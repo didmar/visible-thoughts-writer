@@ -1,8 +1,6 @@
 import { initializeApp } from 'firebase/app';
 // import { getAnalytics } from "firebase/analytics";
-import { getFirestore } from '@firebase/firestore';
-import { getDocs, collection, addDoc } from 'firebase/firestore';
-
+import { getFirestore, collection, getDocs, addDoc } from '@firebase/firestore';
 import firebaseConfig from './firebase.creds.json';
 
 const app = initializeApp(firebaseConfig);
@@ -36,6 +34,93 @@ export async function getRuns(): Promise<Run[]> {
 }
 
 export async function createRun(title: string): Promise<string> {
-  const toto = await addDoc(runsCol, { title });
-  return toto.id;
+  const doc = await addDoc(runsCol, { title });
+  return doc.id;
+}
+
+enum ThoughtType {
+  Watsonian = 0,
+  Doylist = 1,
+  Meta = 2,
+  Comment = 3,
+}
+
+export interface Thought {
+  txt: string;
+  type: ThoughtType;
+  lt: boolean;
+}
+
+export interface Bullet {
+  T: Thought[];
+}
+
+export interface Step {
+  id: string;
+  initT: Bullet[];
+  ppt: string;
+  pptYBR: boolean;
+  ppptT: Bullet[];
+  act: string;
+  actYBR: boolean;
+  pactT: Bullet[];
+  out: string;
+  outYBR: boolean;
+}
+
+export class Step {
+  id: string;
+  initT: Bullet[];
+  ppt: string;
+  pptYBR: boolean;
+  ppptT: Bullet[];
+  act: string;
+  actYBR: boolean;
+  pactT: Bullet[];
+  out: string;
+  outYBR: boolean;
+  constructor(
+    id: string,
+    initT: Bullet[],
+    ppt: string,
+    pptYBR: boolean,
+    ppptT: Bullet[],
+    act: string,
+    actYBR: boolean,
+    pactT: Bullet[],
+    out: string,
+    outYBR: boolean
+  ) {
+    this.id = id;
+    this.initT = initT;
+    this.ppt = ppt;
+    this.pptYBR = pptYBR;
+    this.ppptT = ppptT;
+    this.act = act;
+    this.actYBR = actYBR;
+    this.pactT = pactT;
+    this.out = out;
+    this.outYBR = outYBR;
+  }
+}
+
+export async function getSteps(runId: string): Promise<Step[]> {
+  const stepsCol = collection(db, 'runs', runId, 'steps');
+  const stepsSnapshot = await getDocs(stepsCol);
+  return stepsSnapshot.docs.map((doc) => {
+    const data = doc.data();
+    console.log(data);
+    return new Step(
+      doc.id,
+      data.initT,
+      data.ppt,
+      data.pptYBR,
+      data.ppptT,
+      data.act,
+      data.actYBR,
+      data.pactT,
+      data.out,
+      data.outYBR
+    );
+  });
 }
