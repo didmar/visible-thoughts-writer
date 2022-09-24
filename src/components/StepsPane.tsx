@@ -12,7 +12,7 @@ import {
 import { Menu, Settings, AccountCircle } from '@mui/icons-material';
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getSteps, Step } from '../firebase-app';
+import { getLastNSteps, Step } from '../firebase-app';
 import StepElem from './StepElem';
 
 function StepsPane(): JSX.Element {
@@ -23,7 +23,7 @@ function StepsPane(): JSX.Element {
   useEffect(() => {
     void (async function () {
       if (runId !== undefined) {
-        setSteps(await getSteps(runId));
+        setSteps(await getLastNSteps(runId, 50));
       }
     })();
   }, [runId]);
