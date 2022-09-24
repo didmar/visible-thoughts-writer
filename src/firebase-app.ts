@@ -66,7 +66,6 @@ export interface Bullet {
 }
 
 export interface Step {
-  id: string;
   n: number;
   initT: Bullet[];
   ppt: string;
@@ -80,7 +79,6 @@ export interface Step {
 }
 
 export class Step {
-  id: string;
   n: number;
   initT: Bullet[];
   ppt: string;
@@ -92,7 +90,6 @@ export class Step {
   out: string;
   outYBR: boolean;
   constructor(
-    id: string,
     n: number,
     initT: Bullet[],
     ppt: string,
@@ -104,7 +101,6 @@ export class Step {
     out: string,
     outYBR: boolean
   ) {
-    this.id = id;
     this.n = n;
     this.initT = initT;
     this.ppt = ppt;
@@ -125,7 +121,6 @@ export async function getSteps(runId: string): Promise<Step[]> {
     const data = doc.data();
     console.log(data);
     return new Step(
-      doc.id,
       data.n,
       data.initT,
       data.ppt,
@@ -151,7 +146,6 @@ export async function getLastNSteps(
     const data = doc.data();
     // console.log(data);
     return new Step(
-      doc.id,
       data.n,
       data.initT,
       data.ppt,
@@ -176,7 +170,7 @@ export async function addStep(runId: string, step: Step): Promise<string> {
 export async function addSteps(runId: string, steps: Step[]): Promise<void> {
   const batch = writeBatch(db);
   steps.forEach((step) => {
-    const stepRef = doc(db, 'runs', runId, 'steps', step.id);
+    const stepRef = doc(db, 'runs', runId, 'steps', step.n.toString());
     batch.set(stepRef, Object.assign({}, step));
   });
   await batch.commit();

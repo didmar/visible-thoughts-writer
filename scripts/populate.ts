@@ -1,15 +1,15 @@
 import { Step, addSteps, Bullet, Thought } from '../src/firebase-app';
 
 function randomThoughtsSection(): Bullet[] {
-  const nbBullets = Math.floor(Math.random() * 10);
+  const nbBullets = Math.floor(1 + Math.random() * 10);
   const bullets: Bullet[] = [];
   for (let i = 0; i < nbBullets; i++) {
-    const nbThoughts = Math.floor(Math.random() * 10);
+    const nbThoughts = Math.floor(1 + Math.random() * 10);
     const thoughts: Thought[] = [];
     for (let j = 0; j < nbThoughts; j++) {
       thoughts.push({
-        txt: 'Lorem ipsum '.repeat(Math.floor(Math.random() * 20)),
-        type: 0,
+        txt: 'Lorem ipsum '.repeat(1 + Math.floor(Math.random() * 20)),
+        type: Math.floor(Math.random() * 4),
         lt: false,
       });
     }
@@ -22,18 +22,17 @@ async function main(): Promise<void> {
   const runId = '9Eu80GJttvrbu1S5ieAn';
 
   const steps: Step[] = [];
-  for (let n = 4; n < 500; n++) {
+  for (let n = 1; n <= 500; n++) {
     const initT = randomThoughtsSection();
-    const ppt = 'Lorem ipsum '.repeat(Math.floor(Math.random() * 20));
+    const ppt = 'Lorem ipsum '.repeat(1 + Math.floor(Math.random() * 20));
     const pptYBR = Math.random() < 0.1;
     const ppptT = randomThoughtsSection();
-    const act = 'Lorem ipsum '.repeat(Math.floor(Math.random() * 10));
+    const act = 'Lorem ipsum '.repeat(1 + Math.floor(Math.random() * 10));
     const actYBR = Math.random() < 0.1;
     const pactT = randomThoughtsSection();
-    const out = 'Lorem ipsum '.repeat(Math.floor(Math.random() * 20));
+    const out = 'Lorem ipsum '.repeat(1 + Math.floor(Math.random() * 20));
     const outYBR = Math.random() < 0.1;
     const step = new Step(
-      n.toString(), // Generate unique ID for the step number
       n,
       initT,
       ppt,

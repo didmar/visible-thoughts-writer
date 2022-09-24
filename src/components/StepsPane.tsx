@@ -23,7 +23,7 @@ function StepsPane(): JSX.Element {
   useEffect(() => {
     void (async function () {
       if (runId !== undefined) {
-        setSteps(await getLastNSteps(runId, 50));
+        setSteps(await getLastNSteps(runId, 1));
       }
     })();
   }, [runId]);
@@ -84,7 +84,7 @@ function StepsPane(): JSX.Element {
             >
               <List>
                 {steps.map((step) => (
-                  <StepElem key={step.id} step={step} />
+                  <StepElem key={step.n.toString()} step={step} />
                 ))}
               </List>
             </Paper>
