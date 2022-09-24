@@ -10,6 +10,8 @@ import {
   query,
   orderBy,
   limit,
+  DocumentData,
+  getDoc,
 } from '@firebase/firestore';
 import firebaseConfig from './firebase.creds.json';
 
@@ -112,6 +114,21 @@ export class Step {
     this.out = out;
     this.outYBR = outYBR;
   }
+
+  static fromDocData(data: DocumentData): Step {
+    return new Step(
+      data.n,
+      data.initT,
+      data.ppt,
+      data.pptYBR,
+      data.ppptT,
+      data.act,
+      data.actYBR,
+      data.pactT,
+      data.out,
+      data.outYBR
+    );
+  }
 }
 
 export async function getSteps(runId: string): Promise<Step[]> {
@@ -174,4 +191,17 @@ export async function addSteps(runId: string, steps: Step[]): Promise<void> {
     batch.set(stepRef, Object.assign({}, step));
   });
   await batch.commit();
+}
+
+export async function getStepN(
+  runId: string,
+  n: number
+): Promise<Step | undefined> {
+  const docRef = doc(db, 'runs', runId, 'steps', n.toString());
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return Step.fromDocData(docSnap.data());
+  } else {
+    return undefined;
+  }
 }

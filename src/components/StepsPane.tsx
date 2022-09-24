@@ -12,18 +12,25 @@ import {
 import { Menu, Settings, AccountCircle } from '@mui/icons-material';
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getLastNSteps, Step } from '../firebase-app';
+import { getLastNSteps, Step, getStepN } from '../firebase-app';
 import StepElem from './StepElem';
 
 function StepsPane(): JSX.Element {
   const { runId } = useParams();
 
   const [steps, setSteps] = useState<Step[]>([]);
+  const [xStepAgo, setXStepAgo] = useState<Step | undefined>(undefined);
 
   useEffect(() => {
     void (async function () {
       if (runId !== undefined) {
-        setSteps(await getLastNSteps(runId, 1));
+        const _steps = await getLastNSteps(runId, 1);
+        setSteps(_steps);
+        const lastN = _steps[_steps.length - 1].n;
+        const _xStepAgo = await getStepN(runId, lastN - 50);
+        if (_xStepAgo !== undefined) {
+          setXStepAgo(_xStepAgo);
+        }
       }
     })();
   }, [runId]);
@@ -97,10 +104,11 @@ function StepsPane(): JSX.Element {
                 p: 2,
                 display: 'flex',
                 flexDirection: 'column',
-                height: 240,
+                height: '20vh',
+                overflow: 'auto',
               }}
             >
-              X steps ago
+              {xStepAgo !== undefined && <StepElem step={xStepAgo} />}
             </Paper>
           </Grid>
 
