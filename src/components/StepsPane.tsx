@@ -109,7 +109,13 @@ function StepsPane(): JSX.Element {
           </Grid>
 
           {/* Long-term thoughts */}
-          <Grid item xs={12} md={4} lg={9}>
+          <Grid
+            item
+            xs={0}
+            md={4}
+            lg={3}
+            display={{ xs: 'none', md: 'block', lg: 'block' }}
+          >
             <Paper
               sx={{
                 p: 2,
@@ -125,7 +131,7 @@ function StepsPane(): JSX.Element {
           </Grid>
 
           {/* Compose */}
-          <Grid item xs={12} md={8} lg={3}>
+          <Grid item xs={12} md={8} lg={9}>
             <Paper
               sx={{
                 p: 2,
@@ -140,7 +146,13 @@ function StepsPane(): JSX.Element {
           </Grid>
 
           {/* X steps ago */}
-          <Grid item xs={12} md={4} lg={3}>
+          <Grid
+            item
+            xs={0}
+            md={4}
+            lg={3}
+            display={{ xs: 'none', md: 'block', lg: 'block' }}
+          >
             <Paper
               sx={{
                 p: 2,
