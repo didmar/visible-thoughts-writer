@@ -1,4 +1,19 @@
+import { Grid, Paper } from '@mui/material';
+import Stack from '@mui/material/Stack';
+import { styled } from '@mui/material/styles';
 import { Bullet, Step, Thought } from '../firebase-app';
+import BubbleChartIcon from '@mui/icons-material/BubbleChart';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import CasinoIcon from '@mui/icons-material/Casino';
+import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
+
+const Item = styled(Paper)(({ theme }) => ({
+  backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
+  ...theme.typography.body2,
+  padding: theme.spacing(1),
+  textAlign: 'center',
+  color: theme.palette.text.secondary,
+}));
 
 interface StepElemProps {
   step: Step;
@@ -29,19 +44,40 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
   return (
     <div className="StepsPane">
       <>
-        <h3>Step {step.id}</h3>
-        <div>Initial thoughts: {renderBullets(step.initT)}</div>
-        <div>
-          Prompt: {renderYBR(step.pptYBR)} {step.ppt}
-        </div>
-        <div>Post-prompt thoughts: {renderBullets(step.ppptT)}</div>
-        <div>
-          Action: {renderYBR(step.actYBR)} {step.act}
-        </div>
-        <div>Post-action thoughts: {renderBullets(step.pactT)}</div>
-        <div>
-          Outcome: {renderYBR(step.outYBR)} {step.out}
-        </div>
+        <h3>Step #{step.n}</h3>
+        <Stack spacing={2}>
+          {/* Initial thoughts */}
+          <Item>
+            <Grid container spacing={0}>
+              <Grid item xs={1} md={1} lg={1}>
+                <BubbleChartIcon />
+              </Grid>
+              <Grid item xs={11} md={11} lg={11}>
+                {renderBullets(step.initT)}
+              </Grid>
+            </Grid>
+          </Item>
+          {/* Prompt */}
+          <Item>
+            <VisibilityIcon /> {renderYBR(step.pptYBR)} {step.ppt}
+          </Item>
+          {/* Post-prompt thoughts */}
+          <Item>
+            <BubbleChartIcon /> {renderBullets(step.ppptT)}
+          </Item>
+          {/* Action */}
+          <Item>
+            <DirectionsRunIcon /> {renderYBR(step.actYBR)} {step.act}
+          </Item>
+          {/* Post-action thoughts */}
+          <Item>
+            <BubbleChartIcon /> {renderBullets(step.pactT)}
+          </Item>
+          {/* Outcome */}
+          <Item>
+            <CasinoIcon /> {renderYBR(step.outYBR)} {step.out}
+          </Item>
+        </Stack>
       </>
     </div>
   );

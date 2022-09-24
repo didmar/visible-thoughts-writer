@@ -57,6 +57,7 @@ export interface Bullet {
 
 export interface Step {
   id: string;
+  n: number;
   initT: Bullet[];
   ppt: string;
   pptYBR: boolean;
@@ -70,6 +71,7 @@ export interface Step {
 
 export class Step {
   id: string;
+  n: number;
   initT: Bullet[];
   ppt: string;
   pptYBR: boolean;
@@ -81,6 +83,7 @@ export class Step {
   outYBR: boolean;
   constructor(
     id: string,
+    n: number,
     initT: Bullet[],
     ppt: string,
     pptYBR: boolean,
@@ -92,6 +95,7 @@ export class Step {
     outYBR: boolean
   ) {
     this.id = id;
+    this.n = n;
     this.initT = initT;
     this.ppt = ppt;
     this.pptYBR = pptYBR;
@@ -112,6 +116,7 @@ export async function getSteps(runId: string): Promise<Step[]> {
     console.log(data);
     return new Step(
       doc.id,
+      data.n,
       data.initT,
       data.ppt,
       data.pptYBR,
@@ -123,4 +128,10 @@ export async function getSteps(runId: string): Promise<Step[]> {
       data.outYBR
     );
   });
+}
+
+export async function addStep(runId: string, step: Step): Promise<string> {
+  const stepsCol = collection(db, 'runs', runId, 'steps');
+  const doc = await addDoc(stepsCol, step);
+  return doc.id;
 }

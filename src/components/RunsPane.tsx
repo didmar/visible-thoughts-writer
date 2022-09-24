@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Run, getRuns, createRun } from '../firebase-app';
 import '../App.css';
+import { Button } from '@mui/material';
 
 function RunsPane(): JSX.Element {
   const [runs, setRuns] = useState<Run[]>([]);
@@ -22,7 +23,8 @@ function RunsPane(): JSX.Element {
             setNewTitle(event.target.value);
           }}
         />
-        <button
+        <Button
+          variant="contained"
           onClick={() => {
             void async function () {
               await createRun(newTitle);
@@ -30,7 +32,7 @@ function RunsPane(): JSX.Element {
           }}
         >
           Create Run
-        </button>
+        </Button>
         <h1>Runs:</h1>
         <ul>
           {runs.map((run) => (
