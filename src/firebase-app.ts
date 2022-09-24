@@ -12,6 +12,7 @@ import {
   limit,
   DocumentData,
   getDoc,
+  updateDoc,
 } from '@firebase/firestore';
 import firebaseConfig from './firebase.creds.json';
 
@@ -28,10 +29,23 @@ export const db = getFirestore(app);
 export class Run {
   id: string;
   title: string;
+  ltts: Record<string, Thought[]>;
 
-  constructor(id: string, title: string) {
+  constructor(id: string, title: string, ltts: Record<string, Thought[]>) {
     this.id = id;
     this.title = title;
+    this.ltts = ltts;
+  }
+
+  lttsToArray(): Thought[] {
+    const thoughts: Thought[] = [];
+    const ns: number[] = Object.keys(this.ltts)
+      .map((id) => parseInt(id))
+      .sort((a, b) => (a < b ? a : b));
+    for (const n of ns) {
+      thoughts.push(...this.ltts[n.toString()]);
+    }
+    return thoughts;
   }
 }
 
@@ -41,8 +55,19 @@ export async function getRuns(): Promise<Run[]> {
   const runsSnapshot = await getDocs(runsCol);
   return runsSnapshot.docs.map((doc) => {
     const data = doc.data();
-    return new Run(doc.id, data.title);
+    return new Run(doc.id, data.title, data.ltts);
   });
+}
+
+export async function getRun(runId: string): Promise<Run | undefined> {
+  const runRef = doc(db, 'runs', runId);
+  const runSnapshot = await getDoc(runRef);
+  const data = runSnapshot.data();
+  if (data !== undefined) {
+    return new Run(runId, data.title, data.ltts);
+  } else {
+    return undefined;
+  }
 }
 
 export async function createRun(title: string): Promise<string> {
@@ -204,4 +229,40 @@ export async function getStepN(
   } else {
     return undefined;
   }
+}
+
+function collectLongTermThoughts(step: Step): Thought[] {
+  return [step.initT, step.ppptT, step.pactT].flatMap((bullets) => {
+    return bullets.flatMap((bullet) =>
+      bullet.T.filter((thought) => thought.lt)
+    );
+  });
+}
+
+export async function getRunLongTermThoughts(
+  runId: string
+): Promise<Thought[]> {
+  const run = await getRun(runId);
+  if (run !== undefined) {
+    return run.lttsToArray();
+  } else {
+    return [];
+  }
+}
+
+export async function updateRunLongTermThoughts(
+  runId: string,
+  n: number
+): Promise<void> {
+  const stepN = await getStepN(runId, n);
+  if (stepN === undefined) {
+    return;
+  }
+
+  const ltts: Thought[] = collectLongTermThoughts(stepN);
+
+  const docRef = doc(db, 'runs', runId);
+  await updateDoc(docRef, {
+    [`ltts.${n}`]: ltts.map((ltt) => Object.assign({}, ltt)),
+  });
 }

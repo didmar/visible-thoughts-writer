@@ -19,6 +19,11 @@ interface StepElemProps {
   step: Step;
 }
 
+export function renderLongTermThoughts(ltts: Thought[]): JSX.Element {
+  const b = ltts.map((thought, index) => <li key={index}>{thought.txt}</li>);
+  return <ul>{b}</ul>;
+}
+
 function renderThought(thought: Thought): JSX.Element {
   return <span>{thought.txt}.</span>;
 }

@@ -1,4 +1,11 @@
-import { Step, addSteps, Bullet, Thought } from '../src/firebase-app';
+import { exit } from 'process';
+import {
+  Step,
+  addSteps,
+  Bullet,
+  Thought,
+  updateRunLongTermThoughts,
+} from '../src/firebase-app';
 
 function randomThoughtsSection(): Bullet[] {
   const nbBullets = Math.floor(1 + Math.random() * 10);
@@ -50,7 +57,10 @@ async function main(): Promise<void> {
 }
 
 void (async () => {
-  await main();
+  // await main();
+
+  await updateRunLongTermThoughts('9Eu80GJttvrbu1S5ieAn', 500);
+
   console.log('Done!');
-  // FIXME: hangs forever afterwards
+  exit(0);
 })();
