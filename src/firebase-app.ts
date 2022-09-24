@@ -1,6 +1,13 @@
 import { initializeApp } from 'firebase/app';
 // import { getAnalytics } from "firebase/analytics";
-import { getFirestore, collection, getDocs, addDoc } from '@firebase/firestore';
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  addDoc,
+  writeBatch,
+  doc,
+} from '@firebase/firestore';
 import firebaseConfig from './firebase.creds.json';
 
 const app = initializeApp(firebaseConfig);
@@ -132,6 +139,16 @@ export async function getSteps(runId: string): Promise<Step[]> {
 
 export async function addStep(runId: string, step: Step): Promise<string> {
   const stepsCol = collection(db, 'runs', runId, 'steps');
-  const doc = await addDoc(stepsCol, step);
+  const doc = await addDoc(stepsCol, Object.assign({}, step));
   return doc.id;
+}
+
+// Only used for populating the database
+export async function addSteps(runId: string, steps: Step[]): Promise<void> {
+  const batch = writeBatch(db);
+  steps.forEach((step) => {
+    const stepRef = doc(db, 'runs', runId, 'steps', step.id);
+    batch.set(stepRef, Object.assign({}, step));
+  });
+  await batch.commit();
 }
