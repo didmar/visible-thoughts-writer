@@ -38,7 +38,7 @@ function StepsPane(): JSX.Element {
         setSteps(_steps);
         // Init step from x steps ago
         const lastN = _steps[_steps.length - 1].n;
-        const _xStepAgo = await getStepN(runId, lastN - 50);
+        const _xStepAgo = await getStepN(runId, Math.max(lastN - 50, 1));
         if (_xStepAgo !== undefined) {
           setXStepAgo(_xStepAgo);
         }
