@@ -75,7 +75,7 @@ export async function createRun(title: string): Promise<string> {
   return doc.id;
 }
 
-enum ThoughtType {
+export enum ThoughtType {
   Watsonian = 0,
   Doylist = 1,
   Meta = 2,

@@ -1,7 +1,7 @@
-import { Grid, Paper } from '@mui/material';
+import { Grid, Paper, Typography } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import { styled } from '@mui/material/styles';
-import { Bullet, Step, TextYBR, Thought } from '../firebase-app';
+import { Bullet, Step, TextYBR, Thought, ThoughtType } from '../firebase-app';
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CasinoIcon from '@mui/icons-material/Casino';
@@ -20,12 +20,42 @@ interface StepElemProps {
 }
 
 export function renderLongTermThoughts(ltts: Thought[]): JSX.Element {
-  const b = ltts.map((thought, index) => <li key={index}>{thought.txt}</li>);
+  const b = ltts.map((thought, index) => (
+    <li key={index}>{renderThought(thought, 1)}</li>
+  ));
   return <ul>{b}</ul>;
 }
 
 function renderThought(thought: Thought, index: number): JSX.Element {
-  return <span key={index}>{thought.txt}.</span>;
+  let formattedText;
+  let color = 'text.primary';
+  switch (thought.type) {
+    case ThoughtType.Watsonian:
+      formattedText = <>{thought.txt.trim()}</>;
+      break;
+    case ThoughtType.Doylist:
+      formattedText = <b>{'(' + thought.txt.trim() + ')'}</b>;
+      break;
+    case ThoughtType.Meta:
+      formattedText = <i>{'{' + thought.txt.trim() + '}'}</i>;
+      break;
+    case ThoughtType.Comment:
+      formattedText = <>#{thought.txt.trim()}#</>;
+      color = 'text.secondary';
+      break;
+    default:
+      throw new Error(`Unknown thought type: ${thought.type as number}`);
+  }
+  if (thought.lt) {
+    formattedText = <u>{formattedText}</u>;
+  }
+  return (
+    <span key={index}>
+      <Typography variant="caption" sx={{ color }}>
+        {formattedText}.
+      </Typography>
+    </span>
+  );
 }
 
 function renderThoughts(thoughts: Thought[]): JSX.Element {
