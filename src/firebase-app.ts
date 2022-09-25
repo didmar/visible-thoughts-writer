@@ -108,6 +108,8 @@ export enum Section {
   Out,
 }
 
+export type SectionContent = Bullet[] | TextYBR | string;
+
 export function getNextSectionForStep(step?: Step): Section | undefined {
   if (step === undefined) return undefined; // no step yet, must create
   if (step.initT === undefined) return Section.InitT;
@@ -206,6 +208,15 @@ export async function getLastNSteps(
       data.out
     );
   });
+}
+
+export async function updateStep(
+  runId: string,
+  n: number,
+  update: Partial<Step>
+): Promise<void> {
+  const docRef = doc(db, 'runs', runId, 'steps', n.toString());
+  await updateDoc(docRef, update);
 }
 
 export async function addStep(runId: string, step: Step): Promise<void> {

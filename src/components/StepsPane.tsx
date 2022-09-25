@@ -22,6 +22,9 @@ import {
   getNextSectionForStep,
   Section,
   addStep,
+  TextYBR,
+  SectionContent,
+  updateStep,
 } from '../firebase-app';
 import StepElem, { renderLongTermThoughts } from './StepElem';
 import Composer from './Composer';
@@ -50,13 +53,11 @@ function StepsPane(): JSX.Element {
   useEffect(() => {
     void (async function () {
       if (runId !== undefined && steps !== undefined) {
-        console.log('### useEffect steps ###');
         // Must init next step?
         const section = getNextSection();
         if (section === undefined) {
           await createNextStep();
         } else {
-          console.log('Section: ', Section[section]);
           // Init step from x steps ago
           const lastN = steps[steps.length - 1].n;
           const _xStepAgo = await getStepN(runId, Math.max(lastN - X, 1));
@@ -70,9 +71,47 @@ function StepsPane(): JSX.Element {
     })();
   }, [steps]);
 
-  function onSubmitted(bullets: Bullet[]): void {
-    console.log('Submitted! ', bullets);
-  }
+  const onSubmitted = (section: Section, content: SectionContent): void => {
+    if (runId === undefined) {
+      throw new Error('onSubmitted called before runId was initialized!');
+    }
+    if (steps === undefined || steps.length === 0) {
+      throw new Error('onSubmitted called before steps were initialized!');
+    }
+
+    let update;
+    switch (section) {
+      case Section.InitT:
+        update = { initT: content as Bullet[] };
+        break;
+      case Section.Ppt:
+        update = { ppt: content as string };
+        break;
+      case Section.PpptT:
+        update = { ppptT: content as Bullet[] };
+        break;
+      case Section.Act:
+        update = { act: content as TextYBR };
+        break;
+      case Section.PactT:
+        update = { pactT: content as Bullet[] };
+        break;
+      case Section.Out:
+        update = { out: content as TextYBR };
+        break;
+      default:
+        throw new Error(`Unknown section: ${Section[section]}`);
+        break;
+    }
+
+    const lastStep = steps[steps.length - 1];
+    void (async () => {
+      await updateStep(runId, lastStep.n, update);
+    })();
+
+    const updatedLastStep: Step = { ...lastStep, ...update };
+    setSteps([...steps.slice(0, -1), updatedLastStep]);
+  };
 
   async function createNextStep(): Promise<void> {
     if (steps === undefined || runId === undefined) return;
