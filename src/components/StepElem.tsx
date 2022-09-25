@@ -1,7 +1,7 @@
 import { Grid, Paper } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import { styled } from '@mui/material/styles';
-import { Bullet, Step, Thought } from '../firebase-app';
+import { Bullet, Step, TextYBR, Thought } from '../firebase-app';
 import BubbleChartIcon from '@mui/icons-material/BubbleChart';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CasinoIcon from '@mui/icons-material/Casino';
@@ -39,8 +39,12 @@ function renderBullets(bullets: Bullet[]): JSX.Element {
   return <ul>{b}</ul>;
 }
 
-function renderYBR(ybr: boolean): JSX.Element {
-  return <span>{ybr ? 'YBR!' : ''}</span>;
+function renderTextYBR({ txt, ybr }: TextYBR): JSX.Element {
+  return (
+    <span>
+      {ybr ? 'YBR!' : ''} {txt}
+    </span>
+  );
 }
 
 const StepElem: React.FunctionComponent<StepElemProps> = ({
@@ -64,7 +68,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
           </Item>
           {/* Prompt */}
           <Item>
-            <VisibilityIcon /> {renderYBR(step.pptYBR)} {step.ppt}
+            <VisibilityIcon /> {step.ppt}
           </Item>
           {/* Post-prompt thoughts */}
           <Item>
@@ -72,7 +76,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
           </Item>
           {/* Action */}
           <Item>
-            <DirectionsRunIcon /> {renderYBR(step.actYBR)} {step.act}
+            <DirectionsRunIcon /> {renderTextYBR(step.act)}
           </Item>
           {/* Post-action thoughts */}
           <Item>
@@ -80,7 +84,8 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
           </Item>
           {/* Outcome */}
           <Item>
-            <CasinoIcon /> {renderYBR(step.outYBR)} {step.out}
+            <CasinoIcon />
+            {step.out != null ? renderTextYBR(step.out) : 'Skipped'}
           </Item>
         </Stack>
       </>

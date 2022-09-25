@@ -4,7 +4,7 @@ import {
   addSteps,
   Bullet,
   Thought,
-  updateRunLongTermThoughts,
+  // updateRunLongTermThoughtsForStep,
 } from '../src/firebase-app';
 
 function randomThoughtsSection(): Bullet[] {
@@ -25,41 +25,53 @@ function randomThoughtsSection(): Bullet[] {
   return bullets;
 }
 
+function generateRandomStep(n: number, prevStep: Step | undefined): Step {
+  // Skip initT if the last step had a YBR flag on outcome, or the outcome was skipped
+  // subsequently to a YBR flag on action
+  const skipInitT =
+    prevStep !== undefined && (prevStep.out == null || prevStep.out.ybr);
+  const skipPptAndPpptT = prevStep?.out?.ybr ?? false;
+
+  const initT = skipInitT ? [] : randomThoughtsSection();
+  const ppt = skipPptAndPpptT
+    ? null
+    : 'Lorem ipsum '.repeat(1 + Math.floor(Math.random() * 20));
+  const ppptT = skipPptAndPpptT ? [] : randomThoughtsSection();
+  const act = {
+    txt: 'Lorem ipsum '.repeat(1 + Math.floor(Math.random() * 10)),
+    ybr: Math.random() < 0.1,
+  };
+  const pactT = randomThoughtsSection();
+
+  const out =
+    act.ybr && Math.random() < 0.5
+      ? null
+      : {
+          txt: 'Lorem ipsum '.repeat(1 + Math.floor(Math.random() * 10)),
+          ybr: Math.random() < 0.1,
+        };
+
+  const step = new Step(n, initT, ppt, ppptT, act, pactT, out);
+  return step;
+}
+
 async function main(): Promise<void> {
   const runId = '9Eu80GJttvrbu1S5ieAn';
 
   const steps: Step[] = [];
-  for (let n = 1; n <= 500; n++) {
-    const initT = randomThoughtsSection();
-    const ppt = 'Lorem ipsum '.repeat(1 + Math.floor(Math.random() * 20));
-    const pptYBR = Math.random() < 0.1;
-    const ppptT = randomThoughtsSection();
-    const act = 'Lorem ipsum '.repeat(1 + Math.floor(Math.random() * 10));
-    const actYBR = Math.random() < 0.1;
-    const pactT = randomThoughtsSection();
-    const out = 'Lorem ipsum '.repeat(1 + Math.floor(Math.random() * 20));
-    const outYBR = Math.random() < 0.1;
-    const step = new Step(
-      n,
-      initT,
-      ppt,
-      pptYBR,
-      ppptT,
-      act,
-      actYBR,
-      pactT,
-      out,
-      outYBR
-    );
+  let prevStep;
+  for (let n = 1; n <= 50; n++) {
+    const step = generateRandomStep(n, prevStep);
     steps.push(step);
+    prevStep = step;
   }
   await addSteps(runId, steps);
 }
 
 void (async () => {
-  // await main();
+  await main();
 
-  await updateRunLongTermThoughts('9Eu80GJttvrbu1S5ieAn', 500);
+  // await updateRunLongTermThoughts('9Eu80GJttvrbu1S5ieAn', 500);
 
   console.log('Done!');
   exit(0);

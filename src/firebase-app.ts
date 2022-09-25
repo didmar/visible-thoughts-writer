@@ -92,52 +92,45 @@ export interface Bullet {
   T: Thought[];
 }
 
+export interface TextYBR {
+  txt: string;
+  ybr: boolean;
+}
+
 export interface Step {
   n: number;
   initT: Bullet[];
-  ppt: string;
-  pptYBR: boolean;
+  ppt: string | null;
   ppptT: Bullet[];
-  act: string;
-  actYBR: boolean;
+  act: TextYBR;
   pactT: Bullet[];
-  out: string;
-  outYBR: boolean;
+  out: TextYBR | null;
 }
 
 export class Step {
   n: number;
   initT: Bullet[];
-  ppt: string;
-  pptYBR: boolean;
+  ppt: string | null;
   ppptT: Bullet[];
-  act: string;
-  actYBR: boolean;
+  act: TextYBR;
   pactT: Bullet[];
-  out: string;
-  outYBR: boolean;
+  out: TextYBR | null;
   constructor(
     n: number,
     initT: Bullet[],
-    ppt: string,
-    pptYBR: boolean,
+    ppt: string | null,
     ppptT: Bullet[],
-    act: string,
-    actYBR: boolean,
+    act: TextYBR,
     pactT: Bullet[],
-    out: string,
-    outYBR: boolean
+    out: TextYBR | null
   ) {
     this.n = n;
     this.initT = initT;
     this.ppt = ppt;
-    this.pptYBR = pptYBR;
     this.ppptT = ppptT;
     this.act = act;
-    this.actYBR = actYBR;
     this.pactT = pactT;
     this.out = out;
-    this.outYBR = outYBR;
   }
 
   static fromDocData(data: DocumentData): Step {
@@ -145,13 +138,10 @@ export class Step {
       data.n,
       data.initT,
       data.ppt,
-      data.pptYBR,
       data.ppptT,
       data.act,
-      data.actYBR,
       data.pactT,
-      data.out,
-      data.outYBR
+      data.out
     );
   }
 }
@@ -166,13 +156,10 @@ export async function getSteps(runId: string): Promise<Step[]> {
       data.n,
       data.initT,
       data.ppt,
-      data.pptYBR,
       data.ppptT,
       data.act,
-      data.actYBR,
       data.pactT,
-      data.out,
-      data.outYBR
+      data.out
     );
   });
 }
@@ -191,13 +178,10 @@ export async function getLastNSteps(
       data.n,
       data.initT,
       data.ppt,
-      data.pptYBR,
       data.ppptT,
       data.act,
-      data.actYBR,
       data.pactT,
-      data.out,
-      data.outYBR
+      data.out
     );
   });
 }
@@ -210,11 +194,26 @@ export async function addStep(runId: string, step: Step): Promise<string> {
 
 // Only used for populating the database
 export async function addSteps(runId: string, steps: Step[]): Promise<void> {
+  // Create a batch to write all the steps at once
   const batch = writeBatch(db);
   steps.forEach((step) => {
     const stepRef = doc(db, 'runs', runId, 'steps', step.n.toString());
     batch.set(stepRef, Object.assign({}, step));
   });
+
+  // Also add the update of run's long-term thoughts
+  const obj = steps.reduce(
+    (acc, step) => ({
+      ...acc,
+      [`ltts.${step.n}`]: collectLongTermThoughts(step).map((ltt) =>
+        Object.assign({}, ltt)
+      ),
+    }),
+    {}
+  );
+  const docRef = doc(db, 'runs', runId);
+  batch.update(docRef, obj);
+
   await batch.commit();
 }
 
@@ -250,7 +249,7 @@ export async function getRunLongTermThoughts(
   }
 }
 
-export async function updateRunLongTermThoughts(
+export async function updateRunLongTermThoughtsForStep(
   runId: string,
   n: number
 ): Promise<void> {
