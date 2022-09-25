@@ -24,12 +24,12 @@ export function renderLongTermThoughts(ltts: Thought[]): JSX.Element {
   return <ul>{b}</ul>;
 }
 
-function renderThought(thought: Thought): JSX.Element {
-  return <span>{thought.txt}.</span>;
+function renderThought(thought: Thought, index: number): JSX.Element {
+  return <span key={index}>{thought.txt}.</span>;
 }
 
 function renderThoughts(thoughts: Thought[]): JSX.Element {
-  return <>{thoughts.map((thought) => renderThought(thought))}</>;
+  return <>{thoughts.map((thought, index) => renderThought(thought, index))}</>;
 }
 
 function renderBullets(bullets: Bullet[]): JSX.Element {
