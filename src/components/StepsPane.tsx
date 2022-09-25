@@ -18,8 +18,10 @@ import {
   getStepN,
   Thought,
   getRunLongTermThoughts,
+  Bullet,
 } from '../firebase-app';
 import StepElem, { renderLongTermThoughts } from './StepElem';
+import Composer from './Composer';
 
 function StepsPane(): JSX.Element {
   const { runId } = useParams();
@@ -45,6 +47,10 @@ function StepsPane(): JSX.Element {
       }
     })();
   }, [runId]);
+
+  function onSubmitted(bullets: Bullet[]): void {
+    console.log('Submitted! ', bullets);
+  }
 
   return (
     <Box
@@ -141,7 +147,7 @@ function StepsPane(): JSX.Element {
                 overflow: 'auto',
               }}
             >
-              Compose
+              <Composer onSubmitted={onSubmitted} />
             </Paper>
           </Grid>
 
