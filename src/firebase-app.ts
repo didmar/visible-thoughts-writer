@@ -16,6 +16,7 @@ import {
   setDoc,
 } from '@firebase/firestore';
 import firebaseConfig from './firebase.creds.json';
+import { withoutUndefinedValues } from './utils';
 
 const app = initializeApp(firebaseConfig);
 
@@ -108,7 +109,8 @@ export enum Section {
 }
 
 export function getNextSectionForStep(step?: Step): Section | undefined {
-  if (step === undefined || step.initT === undefined) return Section.InitT;
+  if (step === undefined) return undefined; // no step yet, must create
+  if (step.initT === undefined) return Section.InitT;
   if (step.ppt === undefined) return Section.Ppt;
   if (step.ppptT === undefined) return Section.PpptT;
   if (step.act === undefined) return Section.Act;
@@ -208,11 +210,7 @@ export async function getLastNSteps(
 
 export async function addStep(runId: string, step: Step): Promise<void> {
   const docRef = doc(db, 'runs', runId, 'steps', step.n.toString());
-  const obj = Object.entries(step).reduce(
-    (acc, [key, value]) =>
-      value !== undefined ? { ...acc, [key]: value } : acc,
-    {}
-  );
+  const obj = withoutUndefinedValues({ ...step });
   console.log('obj: ', obj);
   await setDoc(docRef, obj);
 }
