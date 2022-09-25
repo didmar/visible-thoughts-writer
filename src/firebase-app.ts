@@ -13,6 +13,7 @@ import {
   DocumentData,
   getDoc,
   updateDoc,
+  setDoc,
 } from '@firebase/firestore';
 import firebaseConfig from './firebase.creds.json';
 
@@ -106,7 +107,7 @@ export enum Section {
   Out,
 }
 
-export function getNextSection(step?: Step): Section | undefined {
+export function getNextSectionForStep(step?: Step): Section | undefined {
   if (step === undefined || step.initT === undefined) return Section.InitT;
   if (step.ppt === undefined) return Section.Ppt;
   if (step.ppptT === undefined) return Section.PpptT;
@@ -118,30 +119,30 @@ export function getNextSection(step?: Step): Section | undefined {
 
 export interface Step {
   n: number;
-  initT: Bullet[];
-  ppt: string | null;
-  ppptT: Bullet[];
-  act: TextYBR;
-  pactT: Bullet[];
-  out: TextYBR | null;
+  initT?: Bullet[];
+  ppt?: string | null;
+  ppptT?: Bullet[];
+  act?: TextYBR;
+  pactT?: Bullet[];
+  out?: TextYBR | null;
 }
 
 export class Step {
   n: number;
-  initT: Bullet[];
-  ppt: string | null;
-  ppptT: Bullet[];
-  act: TextYBR;
-  pactT: Bullet[];
-  out: TextYBR | null;
+  initT?: Bullet[];
+  ppt?: string | null;
+  ppptT?: Bullet[];
+  act?: TextYBR;
+  pactT?: Bullet[];
+  out?: TextYBR | null;
   constructor(
     n: number,
-    initT: Bullet[],
-    ppt: string | null,
-    ppptT: Bullet[],
-    act: TextYBR,
-    pactT: Bullet[],
-    out: TextYBR | null
+    initT?: Bullet[],
+    ppt?: string | null,
+    ppptT?: Bullet[],
+    act?: TextYBR,
+    pactT?: Bullet[],
+    out?: TextYBR | null
   ) {
     this.n = n;
     this.initT = initT;
@@ -205,10 +206,15 @@ export async function getLastNSteps(
   });
 }
 
-export async function addStep(runId: string, step: Step): Promise<string> {
-  const stepsCol = collection(db, 'runs', runId, 'steps');
-  const doc = await addDoc(stepsCol, Object.assign({}, step));
-  return doc.id;
+export async function addStep(runId: string, step: Step): Promise<void> {
+  const docRef = doc(db, 'runs', runId, 'steps', step.n.toString());
+  const obj = Object.entries(step).reduce(
+    (acc, [key, value]) =>
+      value !== undefined ? { ...acc, [key]: value } : acc,
+    {}
+  );
+  console.log('obj: ', obj);
+  await setDoc(docRef, obj);
 }
 
 // Only used for populating the database
@@ -251,6 +257,9 @@ export async function getStepN(
 
 function collectLongTermThoughts(step: Step): Thought[] {
   return [step.initT, step.ppptT, step.pactT].flatMap((bullets) => {
+    if (bullets === undefined) {
+      return [];
+    }
     return bullets.flatMap((bullet) =>
       bullet.T.filter((thought) => thought.lt)
     );

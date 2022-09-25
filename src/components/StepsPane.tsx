@@ -19,45 +19,83 @@ import {
   Thought,
   getRunLongTermThoughts,
   Bullet,
-  getNextSection,
+  getNextSectionForStep,
+  Section,
+  addStep,
 } from '../firebase-app';
 import StepElem, { renderLongTermThoughts } from './StepElem';
 import Composer from './Composer';
 
-function StepsPane(): JSX.Element {
-  const { runId } = useParams();
+// How many steps ago to give a hint of
+const X = 50;
 
-  const [steps, setSteps] = useState<Step[]>([]);
+function StepsPane(): JSX.Element {
+  const { runId } = useParams<string>();
+
+  const [steps, setSteps] = useState<Step[] | undefined>(undefined);
   const [xStepAgo, setXStepAgo] = useState<Step | undefined>(undefined);
   const [ltts, setLtts] = useState<Thought[]>([]);
 
   useEffect(() => {
     void (async function () {
+      console.log(' ### useEffect runId  ###');
       if (runId !== undefined) {
         // Init steps
         const _steps = await getLastNSteps(runId, 1);
         setSteps(_steps);
-        // Init step from x steps ago
-        const lastN = _steps[_steps.length - 1].n;
-        const _xStepAgo = await getStepN(runId, Math.max(lastN - 50, 1));
-        if (_xStepAgo !== undefined) {
-          setXStepAgo(_xStepAgo);
-        }
-        // Init long term thoughts
-        setLtts(await getRunLongTermThoughts(runId));
       }
     })();
-  }, [runId]);
+  }, []);
+
+  useEffect(() => {
+    void (async function () {
+      if (runId !== undefined && steps !== undefined) {
+        console.log('### useEffect steps ###');
+        // Must init next step?
+        const section = getNextSection();
+        if (section === undefined) {
+          await createNextStep();
+        } else {
+          console.log('Section: ', Section[section]);
+          // Init step from x steps ago
+          const lastN = steps[steps.length - 1].n;
+          const _xStepAgo = await getStepN(runId, Math.max(lastN - X, 1));
+          if (_xStepAgo !== undefined) {
+            setXStepAgo(_xStepAgo);
+          }
+          // Init long term thoughts
+          setLtts(await getRunLongTermThoughts(runId));
+        }
+      }
+    })();
+  }, [steps]);
 
   function onSubmitted(bullets: Bullet[]): void {
     console.log('Submitted! ', bullets);
   }
 
+  async function createNextStep(): Promise<void> {
+    if (steps === undefined || runId === undefined) return;
+    const n = steps.length !== 0 ? steps[steps.length - 1].n + 1 : 1;
+    const newStep = new Step(n);
+    console.log('Created new step: ', newStep);
+    await addStep(runId, newStep);
+    setSteps([...steps, newStep]);
+  }
+
+  function getNextSection(): Section | undefined {
+    if (steps === undefined || steps.length === 0) return undefined;
+    const section = getNextSectionForStep(steps[steps.length - 1]);
+    return section;
+  }
+
   function renderComposer(): JSX.Element {
-    if (steps === undefined) return <></>;
-    const section = getNextSection(steps[steps.length - 1]);
-    if (section === undefined) return <>Wait...</>; // Next step not created yet
-    return <Composer section={section} onSubmitted={onSubmitted} />;
+    const section = getNextSection();
+    return section !== undefined ? (
+      <Composer section={section} onSubmitted={onSubmitted} />
+    ) : (
+      <>Wait...</>
+    );
   }
 
   return (
@@ -115,7 +153,7 @@ function StepsPane(): JSX.Element {
               }}
             >
               <List>
-                {steps.map((step) => (
+                {steps?.map((step) => (
                   <StepElem key={step.n.toString()} step={step} />
                 ))}
               </List>

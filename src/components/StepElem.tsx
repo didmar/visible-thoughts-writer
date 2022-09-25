@@ -82,12 +82,12 @@ function renderTextYBR({ txt, ybr }: TextYBR): JSX.Element {
   );
 }
 
-function renderSection(step: Step, section: Section): JSX.Element {
+function renderSection(step: Step, section: Section): JSX.Element | undefined {
   const icon = sectionsData[section].icon;
   let r;
   switch (section) {
     case Section.InitT:
-      r = (
+      r = step.initT !== undefined && (
         <Grid container spacing={0}>
           <Grid item xs={1} md={1} lg={1}>
             {icon}
@@ -99,35 +99,35 @@ function renderSection(step: Step, section: Section): JSX.Element {
       );
       break;
     case Section.Ppt:
-      r = (
+      r = step.ppt !== undefined && (
         <>
           {icon} {step.ppt}
         </>
       );
       break;
     case Section.PpptT:
-      r = (
+      r = step.ppptT !== undefined && (
         <>
           {icon} {renderBullets(step.ppptT)}
         </>
       );
       break;
     case Section.Act:
-      r = (
+      r = step.act !== undefined && (
         <>
           {icon} {renderTextYBR(step.act)}
         </>
       );
       break;
     case Section.PactT:
-      r = (
+      r = step.pactT !== undefined && (
         <>
           {icon} {renderBullets(step.pactT)}
         </>
       );
       break;
     case Section.Out:
-      r = (
+      r = step.out !== undefined && (
         <>
           {icon}
           {step.out != null ? renderTextYBR(step.out) : 'Skipped'}
@@ -138,7 +138,7 @@ function renderSection(step: Step, section: Section): JSX.Element {
       throw new Error(`Unknown section: ${Section[section]}`);
       break;
   }
-  return r;
+  return r === false ? undefined : r;
 }
 
 const StepElem: React.FunctionComponent<StepElemProps> = ({
@@ -147,11 +147,15 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
   return (
     <div className="StepsPane">
       <>
-        <h3>Step #{step.n}</h3>
-        <Stack spacing={2}>
-          {enumKeys(Section).map((section, index) => (
-            <Item key={index}>{renderSection(step, Section[section])}</Item>
-          ))}
+        <h3 key={`h3-${step.n}`}>Step #{step.n}</h3>
+        <Stack key={`stack-${step.n}`} spacing={2}>
+          {enumKeys(Section).map((section, index) => {
+            const renderedSection = renderSection(step, Section[section]);
+            if (renderedSection !== undefined) {
+              return <Item key={index}>{renderedSection}</Item>;
+            }
+            return <></>;
+          })}
         </Stack>
       </>
     </div>
