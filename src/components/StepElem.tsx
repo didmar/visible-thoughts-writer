@@ -1,11 +1,16 @@
 import { Grid, Paper, Typography } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import { styled } from '@mui/material/styles';
-import { Bullet, Step, TextYBR, Thought, ThoughtType } from '../firebase-app';
-import BubbleChartIcon from '@mui/icons-material/BubbleChart';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import CasinoIcon from '@mui/icons-material/Casino';
-import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
+import {
+  Bullet,
+  Section,
+  Step,
+  TextYBR,
+  Thought,
+  ThoughtType,
+} from '../firebase-app';
+import { sectionsData } from '../Section';
+import { enumKeys } from '../utils';
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -77,6 +82,65 @@ function renderTextYBR({ txt, ybr }: TextYBR): JSX.Element {
   );
 }
 
+function renderSection(step: Step, section: Section): JSX.Element {
+  const icon = sectionsData[section].icon;
+  let r;
+  switch (section) {
+    case Section.InitT:
+      r = (
+        <Grid container spacing={0}>
+          <Grid item xs={1} md={1} lg={1}>
+            {icon}
+          </Grid>
+          <Grid item xs={11} md={11} lg={11}>
+            {renderBullets(step.initT)}
+          </Grid>
+        </Grid>
+      );
+      break;
+    case Section.Ppt:
+      r = (
+        <>
+          {icon} {step.ppt}
+        </>
+      );
+      break;
+    case Section.PpptT:
+      r = (
+        <>
+          {icon} {renderBullets(step.ppptT)}
+        </>
+      );
+      break;
+    case Section.Act:
+      r = (
+        <>
+          {icon} {renderTextYBR(step.act)}
+        </>
+      );
+      break;
+    case Section.PactT:
+      r = (
+        <>
+          {icon} {renderBullets(step.pactT)}
+        </>
+      );
+      break;
+    case Section.Out:
+      r = (
+        <>
+          {icon}
+          {step.out != null ? renderTextYBR(step.out) : 'Skipped'}
+        </>
+      );
+      break;
+    default:
+      throw new Error(`Unknown section: ${Section[section]}`);
+      break;
+  }
+  return r;
+}
+
 const StepElem: React.FunctionComponent<StepElemProps> = ({
   step,
 }: StepElemProps) => {
@@ -85,38 +149,9 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
       <>
         <h3>Step #{step.n}</h3>
         <Stack spacing={2}>
-          {/* Initial thoughts */}
-          <Item>
-            <Grid container spacing={0}>
-              <Grid item xs={1} md={1} lg={1}>
-                <BubbleChartIcon />
-              </Grid>
-              <Grid item xs={11} md={11} lg={11}>
-                {renderBullets(step.initT)}
-              </Grid>
-            </Grid>
-          </Item>
-          {/* Prompt */}
-          <Item>
-            <VisibilityIcon /> {step.ppt}
-          </Item>
-          {/* Post-prompt thoughts */}
-          <Item>
-            <BubbleChartIcon /> {renderBullets(step.ppptT)}
-          </Item>
-          {/* Action */}
-          <Item>
-            <DirectionsRunIcon /> {renderTextYBR(step.act)}
-          </Item>
-          {/* Post-action thoughts */}
-          <Item>
-            <BubbleChartIcon /> {renderBullets(step.pactT)}
-          </Item>
-          {/* Outcome */}
-          <Item>
-            <CasinoIcon />
-            {step.out != null ? renderTextYBR(step.out) : 'Skipped'}
-          </Item>
+          {enumKeys(Section).map((section, index) => (
+            <Item key={index}>{renderSection(step, Section[section])}</Item>
+          ))}
         </Stack>
       </>
     </div>

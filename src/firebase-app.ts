@@ -97,6 +97,25 @@ export interface TextYBR {
   ybr: boolean;
 }
 
+export enum Section {
+  InitT,
+  Ppt,
+  PpptT,
+  Act,
+  PactT,
+  Out,
+}
+
+export function getNextSection(step?: Step): Section | undefined {
+  if (step === undefined || step.initT === undefined) return Section.InitT;
+  if (step.ppt === undefined) return Section.Ppt;
+  if (step.ppptT === undefined) return Section.PpptT;
+  if (step.act === undefined) return Section.Act;
+  if (step.pactT === undefined) return Section.PactT;
+  if (step.out === undefined) return Section.Out;
+  return undefined; // no next section for this step, go to the next
+}
+
 export interface Step {
   n: number;
   initT: Bullet[];

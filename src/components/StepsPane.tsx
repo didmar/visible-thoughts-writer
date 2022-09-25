@@ -19,6 +19,7 @@ import {
   Thought,
   getRunLongTermThoughts,
   Bullet,
+  getNextSection,
 } from '../firebase-app';
 import StepElem, { renderLongTermThoughts } from './StepElem';
 import Composer from './Composer';
@@ -50,6 +51,13 @@ function StepsPane(): JSX.Element {
 
   function onSubmitted(bullets: Bullet[]): void {
     console.log('Submitted! ', bullets);
+  }
+
+  function renderComposer(): JSX.Element {
+    if (steps === undefined) return <></>;
+    const section = getNextSection(steps[steps.length - 1]);
+    if (section === undefined) return <>Wait...</>; // Next step not created yet
+    return <Composer section={section} onSubmitted={onSubmitted} />;
   }
 
   return (
@@ -147,7 +155,7 @@ function StepsPane(): JSX.Element {
                 overflow: 'auto',
               }}
             >
-              <Composer onSubmitted={onSubmitted} />
+              {renderComposer()}
             </Paper>
           </Grid>
 
