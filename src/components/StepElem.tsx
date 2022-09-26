@@ -67,7 +67,7 @@ function renderThought(thought: Thought, index: number): JSX.Element {
     <span key={index}>
       <Typography variant="caption" sx={{ color }}>
         {formattedText}.
-      </Typography>
+      </Typography>{' '}
     </span>
   );
 }
