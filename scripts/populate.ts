@@ -4,6 +4,8 @@ import {
   addSteps,
   Bullet,
   Thought,
+  skipInitT,
+  skipPptAndPpptT,
   // updateRunLongTermThoughtsForStep,
 } from '../src/firebase-app';
 
@@ -26,17 +28,11 @@ function randomThoughtsSection(): Bullet[] {
 }
 
 function generateRandomStep(n: number, prevStep: Step | undefined): Step {
-  // Skip initT if the last step had a YBR flag on outcome, or the outcome was skipped
-  // subsequently to a YBR flag on action
-  const skipInitT =
-    prevStep !== undefined && (prevStep.out == null || prevStep.out.ybr);
-  const skipPptAndPpptT = prevStep?.out?.ybr ?? false;
-
-  const initT = skipInitT ? [] : randomThoughtsSection();
-  const ppt = skipPptAndPpptT
+  const initT = skipInitT(prevStep) ? [] : randomThoughtsSection();
+  const ppt = skipPptAndPpptT(prevStep)
     ? null
     : 'Lorem ipsum '.repeat(1 + Math.floor(Math.random() * 20));
-  const ppptT = skipPptAndPpptT ? [] : randomThoughtsSection();
+  const ppptT = skipPptAndPpptT(prevStep) ? [] : randomThoughtsSection();
   const act = {
     txt: 'Lorem ipsum '.repeat(1 + Math.floor(Math.random() * 10)),
     ybr: Math.random() < 0.1,

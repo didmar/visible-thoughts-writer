@@ -108,7 +108,7 @@ export enum Section {
   Out,
 }
 
-export type SectionContent = Bullet[] | TextYBR | string;
+export type SectionContent = Bullet[] | TextYBR | string | null;
 
 export function getNextSectionForStep(step?: Step): Section | undefined {
   if (step === undefined) return undefined; // no step yet, must create
@@ -121,31 +121,52 @@ export function getNextSectionForStep(step?: Step): Section | undefined {
   return undefined; // no next section for this step, go to the next
 }
 
+export const skipInitT = (prevStep: Step | undefined): boolean =>
+  // Skip initT if the last step had a YBR flag on outcome, or the outcome was skipped
+  // subsequently to a YBR flag on action
+  prevStep !== undefined && (prevStep.out == null || prevStep.out.ybr);
+
+export const skipPptAndPpptT = (prevStep: Step | undefined): boolean =>
+  prevStep?.out?.ybr ?? false;
+
+export const createNextStep = (currentStep?: Step): Step => {
+  if (currentStep === undefined) return new Step(1);
+  const newStep = new Step(currentStep.n + 1);
+  if (skipInitT(currentStep)) {
+    newStep.initT = [];
+    if (skipPptAndPpptT(currentStep)) {
+      newStep.ppt = null;
+      newStep.ppptT = [];
+    }
+  }
+  return newStep;
+};
+
 export interface Step {
   n: number;
-  initT?: Bullet[];
+  initT?: Bullet[] | null;
   ppt?: string | null;
-  ppptT?: Bullet[];
-  act?: TextYBR;
-  pactT?: Bullet[];
+  ppptT?: Bullet[] | null;
+  act?: TextYBR | null;
+  pactT?: Bullet[] | null;
   out?: TextYBR | null;
 }
 
 export class Step {
   n: number;
-  initT?: Bullet[];
+  initT?: Bullet[] | null;
   ppt?: string | null;
-  ppptT?: Bullet[];
-  act?: TextYBR;
-  pactT?: Bullet[];
+  ppptT?: Bullet[] | null;
+  act?: TextYBR | null;
+  pactT?: Bullet[] | null;
   out?: TextYBR | null;
   constructor(
     n: number,
-    initT?: Bullet[],
+    initT?: Bullet[] | null,
     ppt?: string | null,
-    ppptT?: Bullet[],
-    act?: TextYBR,
-    pactT?: Bullet[],
+    ppptT?: Bullet[] | null,
+    act?: TextYBR | null,
+    pactT?: Bullet[] | null,
     out?: TextYBR | null
   ) {
     this.n = n;
@@ -266,7 +287,7 @@ export async function getStepN(
 
 function collectLongTermThoughts(step: Step): Thought[] {
   return [step.initT, step.ppptT, step.pactT].flatMap((bullets) => {
-    if (bullets === undefined) {
+    if (bullets === undefined || bullets === null) {
       return [];
     }
     return bullets.flatMap((bullet) =>

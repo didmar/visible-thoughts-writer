@@ -1,6 +1,24 @@
 import { Section } from '../firebase-app';
 import { parse } from '../parsing';
 
+it('should parse text with a YBR tag', () => {
+  const children = [
+    {
+      type: 'paragraph',
+      children: [
+        {
+          text: 'Hey YBR! This is a test.',
+        },
+      ],
+    },
+  ];
+  const textYBR = parse(children, Section.Act);
+  expect(textYBR).toEqual({
+    txt: 'Hey  This is a test.',
+    ybr: true,
+  });
+});
+
 it('should parse to bullets', () => {
   const children = [
     {

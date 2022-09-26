@@ -31,7 +31,7 @@ export function parse(
   }
 }
 
-function parseToBullets(children: Descendant[]): Bullet[] {
+function parseToBullets(children: Descendant[]): Bullet[] | null {
   // Each child (a paragraph) is a bullet
   const bullets = children.map((child) => {
     const sentences = (child as Element).children.flatMap((c) => {
@@ -48,6 +48,7 @@ function parseToBullets(children: Descendant[]): Bullet[] {
       }),
     };
   });
+  if (bullets.length === 0) return null; // Indicates a skip
   return bullets;
 }
 
@@ -79,24 +80,30 @@ function parseLongTermMarks(sentence: string): [boolean, string] {
   return [false, sentence];
 }
 
-function parseToTextYBR(children: Descendant[]): TextYBR {
+const ybrRe = /(.*)YBR!(.*)/;
+
+function parseToTextYBR(children: Descendant[]): TextYBR | null {
   // Each child is a paragraph, and each grand child a text
   const texts: string[] = [];
   let ybr = false;
   children.forEach((child) => {
     (child as Element).children.forEach((c) => {
-      const text = (c as Text).text.trim();
+      let text = (c as Text).text.trim();
       if (text !== '') {
-        texts.push(text);
-        if (text.includes('YBR!')) {
+        if (ybrRe.test(text)) {
+          text = text.replace(ybrRe, '$1$2');
           ybr = true;
         }
+        texts.push(text);
       }
     });
   });
+  if (texts.length === 0 && !ybr) return null; // Indicates a skip
   return { txt: texts.join('\n'), ybr };
 }
 
-function parseToString(children: Descendant[]): string {
-  return parseToTextYBR(children).txt;
+function parseToString(children: Descendant[]): string | null {
+  const textYBR = parseToTextYBR(children);
+  if (textYBR === null) return null;
+  return textYBR.txt;
 }

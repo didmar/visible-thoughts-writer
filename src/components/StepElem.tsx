@@ -76,17 +76,23 @@ function renderThoughts(thoughts: Thought[]): JSX.Element {
   return <>{thoughts.map((thought, index) => renderThought(thought, index))}</>;
 }
 
-function renderBullets(bullets: Bullet[]): JSX.Element {
+function renderBullets(bullets: Bullet[] | null): JSX.Element {
+  if (bullets === null) {
+    return <>(skipped)</>;
+  }
   const b = bullets.map((bullet, index) => (
     <li key={index}>{renderThoughts(bullet.T)}</li>
   ));
   return <ul>{b}</ul>;
 }
 
-function renderTextYBR({ txt, ybr }: TextYBR): JSX.Element {
+function renderTextYBR(textYBR: TextYBR | null): JSX.Element {
+  if (textYBR === null) {
+    return <>(skipped)</>;
+  }
   return (
     <span>
-      {ybr ? 'YBR!' : ''} {txt}
+      {textYBR.ybr ? '*YBR!* ' : ''} {textYBR.txt}
     </span>
   );
 }
@@ -110,7 +116,7 @@ function renderSection(step: Step, section: Section): JSX.Element | undefined {
     case Section.Ppt:
       r = step.ppt !== undefined && (
         <>
-          {icon} {step.ppt}
+          {icon} {step.ppt === null ? '(skipped)' : step.ppt}
         </>
       );
       break;
@@ -139,7 +145,7 @@ function renderSection(step: Step, section: Section): JSX.Element | undefined {
       r = step.out !== undefined && (
         <>
           {icon}
-          {step.out != null ? renderTextYBR(step.out) : 'Skipped'}
+          {step.out != null ? renderTextYBR(step.out) : '(skipped)'}
         </>
       );
       break;

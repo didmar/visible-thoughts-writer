@@ -25,6 +25,7 @@ import {
   TextYBR,
   SectionContent,
   updateStep,
+  createNextStep,
 } from '../firebase-app';
 import StepElem, { renderLongTermThoughts } from './StepElem';
 import Composer from './Composer';
@@ -53,10 +54,16 @@ function StepsPane(): JSX.Element {
   useEffect(() => {
     void (async function () {
       if (runId !== undefined && steps !== undefined) {
-        // Must init next step?
+        // Must init first/next step?
         const section = getNextSection();
         if (section === undefined) {
-          await createNextStep();
+          // Create the next step
+          const currentStep =
+            steps.length !== 0 ? steps[steps.length - 1] : undefined;
+          const newStep = createNextStep(currentStep);
+          console.log('Created new step: ', newStep);
+          await addStep(runId, newStep);
+          setSteps([...steps, newStep]);
         } else {
           // Init step from x steps ago
           const lastN = steps[steps.length - 1].n;
@@ -82,22 +89,22 @@ function StepsPane(): JSX.Element {
     let update;
     switch (section) {
       case Section.InitT:
-        update = { initT: content as Bullet[] };
+        update = { initT: content as Bullet[] | null };
         break;
       case Section.Ppt:
-        update = { ppt: content as string };
+        update = { ppt: content as string | null };
         break;
       case Section.PpptT:
-        update = { ppptT: content as Bullet[] };
+        update = { ppptT: content as Bullet[] | null };
         break;
       case Section.Act:
-        update = { act: content as TextYBR };
+        update = { act: content as TextYBR | null };
         break;
       case Section.PactT:
-        update = { pactT: content as Bullet[] };
+        update = { pactT: content as Bullet[] | null };
         break;
       case Section.Out:
-        update = { out: content as TextYBR };
+        update = { out: content as TextYBR | null };
         break;
       default:
         throw new Error(`Unknown section: ${Section[section]}`);
@@ -112,15 +119,6 @@ function StepsPane(): JSX.Element {
     const updatedLastStep: Step = { ...lastStep, ...update };
     setSteps([...steps.slice(0, -1), updatedLastStep]);
   };
-
-  async function createNextStep(): Promise<void> {
-    if (steps === undefined || runId === undefined) return;
-    const n = steps.length !== 0 ? steps[steps.length - 1].n + 1 : 1;
-    const newStep = new Step(n);
-    console.log('Created new step: ', newStep);
-    await addStep(runId, newStep);
-    setSteps([...steps, newStep]);
-  }
 
   function getNextSection(): Section | undefined {
     if (steps === undefined || steps.length === 0) return undefined;
