@@ -13,3 +13,7 @@ export function withoutUndefinedValues(
     {}
   );
 }
+
+export function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}

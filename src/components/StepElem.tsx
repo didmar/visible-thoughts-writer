@@ -31,21 +31,30 @@ export function renderLongTermThoughts(ltts: Thought[]): JSX.Element {
   return <ul>{b}</ul>;
 }
 
+export const thoughtTypesMarks = {
+  [ThoughtType.Watsonian]: ['', ''],
+  [ThoughtType.Doylist]: ['(', ')'],
+  [ThoughtType.Meta]: ['{', '}'],
+  [ThoughtType.Comment]: ['#', '#'],
+};
+
 function renderThought(thought: Thought, index: number): JSX.Element {
+  const [begMark, endMark] = thoughtTypesMarks[thought.type];
+  const markedText = begMark + thought.txt.trim() + endMark;
   let formattedText;
   let color = 'text.primary';
   switch (thought.type) {
     case ThoughtType.Watsonian:
-      formattedText = <>{thought.txt.trim()}</>;
+      formattedText = <>{markedText}</>;
       break;
     case ThoughtType.Doylist:
-      formattedText = <b>{'(' + thought.txt.trim() + ')'}</b>;
+      formattedText = <b>{markedText}</b>;
       break;
     case ThoughtType.Meta:
-      formattedText = <i>{'{' + thought.txt.trim() + '}'}</i>;
+      formattedText = <i>{markedText}</i>;
       break;
     case ThoughtType.Comment:
-      formattedText = <>#{thought.txt.trim()}#</>;
+      formattedText = <>{markedText}</>;
       color = 'text.secondary';
       break;
     default:

@@ -19,8 +19,9 @@
     "noUnusedLocals": true, // Report errors on unused locals
     "noUnusedParameters": true, // Report errors on unused parameters
     "incremental": true, // Enable incremental compilation by reading/writing information from prior compilations to a file on disk
-    "jsx": "react-jsx" // Support JSX in .tsx files
+    "jsx": "react-jsx", // Support JSX in .tsx files
+    "types": ["jest"]
   },
-  "include": ["src/**/*", "scripts/*"],
+  "include": ["src/**/*", "scripts/*", "jest.config.ts"],
   "exclude": ["node_modules", "build"]
 }
