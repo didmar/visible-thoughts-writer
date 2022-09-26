@@ -17,7 +17,6 @@ import {
   Step,
   getStepN,
   Thought,
-  getRunLongTermThoughts,
   Bullet,
   getNextSectionForStep,
   Section,
@@ -26,6 +25,7 @@ import {
   SectionContent,
   updateStep,
   createNextStep,
+  getRun,
 } from '../firebase-app';
 import StepElem, { renderLongTermThoughts } from './StepElem';
 import Composer from './Composer';
@@ -39,6 +39,7 @@ function StepsPane(): JSX.Element {
   const [steps, setSteps] = useState<Step[] | undefined>(undefined);
   const [xStepAgo, setXStepAgo] = useState<Step | undefined>(undefined);
   const [ltts, setLtts] = useState<Thought[]>([]);
+  const [title, setTitle] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     void (async function () {
@@ -71,8 +72,12 @@ function StepsPane(): JSX.Element {
           if (_xStepAgo !== undefined) {
             setXStepAgo(_xStepAgo);
           }
-          // Init long term thoughts
-          setLtts(await getRunLongTermThoughts(runId));
+          // Init long term thoughts and run title
+          const run = await getRun(runId);
+          if (run !== undefined) {
+            setTitle(run.title);
+            setLtts(run.lttsToArray());
+          }
         }
       }
     })();
@@ -158,7 +163,7 @@ function StepsPane(): JSX.Element {
             </Link>
           </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Run {runId?.toString()}
+            {title !== undefined ? title : ''}
           </Typography>
           <IconButton size="large" aria-label="search" color="inherit">
             <Settings />
