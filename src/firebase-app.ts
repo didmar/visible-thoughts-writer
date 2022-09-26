@@ -286,14 +286,16 @@ export async function getStepN(
 }
 
 function collectLongTermThoughts(step: Step): Thought[] {
-  return [step.initT, step.ppptT, step.pactT].flatMap((bullets) => {
-    if (bullets === undefined || bullets === null) {
-      return [];
-    }
-    return bullets.flatMap((bullet) =>
-      bullet.T.filter((thought) => thought.lt)
-    );
-  });
+  return [step.initT, step.ppptT, step.pactT].flatMap(collectSectionLtts);
+}
+
+export function collectSectionLtts(
+  bullets: Bullet[] | null | undefined
+): Thought[] {
+  if (bullets === undefined || bullets === null) {
+    return [];
+  }
+  return bullets.flatMap((bullet) => bullet.T.filter((thought) => thought.lt));
 }
 
 export async function getRunLongTermThoughts(

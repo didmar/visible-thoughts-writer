@@ -26,6 +26,8 @@ import {
   updateStep,
   createNextStep,
   getRun,
+  updateRunLongTermThoughtsForStep,
+  collectSectionLtts,
 } from '../firebase-app';
 import StepElem, { renderLongTermThoughts } from './StepElem';
 import Composer from './Composer';
@@ -91,38 +93,50 @@ function StepsPane(): JSX.Element {
       throw new Error('onSubmitted called before steps were initialized!');
     }
 
+    const lastStep = steps[steps.length - 1];
+
     let update;
+    let lttsUpdate: Thought[] = [];
     switch (section) {
       case Section.InitT:
         update = { initT: content as Bullet[] | null };
+        lttsUpdate = collectSectionLtts(content as Bullet[] | null);
         break;
       case Section.Ppt:
         update = { ppt: content as string | null };
         break;
       case Section.PpptT:
         update = { ppptT: content as Bullet[] | null };
+        lttsUpdate = collectSectionLtts(content as Bullet[] | null);
         break;
       case Section.Act:
         update = { act: content as TextYBR | null };
         break;
       case Section.PactT:
         update = { pactT: content as Bullet[] | null };
+        lttsUpdate = collectSectionLtts(content as Bullet[] | null);
         break;
       case Section.Out:
         update = { out: content as TextYBR | null };
         break;
       default:
         throw new Error(`Unknown section: ${Section[section]}`);
-        break;
     }
 
-    const lastStep = steps[steps.length - 1];
+    // Update in Firebase
     void (async () => {
       await updateStep(runId, lastStep.n, update);
+      if (lttsUpdate.length !== 0) {
+        await updateRunLongTermThoughtsForStep(runId, lastStep.n);
+      }
     })();
 
+    // Update our states
     const updatedLastStep: Step = { ...lastStep, ...update };
     setSteps([...steps.slice(0, -1), updatedLastStep]);
+    if (lttsUpdate.length !== 0) {
+      setLtts([...ltts, ...lttsUpdate]);
+    }
   };
 
   function getNextSection(): Section | undefined {
