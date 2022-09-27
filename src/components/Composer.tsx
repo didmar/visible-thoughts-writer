@@ -2,12 +2,21 @@ import {
   // useState,
   useMemo,
 } from 'react';
-import { createEditor } from 'slate';
+import { createEditor, Transforms, Editor } from 'slate';
 import { withReact, Slate, Editable } from 'slate-react';
 import { withHistory } from 'slate-history';
 import { Section, SectionContent } from '../firebase-app';
 import { sectionsData } from '../Section';
 import { parse } from '../parsing';
+
+function clearEditor(editor: Editor): void {
+  Transforms.delete(editor, {
+    at: {
+      anchor: Editor.start(editor, []),
+      focus: Editor.end(editor, []),
+    },
+  });
+}
 
 interface ComposerProps {
   section: Section;
@@ -17,9 +26,7 @@ interface ComposerProps {
 const Composer = ({ section, onSubmitted }: ComposerProps): JSX.Element => {
   // const [editor] = useState(() => withReact(withHistory(createEditor())));
   const editor = useMemo(() => withReact(withHistory(createEditor())), []);
-  const initialValue = [
-    { type: 'paragraph', children: [{ text: Section[section].toString() }] },
-  ];
+  const initialValue = [{ type: 'paragraph', children: [{ text: '' }] }];
 
   const icon = sectionsData[section].icon;
   return (
@@ -32,6 +39,7 @@ const Composer = ({ section, onSubmitted }: ComposerProps): JSX.Element => {
             if (event.key === 'Enter' && event.ctrlKey) {
               event.preventDefault();
               onSubmitted(section, parse(editor.children, section));
+              clearEditor(editor);
             }
           }}
         />
