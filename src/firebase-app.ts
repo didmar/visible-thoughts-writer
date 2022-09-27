@@ -133,10 +133,10 @@ export const createNextStep = (currentStep?: Step): Step => {
   if (currentStep === undefined) return new Step(1);
   const newStep = new Step(currentStep.n + 1);
   if (skipInitT(currentStep)) {
-    newStep.initT = [];
+    newStep.initT = null;
     if (skipPptAndPpptT(currentStep)) {
       newStep.ppt = null;
-      newStep.ppptT = [];
+      newStep.ppptT = null;
     }
   }
   return newStep;
