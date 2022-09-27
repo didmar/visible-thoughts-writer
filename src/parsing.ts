@@ -33,20 +33,23 @@ export function parse(
 
 function parseToBullets(children: Descendant[]): Bullet[] | null {
   // Each child (a paragraph) is a bullet
-  const bullets = children.map((child) => {
+  const bullets = children.flatMap((child) => {
     const sentences = (child as Element).children.flatMap((c) => {
       return (c as Text).text
         .split('.')
         .map((sentence) => sentence.trim())
         .filter((sentence) => sentence !== '');
     });
-    return {
-      T: sentences.map((s) => {
-        const [type, s2] = parseThoughtTypeMarks(s);
-        const [lt, txt] = parseLongTermMarks(s2);
-        return { txt, type, lt };
-      }),
-    };
+    if (sentences.length === 0) return [];
+    return [
+      {
+        T: sentences.map((s) => {
+          const [type, s2] = parseThoughtTypeMarks(s);
+          const [lt, txt] = parseLongTermMarks(s2);
+          return { txt, type, lt };
+        }),
+      },
+    ];
   });
   if (bullets.length === 0) return null; // Indicates a skip
   return bullets;

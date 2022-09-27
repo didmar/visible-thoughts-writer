@@ -80,3 +80,22 @@ it('should parse to bullets', () => {
     },
   ]);
 });
+
+it('should parse empty text to null', () => {
+  const children = [
+    {
+      type: 'paragraph',
+      children: [
+        {
+          text: '',
+        },
+      ],
+    },
+  ];
+  const bullets = parse(children, Section.PpptT);
+  expect(bullets).toEqual(null);
+  const textYBR = parse(children, Section.Act);
+  expect(bullets).toEqual(textYBR);
+  const text = parse(children, Section.Out);
+  expect(bullets).toEqual(text);
+});
