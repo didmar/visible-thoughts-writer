@@ -10,7 +10,7 @@ import {
   ThoughtType,
 } from '../firebase-app';
 import { sectionsData } from '../Section';
-import { enumKeys } from '../utils';
+// import { enumKeys } from '../utils';
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -160,21 +160,42 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
   step,
 }: StepElemProps) => {
   return (
-    <div className="StepsPane">
-      <>
-        <h3 key={`h3-${step.n}`}>Step #{step.n}</h3>
-        <Stack key={`stack-${step.n}`} spacing={2}>
-          {enumKeys(Section).map((section, index) => {
-            const renderedSection = renderSection(step, Section[section]);
-            if (renderedSection !== undefined) {
-              return <Item key={index}>{renderedSection}</Item>;
-            }
-            return <></>;
-          })}
-        </Stack>
-      </>
+    <div className="StepsPane" key={42}>
+      <h3 key={0}>Step #{step.n}</h3>
+      <Stack key={1} spacing={2}>
+        {step?.initT !== undefined && (
+          <Item key={0}>{renderSection(step, Section.InitT)}</Item>
+        )}
+        {step?.ppt !== undefined && (
+          <Item key={1}>{renderSection(step, Section.Ppt)}</Item>
+        )}
+        {step?.ppptT !== undefined && (
+          <Item key={2}>{renderSection(step, Section.PpptT)}</Item>
+        )}
+        {step?.act !== undefined && (
+          <Item key={3}>{renderSection(step, Section.Act)}</Item>
+        )}
+        {step?.pactT !== undefined && (
+          <Item key={4}>{renderSection(step, Section.PactT)}</Item>
+        )}
+        {step?.out !== undefined && (
+          <Item key={5}>{renderSection(step, Section.Out)}</Item>
+        )}
+      </Stack>
     </div>
   );
 };
+
+/*
+// For some reason, using map here causes a warning about keys.
+{enumKeys(Section).map((section, index) => {
+  const renderedSection = renderSection(step, Section[section]);
+  if (renderedSection !== undefined) {
+    console.log('renderedSection ', renderedSection);
+    return <Item key={index}>{renderedSection}</Item>;
+  }
+  return <></>;
+})}
+*/
 
 export default StepElem;
