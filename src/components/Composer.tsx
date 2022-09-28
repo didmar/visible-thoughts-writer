@@ -8,6 +8,7 @@ import { withHistory } from 'slate-history';
 import { Section, SectionContent } from '../firebase-app';
 import { sectionsData } from '../Section';
 import { parse } from '../parsing';
+import { Button, Grid } from '@mui/material';
 
 function clearEditor(editor: Editor): void {
   Transforms.delete(editor, {
@@ -28,22 +29,41 @@ const Composer = ({ section, onSubmitted }: ComposerProps): JSX.Element => {
   const editor = useMemo(() => withReact(withHistory(createEditor())), []);
   const initialValue = [{ type: 'paragraph', children: [{ text: '' }] }];
 
+  const submit = (): void => {
+    onSubmitted(section, parse(editor.children, section));
+    clearEditor(editor);
+  };
+
   const icon = sectionsData[section].icon;
   return (
     <>
-      {icon}
-      <Slate editor={editor} value={initialValue}>
-        <Editable
-          onKeyDown={(event) => {
-            // console.log(editor.children);
-            if (event.key === 'Enter' && event.ctrlKey) {
-              event.preventDefault();
-              onSubmitted(section, parse(editor.children, section));
-              clearEditor(editor);
-            }
-          }}
-        />
-      </Slate>
+      <Grid container spacing={0}>
+        <Grid item xs={1} md={1} lg={1}>
+          {icon}
+        </Grid>
+        <Grid item xs={11} md={11} lg={11}>
+          <Slate editor={editor} value={initialValue}>
+            <Editable
+              style={{
+                border: '1px solid gray',
+                borderRadius: '5px',
+                padding: 5,
+                overflow: 'auto',
+              }}
+              onKeyDown={(event) => {
+                // console.log(editor.children);
+                if (event.key === 'Enter' && event.ctrlKey) {
+                  event.preventDefault();
+                  submit();
+                }
+              }}
+            />
+            <Button style={{ float: 'right' }} onClick={submit}>
+              Submit
+            </Button>
+          </Slate>
+        </Grid>
+      </Grid>
     </>
   );
 };
