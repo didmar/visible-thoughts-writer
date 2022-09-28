@@ -35,7 +35,7 @@ const Composer = ({ section, onSubmitted }: ComposerProps): JSX.Element => {
       <Slate editor={editor} value={initialValue}>
         <Editable
           onKeyDown={(event) => {
-            console.log(editor.children);
+            // console.log(editor.children);
             if (event.key === 'Enter' && event.ctrlKey) {
               event.preventDefault();
               onSubmitted(section, parse(editor.children, section));
