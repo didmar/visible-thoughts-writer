@@ -40,6 +40,8 @@ export class Run {
   }
 
   lttsToArray(): Thought[] {
+    if (this.ltts === undefined) return [];
+
     const thoughts: Thought[] = [];
     const ns: number[] = Object.keys(this.ltts)
       .map((id) => parseInt(id))
@@ -47,6 +49,7 @@ export class Run {
     for (const n of ns) {
       thoughts.push(...this.ltts[n.toString()]);
     }
+
     return thoughts;
   }
 }
