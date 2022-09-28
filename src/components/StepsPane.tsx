@@ -8,7 +8,11 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import { Menu, Settings, AccountCircle } from '@mui/icons-material';
+import {
+  Menu,
+  // Settings,
+  // AccountCircle,
+} from '@mui/icons-material';
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import InfiniteScroll from 'react-infinite-scroll-component';
@@ -31,6 +35,7 @@ import {
 } from '../firebase-app';
 import StepElem, { renderLongTermThoughts } from './StepElem';
 import Composer from './Composer';
+import HelpAndFeedback from './HelpAndFeedback';
 
 // How many steps ago to give a hint of
 const X = 50;
@@ -194,6 +199,10 @@ function StepsPane(): JSX.Element {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             {title !== undefined ? title : ''}
           </Typography>
+
+          <HelpAndFeedback />
+
+          {/*
           <IconButton size="large" aria-label="search" color="inherit">
             <Settings />
           </IconButton>
@@ -207,6 +216,7 @@ function StepsPane(): JSX.Element {
           >
             <AccountCircle />
           </IconButton>
+           */}
         </Toolbar>
       </AppBar>
 
