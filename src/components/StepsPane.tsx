@@ -4,7 +4,6 @@ import {
   Container,
   Grid,
   IconButton,
-  List,
   Paper,
   Toolbar,
   Typography,
@@ -12,6 +11,7 @@ import {
 import { Menu, Settings, AccountCircle } from '@mui/icons-material';
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import InfiniteScroll from 'react-infinite-scroll-component';
 import {
   getLastNSteps,
   Step,
@@ -48,7 +48,7 @@ function StepsPane(): JSX.Element {
       console.log(' ### useEffect runId  ###');
       if (runId !== undefined) {
         // Init steps
-        const _steps = await getLastNSteps(runId, 1);
+        const _steps = await getLastNSteps(runId, 3);
         setSteps(_steps);
       }
     })();
@@ -154,6 +154,21 @@ function StepsPane(): JSX.Element {
     );
   }
 
+  async function loadMoreSteps(): Promise<void> {
+    if (runId === undefined || steps === undefined || steps.length === 0)
+      return;
+    console.log('Loading more...');
+    // Get the previous step
+    const firstStepAlreadyLoaded = steps[0];
+    const previousN = firstStepAlreadyLoaded.n - 1;
+    if (previousN === 0) return; // No previous step to load
+    const previousStep = await getStepN(runId, previousN);
+    if (previousStep === undefined) {
+      throw new Error('Could not load previous step');
+    }
+    setSteps([previousStep, ...steps]);
+  }
+
   return (
     <Box
       component="main"
@@ -203,16 +218,36 @@ function StepsPane(): JSX.Element {
               sx={{
                 p: 2,
                 display: 'flex',
-                flexDirection: 'column',
+                flexDirection: 'column-reverse',
                 height: '70vh',
                 overflow: 'auto',
               }}
+              id="scrollableDiv"
             >
-              <List>
-                {steps?.map((step) => (
-                  <StepElem key={step.n.toString()} step={step} />
-                ))}
-              </List>
+              <InfiniteScroll
+                dataLength={steps !== undefined ? steps.length : 0}
+                next={() => {
+                  void (async function () {
+                    await loadMoreSteps();
+                  })();
+                }}
+                hasMore={
+                  steps !== undefined && steps.length !== 0
+                    ? steps[0].n > 1
+                    : false
+                }
+                loader={<h4>Loading...</h4>}
+                inverse={true}
+                style={{ display: 'flex', flexDirection: 'column-reverse' }}
+                scrollableTarget="scrollableDiv"
+              >
+                {steps
+                  ?.slice()
+                  .reverse()
+                  .map((step) => (
+                    <StepElem key={step.n} step={step} />
+                  ))}
+              </InfiniteScroll>
             </Paper>
           </Grid>
 
