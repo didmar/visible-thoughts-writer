@@ -15,6 +15,7 @@ import {
   updateDoc,
   setDoc,
 } from '@firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import firebaseConfig from './firebase.creds.json';
 import { withoutUndefinedValues } from './utils';
 
@@ -23,6 +24,8 @@ const app = initializeApp(firebaseConfig);
 // const analytics = getAnalytics(app);
 
 export const db = getFirestore(app);
+
+export const auth = getAuth(app);
 
 // ============================
 // Database types and functions

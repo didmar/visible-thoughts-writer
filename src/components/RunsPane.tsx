@@ -4,6 +4,7 @@ import { Run, getRuns, createRun } from '../firebase-app';
 import '../App.css';
 import { AppBar, Button, Toolbar, Typography } from '@mui/material';
 import HelpAndFeedback from './HelpAndFeedback';
+import UserMenu from './UserMenu';
 
 function RunsPane(): JSX.Element {
   const [runs, setRuns] = useState<Run[] | undefined>(undefined);
@@ -25,6 +26,7 @@ function RunsPane(): JSX.Element {
               Visible Thoughts Writer
             </Typography>
             <HelpAndFeedback />
+            <UserMenu />
           </Toolbar>
         </AppBar>
         <div style={{ padding: 5 }}>

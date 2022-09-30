@@ -36,6 +36,7 @@ import {
 import StepElem, { renderLongTermThoughts } from './StepElem';
 import Composer from './Composer';
 import HelpAndFeedback from './HelpAndFeedback';
+import UserMenu from './UserMenu';
 
 // How many steps ago to give a hint of
 const X = 50;
@@ -201,21 +202,13 @@ function StepsPane(): JSX.Element {
           </Typography>
 
           <HelpAndFeedback />
+          <UserMenu />
 
           {/*
           <IconButton size="large" aria-label="search" color="inherit">
             <Settings />
           </IconButton>
 
-          <IconButton
-            size="large"
-            aria-label="account of current user"
-            aria-controls="primary-search-account-menu"
-            aria-haspopup="true"
-            color="inherit"
-          >
-            <AccountCircle />
-          </IconButton>
            */}
         </Toolbar>
       </AppBar>
