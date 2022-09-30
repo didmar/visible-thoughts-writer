@@ -1,4 +1,8 @@
-import { EmailAuthProvider, onAuthStateChanged } from 'firebase/auth';
+import {
+  EmailAuthProvider,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+} from 'firebase/auth';
 import { useRef, useEffect, useState } from 'react';
 import 'firebaseui/dist/firebaseui.css';
 import * as firebaseui from 'firebaseui';
@@ -6,8 +10,7 @@ import * as firebaseui from 'firebaseui';
 export const uiConfig = {
   signInFlow: 'popup',
   signInOptions: [
-    // Leave the lines as is for the providers you want to offer your users.
-    // GoogleAuthProvider.PROVIDER_ID,
+    GoogleAuthProvider.PROVIDER_ID,
     // FacebookAuthProvider.PROVIDER_ID,
     // TwitterAuthProvider.PROVIDER_ID,
     // GithubAuthProvider.PROVIDER_ID,

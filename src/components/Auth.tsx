@@ -1,12 +1,12 @@
-import { User } from 'firebase/auth';
+import * as firebaseAuth from 'firebase/auth';
 import React, { ReactNode, useContext, useEffect, useState } from 'react';
 import 'firebaseui/dist/firebaseui.css';
 import { auth } from '../firebase-app';
 
-export const AuthContext = React.createContext<User | null>(null);
+export const AuthContext = React.createContext<firebaseAuth.User | null>(null);
 
-export function useAuth(): User | null {
-  return useContext<User | null>(AuthContext);
+export function useAuth(): firebaseAuth.User | null {
+  return useContext<firebaseAuth.User | null>(AuthContext);
 }
 
 interface Props {
@@ -15,7 +15,9 @@ interface Props {
 
 const AuthProvider = ({ children }: Props): JSX.Element => {
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<firebaseAuth.User | null>(
+    null
+  );
 
   useEffect(() => {
     auth.onAuthStateChanged((user) => {
