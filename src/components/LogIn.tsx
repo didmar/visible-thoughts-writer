@@ -1,6 +1,7 @@
 import { useLocation, Navigate } from 'react-router-dom';
-import { uiConfig, useAuth, StyledFirebaseAuth } from './Auth';
+import { useAuth } from './Auth';
 import { auth } from '../firebase-app';
+import { StyledFirebaseAuth, uiConfig } from './StyledFirebaseAuth';
 
 const LogIn = (): JSX.Element => {
   const location = useLocation();
