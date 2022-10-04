@@ -94,18 +94,18 @@ export const UserMenu = (): JSX.Element => {
     </Menu>
   );
 
-  const renderLoggedUser = (
-    <>
-      <MenuItem>{currentUser?.email}</MenuItem>
-      <MenuItem onClick={handleProfile} disabled>
-        Profile
-      </MenuItem>
-      <MenuItem onClick={handleLogout}>
-        <LogoutIcon />
-        <p>Logout</p>
-      </MenuItem>
-    </>
-  );
+  const renderLoggedUser = [
+    <MenuItem key="0">{currentUser?.email()}</MenuItem>,
+
+    <MenuItem key="1" onClick={handleProfile} disabled>
+      Profile
+    </MenuItem>,
+
+    <MenuItem key="2" onClick={handleLogout}>
+      <LogoutIcon />
+      <p>Logout</p>
+    </MenuItem>,
+  ];
 
   const menuId = 'primary-search-account-menu';
   const renderUserMenu = (
