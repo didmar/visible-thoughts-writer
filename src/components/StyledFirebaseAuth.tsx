@@ -1,4 +1,5 @@
 import {
+  Auth,
   EmailAuthProvider,
   GoogleAuthProvider,
   onAuthStateChanged,
@@ -33,7 +34,7 @@ interface Props {
   // disableAutoSignIn().
   uiCallback?: (ui: firebaseui.auth.AuthUI) => void;
   // The Firebase App auth instance to use.
-  firebaseAuth: any; // As firebaseui-web
+  firebaseAuth: Auth; // As firebaseui-web
   className?: string;
 }
 
