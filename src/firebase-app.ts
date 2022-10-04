@@ -93,6 +93,19 @@ export async function createRun(title: string, dm: string): Promise<string> {
   return doc.id;
 }
 
+export async function getUserRoleInRun(
+  uid: string,
+  runId: string
+): Promise<string | null> {
+  const run = await getRun(runId);
+  if (run === undefined) return null;
+  if (run.dm === uid) return 'dm';
+  if (run.players.includes(uid)) return 'player';
+  return null;
+}
+
+// Steps and thought sections
+
 export enum ThoughtType {
   Watsonian = 0,
   Doylist = 1,

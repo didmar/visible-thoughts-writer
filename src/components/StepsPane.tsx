@@ -33,12 +33,14 @@ import {
   updateRunLongTermThoughtsForStep,
   collectSectionLtts,
   Run,
+  getUserRoleInRun,
 } from '../firebase-app';
 import StepElem, { renderLongTermThoughts } from './StepElem';
 import Composer from './Composer';
 import HelpAndFeedback from './HelpAndFeedback';
 import UserMenu from './UserMenu';
 import PageNotFound from './PageNotFound';
+import { useAuth } from './Auth';
 
 // How many steps ago to give a hint of
 const X = 50;
@@ -51,6 +53,9 @@ function StepsPane(): JSX.Element {
   const [xStepAgo, setXStepAgo] = useState<Step | undefined>(undefined);
   const [ltts, setLtts] = useState<Thought[]>([]);
   const [title, setTitle] = useState<string | undefined>(undefined);
+  const [role, setRole] = useState<string | null | undefined>(undefined);
+
+  const currentUser = useAuth();
 
   useEffect(() => {
     void (async function () {
@@ -70,6 +75,17 @@ function StepsPane(): JSX.Element {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    void (async function () {
+      // Init role
+      const uid = currentUser?.uid();
+      if (runId !== undefined && uid !== undefined) {
+        const role = await getUserRoleInRun(uid, runId);
+        setRole(role);
+      }
+    })();
+  }, [currentUser]);
 
   useEffect(() => {
     void (async function () {
@@ -298,7 +314,11 @@ function StepsPane(): JSX.Element {
                 overflow: 'auto',
               }}
             >
-              {renderComposer()}
+              {role === 'player' || role === 'dm' ? (
+                renderComposer()
+              ) : (
+                <>Cannot compose as a guest</>
+              )}
             </Paper>
           </Grid>
 
