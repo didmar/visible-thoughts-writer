@@ -93,14 +93,19 @@ export async function createRun(title: string, dm: string): Promise<string> {
   return doc.id;
 }
 
+export enum Role {
+  Player = 'player',
+  DM = 'dm',
+}
+
 export async function getUserRoleInRun(
   uid: string,
   runId: string
-): Promise<string | null> {
+): Promise<Role | null> {
   const run = await getRun(runId);
   if (run === undefined) return null;
-  if (run.dm === uid) return 'dm';
-  if (run.players.includes(uid)) return 'player';
+  if (run.dm === uid) return Role.Player;
+  if (run.players.includes(uid)) return Role.DM;
   return null;
 }
 
@@ -359,11 +364,11 @@ export async function updateRunLongTermThoughtsForStep(
 
 export class UserProfile {
   id: string; // corresponds to the uid for firebase authentication
-  role: string | null; // null, 'player' or 'dm'
+  role: Role | null; // null, 'player' or 'dm'
   plays: string[]; // reference to a run
   dms: string[]; // reference to a run
 
-  constructor(id: string, role?: string, plays?: string[], dms?: string[]) {
+  constructor(id: string, role?: Role, plays?: string[], dms?: string[]) {
     this.id = id;
     this.role = role ?? null;
     this.plays = plays ?? [];

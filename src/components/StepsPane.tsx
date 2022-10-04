@@ -34,6 +34,7 @@ import {
   collectSectionLtts,
   Run,
   getUserRoleInRun,
+  Role,
 } from '../firebase-app';
 import StepElem, { renderLongTermThoughts } from './StepElem';
 import Composer from './Composer';
@@ -53,7 +54,7 @@ function StepsPane(): JSX.Element {
   const [xStepAgo, setXStepAgo] = useState<Step | undefined>(undefined);
   const [ltts, setLtts] = useState<Thought[]>([]);
   const [title, setTitle] = useState<string | undefined>(undefined);
-  const [role, setRole] = useState<string | null | undefined>(undefined);
+  const [role, setRole] = useState<Role | null | undefined>(undefined);
 
   const currentUser = useAuth();
 
@@ -314,7 +315,7 @@ function StepsPane(): JSX.Element {
                 overflow: 'auto',
               }}
             >
-              {role === 'player' || role === 'dm' ? (
+              {role === Role.Player || role === Role.DM ? (
                 renderComposer()
               ) : (
                 <>Cannot compose as a guest</>
