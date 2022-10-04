@@ -32,11 +32,13 @@ import {
   getRun,
   updateRunLongTermThoughtsForStep,
   collectSectionLtts,
+  Run,
 } from '../firebase-app';
 import StepElem, { renderLongTermThoughts } from './StepElem';
 import Composer from './Composer';
 import HelpAndFeedback from './HelpAndFeedback';
 import UserMenu from './UserMenu';
+import PageNotFound from './PageNotFound';
 
 // How many steps ago to give a hint of
 const X = 50;
@@ -44,6 +46,7 @@ const X = 50;
 function StepsPane(): JSX.Element {
   const { runId } = useParams<string>();
 
+  const [run, setRun] = useState<Run | null | undefined>(undefined);
   const [steps, setSteps] = useState<Step[] | undefined>(undefined);
   const [xStepAgo, setXStepAgo] = useState<Step | undefined>(undefined);
   const [ltts, setLtts] = useState<Thought[]>([]);
@@ -53,9 +56,17 @@ function StepsPane(): JSX.Element {
     void (async function () {
       console.log(' ### useEffect runId  ###');
       if (runId !== undefined) {
-        // Init steps
-        const _steps = await getLastNSteps(runId, 3);
-        setSteps(_steps);
+        // Init run
+        const run = await getRun(runId);
+        if (run === undefined) {
+          console.log('Run not found');
+          setRun(null);
+        } else {
+          setRun(run);
+          // Init steps
+          const _steps = await getLastNSteps(runId, 3);
+          setSteps(_steps);
+        }
       }
     })();
   }, []);
@@ -175,7 +186,7 @@ function StepsPane(): JSX.Element {
     setSteps([previousStep, ...steps]);
   }
 
-  return (
+  return run !== null ? (
     <Box
       component="main"
       sx={{
@@ -314,6 +325,8 @@ function StepsPane(): JSX.Element {
         </Grid>
       </Container>
     </Box>
+  ) : (
+    <PageNotFound />
   );
 }
 
