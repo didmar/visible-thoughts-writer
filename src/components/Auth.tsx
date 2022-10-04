@@ -21,8 +21,8 @@ class User {
     return this.firebaseUser.email;
   }
 
-  role(): string | null {
-    return this.userProfile.role;
+  canDM(): boolean {
+    return this.userProfile.canDM;
   }
 }
 

@@ -20,32 +20,57 @@ function RunsPane(): JSX.Element {
     })();
   }, []);
 
-  const renderCreateRun = (dmUid: string): JSX.Element => (
-    <div style={{ padding: 5 }}>
-      <input
-        placeholder="Title..."
-        onChange={(event) => {
-          setNewTitle(event.target.value);
-        }}
-      />
-      <Button
-        variant="contained"
-        onClick={() => {
-          void (async function () {
-            console.log('newTitle ', newTitle);
-            const runId = await createRun(newTitle, dmUid);
-            console.log('runId ', newTitle);
-            setNewRunId(runId);
-          })();
-        }}
-      >
-        Create Run
-        {newRunId !== undefined && (
-          <Navigate replace to={`/runs/${newRunId}`} />
-        )}
-      </Button>
-    </div>
-  );
+  const renderCreateRun = (): JSX.Element => {
+    if (currentUser == null || !currentUser.canDM()) {
+      return <></>;
+    }
+
+    return (
+      <div style={{ padding: 5 }}>
+        <input
+          placeholder="Title..."
+          onChange={(event) => {
+            setNewTitle(event.target.value);
+          }}
+        />
+        <Button
+          variant="contained"
+          onClick={() => {
+            void (async function () {
+              console.log('newTitle ', newTitle);
+              const runId = await createRun(newTitle, currentUser.uid());
+              console.log('runId ', newTitle);
+              setNewRunId(runId);
+            })();
+          }}
+        >
+          Create Run
+          {newRunId !== undefined && (
+            <Navigate replace to={`/runs/${newRunId}`} />
+          )}
+        </Button>
+      </div>
+    );
+  };
+
+  const renderRunsList = (): JSX.Element => {
+    if (runs === undefined) {
+      return <>Loading...</>;
+    }
+
+    return (
+      <div style={{ padding: 5 }}>
+        <h1>Runs</h1>
+        <ul>
+          {runs?.map((run) => (
+            <li key={run.id}>
+              <Link to={`/runs/${run.id}`}>{run.title}</Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
 
   return (
     <div className="RunsPane">
@@ -59,19 +84,8 @@ function RunsPane(): JSX.Element {
             <UserMenu />
           </Toolbar>
         </AppBar>
-        {currentUser != null &&
-          currentUser.role() === 'dm' &&
-          renderCreateRun(currentUser.uid())}
-        <div style={{ padding: 5 }}>
-          <h1>{runs !== undefined ? 'Runs:' : 'Loading...'}</h1>
-          <ul>
-            {runs?.map((run) => (
-              <li key={run.id}>
-                <Link to={`/runs/${run.id}`}>{run.title}</Link>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {renderCreateRun()}
+        {renderRunsList()}
       </>
     </div>
   );

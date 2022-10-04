@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { FirebaseError, initializeApp } from 'firebase/app';
 // import { getAnalytics } from "firebase/analytics";
 import {
   getFirestore,
@@ -26,6 +26,14 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
 export const auth = getAuth(app);
+
+const handleFirebaseError =
+  (contextMsg?: string) =>
+  (error: FirebaseError): never => {
+    console.log('Firebase error context: ', contextMsg ?? 'no context');
+    console.dir(error);
+    throw error;
+  };
 
 // ============================
 // Database types and functions
@@ -70,7 +78,7 @@ export class Run {
 const runsCol = collection(db, 'runs');
 
 export async function getRuns(): Promise<Run[]> {
-  const runsSnapshot = await getDocs(runsCol);
+  const runsSnapshot = await getDocs(runsCol).catch(handleFirebaseError());
   return runsSnapshot.docs.map((doc) => {
     const data = doc.data();
     return new Run(doc.id, data.title, data.ltts, data.dm, data.players);
@@ -79,7 +87,7 @@ export async function getRuns(): Promise<Run[]> {
 
 export async function getRun(runId: string): Promise<Run | undefined> {
   const runRef = doc(db, 'runs', runId);
-  const runSnapshot = await getDoc(runRef);
+  const runSnapshot = await getDoc(runRef).catch(handleFirebaseError());
   const data = runSnapshot.data();
   if (data !== undefined) {
     return new Run(runId, data.title, data.ltts, data.dm, data.players);
@@ -89,7 +97,9 @@ export async function getRun(runId: string): Promise<Run | undefined> {
 }
 
 export async function createRun(title: string, dm: string): Promise<string> {
-  const doc = await addDoc(runsCol, { title, dm, players: [], ltts: {} });
+  const doc = await addDoc(runsCol, { title, dm, players: [], ltts: {} }).catch(
+    handleFirebaseError()
+  );
   return doc.id;
 }
 
@@ -227,7 +237,7 @@ export class Step {
 
 export async function getSteps(runId: string): Promise<Step[]> {
   const stepsCol = collection(db, 'runs', runId, 'steps');
-  const stepsSnapshot = await getDocs(stepsCol);
+  const stepsSnapshot = await getDocs(stepsCol).catch(handleFirebaseError());
   return stepsSnapshot.docs.map((doc) => {
     const data = doc.data();
     console.log(data);
@@ -249,7 +259,7 @@ export async function getLastNSteps(
 ): Promise<Step[]> {
   const stepsCol = collection(db, 'runs', runId, 'steps');
   const q = query(stepsCol, orderBy('n', 'desc'), limit(_limit));
-  const stepsSnapshot = await getDocs(q);
+  const stepsSnapshot = await getDocs(q).catch(handleFirebaseError());
   return stepsSnapshot.docs.reverse().map((doc) => {
     const data = doc.data();
     // console.log(data);
@@ -271,14 +281,15 @@ export async function updateStep(
   update: Partial<Step>
 ): Promise<void> {
   const docRef = doc(db, 'runs', runId, 'steps', n.toString());
-  await updateDoc(docRef, update);
+  console.log('update: ', update);
+  await updateDoc(docRef, update).catch(handleFirebaseError());
 }
 
 export async function addStep(runId: string, step: Step): Promise<void> {
   const docRef = doc(db, 'runs', runId, 'steps', step.n.toString());
   const obj = withoutUndefinedValues({ ...step });
   console.log('obj: ', obj);
-  await setDoc(docRef, obj);
+  await setDoc(docRef, obj).catch(handleFirebaseError());
 }
 
 // Only used for populating the database
@@ -303,7 +314,7 @@ export async function addSteps(runId: string, steps: Step[]): Promise<void> {
   const docRef = doc(db, 'runs', runId);
   batch.update(docRef, obj);
 
-  await batch.commit();
+  await batch.commit().catch(handleFirebaseError());
 }
 
 export async function getStepN(
@@ -311,7 +322,7 @@ export async function getStepN(
   n: number
 ): Promise<Step | undefined> {
   const docRef = doc(db, 'runs', runId, 'steps', n.toString());
-  const docSnap = await getDoc(docRef);
+  const docSnap = await getDoc(docRef).catch(handleFirebaseError());
   if (docSnap.exists()) {
     return Step.fromDocData(docSnap.data());
   } else {
@@ -355,36 +366,40 @@ export async function updateRunLongTermThoughtsForStep(
   const ltts: Thought[] = collectLongTermThoughts(stepN);
 
   const docRef = doc(db, 'runs', runId);
-  await updateDoc(docRef, {
+  const payload = {
     [`ltts.${n}`]: ltts.map((ltt) => Object.assign({}, ltt)),
-  });
+  };
+  await updateDoc(docRef, payload).catch(handleFirebaseError());
 }
 
 // Users collection
 
 export class UserProfile {
   id: string; // corresponds to the uid for firebase authentication
-  role: Role | null; // null, 'player' or 'dm'
-  plays: string[]; // reference to a run
-  dms: string[]; // reference to a run
+  canDM: boolean; // whether the user can be a DM for a run, or not
+  plays?: string[]; // reference to a run
+  dms?: string[]; // reference to a run
 
-  constructor(id: string, role?: Role, plays?: string[], dms?: string[]) {
+  constructor(id: string, canDM: boolean, plays?: string[], dms?: string[]) {
     this.id = id;
-    this.role = role ?? null;
-    this.plays = plays ?? [];
-    this.dms = dms ?? [];
+    this.canDM = canDM;
+    this.plays = plays;
+    this.dms = dms;
   }
 }
 
 export async function createUserProfile(uid: string): Promise<void> {
-  await setDoc(doc(db, 'users', uid), Object.assign({}, new UserProfile(uid)));
+  await setDoc(
+    doc(db, 'users', uid),
+    Object.assign({}, new UserProfile(uid, false))
+  ).catch(handleFirebaseError());
 }
 
 export async function getUserProfile(
   uid: string
 ): Promise<UserProfile | undefined> {
   const runRef = doc(db, 'users', uid);
-  const runSnapshot = await getDoc(runRef);
+  const runSnapshot = await getDoc(runRef).catch(handleFirebaseError());
   const data = runSnapshot.data();
   if (data !== undefined) {
     return new UserProfile(uid, data.role, data.plays, data.dms);
@@ -398,8 +413,10 @@ export async function getOrCreateUserProfile(
 ): Promise<UserProfile> {
   const profile = await getUserProfile(uid);
   if (profile === undefined) {
-    const newProfile = new UserProfile(uid);
-    await setDoc(doc(db, 'users', uid), Object.assign({}, newProfile));
+    const newProfile = new UserProfile(uid, false);
+    await setDoc(doc(db, 'users', uid), Object.assign({}, newProfile)).catch(
+      handleFirebaseError()
+    );
     return newProfile;
   } else {
     return profile;
