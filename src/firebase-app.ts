@@ -35,11 +35,21 @@ export class Run {
   id: string;
   title: string;
   ltts: Record<string, Thought[]>;
+  dm: string;
+  players: string[];
 
-  constructor(id: string, title: string, ltts: Record<string, Thought[]>) {
+  constructor(
+    id: string,
+    title: string,
+    ltts: Record<string, Thought[]>,
+    dm: string,
+    players: string[]
+  ) {
     this.id = id;
     this.title = title;
     this.ltts = ltts;
+    this.dm = dm;
+    this.players = players;
   }
 
   lttsToArray(): Thought[] {
@@ -63,7 +73,7 @@ export async function getRuns(): Promise<Run[]> {
   const runsSnapshot = await getDocs(runsCol);
   return runsSnapshot.docs.map((doc) => {
     const data = doc.data();
-    return new Run(doc.id, data.title, data.ltts);
+    return new Run(doc.id, data.title, data.ltts, data.dm, data.players);
   });
 }
 
@@ -72,14 +82,14 @@ export async function getRun(runId: string): Promise<Run | undefined> {
   const runSnapshot = await getDoc(runRef);
   const data = runSnapshot.data();
   if (data !== undefined) {
-    return new Run(runId, data.title, data.ltts);
+    return new Run(runId, data.title, data.ltts, data.dm, data.players);
   } else {
     return undefined;
   }
 }
 
-export async function createRun(title: string): Promise<string> {
-  const doc = await addDoc(runsCol, { title });
+export async function createRun(title: string, dm: string): Promise<string> {
+  const doc = await addDoc(runsCol, { title, dm, players: [], ltts: {} });
   return doc.id;
 }
 
@@ -330,4 +340,50 @@ export async function updateRunLongTermThoughtsForStep(
   await updateDoc(docRef, {
     [`ltts.${n}`]: ltts.map((ltt) => Object.assign({}, ltt)),
   });
+}
+
+// Users collection
+
+export class UserProfile {
+  id: string; // corresponds to the uid for firebase authentication
+  role: string | null; // null, 'player' or 'dm'
+  plays: string[]; // reference to a run
+  dms: string[]; // reference to a run
+
+  constructor(id: string, role?: string, plays?: string[], dms?: string[]) {
+    this.id = id;
+    this.role = role ?? null;
+    this.plays = plays ?? [];
+    this.dms = dms ?? [];
+  }
+}
+
+export async function createUserProfile(uid: string): Promise<void> {
+  await setDoc(doc(db, 'users', uid), Object.assign({}, new UserProfile(uid)));
+}
+
+export async function getUserProfile(
+  uid: string
+): Promise<UserProfile | undefined> {
+  const runRef = doc(db, 'users', uid);
+  const runSnapshot = await getDoc(runRef);
+  const data = runSnapshot.data();
+  if (data !== undefined) {
+    return new UserProfile(uid, data.role, data.plays, data.dms);
+  } else {
+    return undefined;
+  }
+}
+
+export async function getOrCreateUserProfile(
+  uid: string
+): Promise<UserProfile> {
+  const profile = await getUserProfile(uid);
+  if (profile === undefined) {
+    const newProfile = new UserProfile(uid);
+    await setDoc(doc(db, 'users', uid), Object.assign({}, newProfile));
+    return newProfile;
+  } else {
+    return profile;
+  }
 }
