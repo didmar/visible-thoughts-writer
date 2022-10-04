@@ -84,6 +84,9 @@ function StepsPane(): JSX.Element {
       if (runId !== undefined && uid !== undefined) {
         const role = await getUserRoleInRun(uid, runId);
         setRole(role);
+        console.log('User has role: ', role);
+      } else {
+        setRole(null); // Guest
       }
     })();
   }, [currentUser]);
@@ -180,12 +183,28 @@ function StepsPane(): JSX.Element {
   }
 
   function renderComposer(): JSX.Element {
+    if (role === undefined) {
+      return <>Loading...</>;
+    }
+    if (role !== Role.Player && role !== Role.DM) {
+      return <>Cannot compose as a guest</>;
+    }
+
     const section = getNextSection();
-    return section !== undefined ? (
-      <Composer section={section} onSubmitted={onSubmitted} />
-    ) : (
-      <>Wait...</>
-    );
+    if (section === undefined) {
+      return <>Wait...</>; // Waiting for the next step to be created
+    }
+
+    // Is it our time to write?
+    if (section === Section.Act) {
+      if (role !== Role.Player) {
+        return <>Wait for the player to write their part...</>;
+      }
+    } else if (role !== Role.DM) {
+      return <>Wait for the DM to write their part...</>;
+    }
+
+    return <Composer section={section} onSubmitted={onSubmitted} />;
   }
 
   async function loadMoreSteps(): Promise<void> {
@@ -315,13 +334,7 @@ function StepsPane(): JSX.Element {
                 overflow: 'auto',
               }}
             >
-              {role === Role.Player || role === Role.DM ? (
-                renderComposer()
-              ) : role === undefined ? (
-                <>Loading...</>
-              ) : (
-                <>Cannot compose as a guest</>
-              )}
+              {renderComposer()}
             </Paper>
           </Grid>
 

@@ -104,8 +104,8 @@ export async function getUserRoleInRun(
 ): Promise<Role | null> {
   const run = await getRun(runId);
   if (run === undefined) return null;
-  if (run.dm === uid) return Role.Player;
-  if (run.players.includes(uid)) return Role.DM;
+  if (run.dm === uid) return Role.DM;
+  if (run.players.includes(uid)) return Role.Player;
   return null;
 }
 
