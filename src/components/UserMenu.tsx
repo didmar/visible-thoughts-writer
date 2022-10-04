@@ -2,7 +2,14 @@ import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { AccountCircle } from '@mui/icons-material';
 import MoreIcon from '@mui/icons-material/More';
-import { Box, IconButton, Menu, MenuItem } from '@mui/material';
+import {
+  Box,
+  IconButton,
+  ListItemIcon,
+  Menu,
+  MenuItem,
+  Typography,
+} from '@mui/material';
 import { signOut } from 'firebase/auth';
 import { useState, MouseEvent } from 'react';
 import { useAuth } from './Auth';
@@ -80,16 +87,10 @@ export const UserMenu = (): JSX.Element => {
       onClose={handleMobileMenuClose}
     >
       <MenuItem onClick={handleUserMenuOpen}>
-        <IconButton
-          size="large"
-          aria-label="account of current user"
-          aria-controls="primary-search-account-menu"
-          aria-haspopup="true"
-          color="inherit"
-        >
+        <ListItemIcon>
           {currentUser !== null ? <AccountCircle /> : renderLoginButton}
-        </IconButton>
-        <p>User</p>
+        </ListItemIcon>
+        <Typography>User</Typography>
       </MenuItem>
     </Menu>
   );
