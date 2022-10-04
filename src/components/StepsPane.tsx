@@ -58,6 +58,7 @@ function StepsPane(): JSX.Element {
 
   const currentUser = useAuth();
 
+  // Initialize run and steps
   useEffect(() => {
     void (async function () {
       console.log(' ### useEffect runId  ###');
@@ -77,9 +78,10 @@ function StepsPane(): JSX.Element {
     })();
   }, []);
 
+  // When currentUser change
   useEffect(() => {
     void (async function () {
-      // Init role
+      // Init role of user for this particular run
       const uid = currentUser?.uid();
       if (runId !== undefined && uid !== undefined) {
         const role = await getUserRoleInRun(uid, runId);
@@ -91,6 +93,7 @@ function StepsPane(): JSX.Element {
     })();
   }, [currentUser]);
 
+  // When steps change
   useEffect(() => {
     void (async function () {
       if (runId !== undefined && steps !== undefined) {
@@ -187,7 +190,7 @@ function StepsPane(): JSX.Element {
       return <>Loading...</>;
     }
     if (role !== Role.Player && role !== Role.DM) {
-      return <>Cannot compose as a guest</>;
+      return <>Only designated players can participate</>;
     }
 
     const section = getNextSection();
