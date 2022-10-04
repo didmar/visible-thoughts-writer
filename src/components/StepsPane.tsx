@@ -203,7 +203,7 @@ function StepsPane(): JSX.Element {
     setSteps([previousStep, ...steps]);
   }
 
-  return run !== null ? (
+  return run !== undefined && run !== null ? (
     <Box
       component="main"
       sx={{
@@ -317,6 +317,8 @@ function StepsPane(): JSX.Element {
             >
               {role === Role.Player || role === Role.DM ? (
                 renderComposer()
+              ) : role === undefined ? (
+                <>Loading...</>
               ) : (
                 <>Cannot compose as a guest</>
               )}
@@ -346,6 +348,8 @@ function StepsPane(): JSX.Element {
         </Grid>
       </Container>
     </Box>
+  ) : run === undefined ? (
+    <>Loading...</>
   ) : (
     <PageNotFound />
   );
