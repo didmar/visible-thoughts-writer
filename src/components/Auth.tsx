@@ -26,10 +26,12 @@ class User {
   }
 }
 
-export const AuthContext = React.createContext<User | null>(null);
+export const AuthContext = React.createContext<User | null | undefined>(
+  undefined
+);
 
-export function useAuth(): User | null {
-  return useContext<User | null>(AuthContext);
+export function useAuth(): User | null | undefined {
+  return useContext<User | null | undefined>(AuthContext);
 }
 
 interface Props {
@@ -38,7 +40,9 @@ interface Props {
 
 const AuthProvider = ({ children }: Props): JSX.Element => {
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null | undefined>(
+    undefined
+  );
 
   useEffect(() => {
     auth.onAuthStateChanged((firebaseUser) => {
