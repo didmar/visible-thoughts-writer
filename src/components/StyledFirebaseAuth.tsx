@@ -70,7 +70,9 @@ export const StyledFirebaseAuth = ({
     // See https://github.com/firebase/firebaseui-web-react/pull/173#issuecomment-1247355860
     if (!skipStrictEffects.current) {
       skipStrictEffects.current = firebaseUiWidget.isPendingRedirect();
-      firebaseUiWidget.start(elementRef.current!, uiConfig);
+      if (elementRef.current !== null) {
+        firebaseUiWidget.start(elementRef.current, uiConfig);
+      }
     }
 
     return () => {
