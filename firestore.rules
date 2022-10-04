@@ -1,8 +1,55 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
+    function hasDMRole() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid))
+          .data.canDM == true;
+    }
+
+    match /runs/{runId} {
+      // Anyone can see the runs
+      allow read: if true;
+      // Only DMs can write
+      allow write: if hasDMRole();
+      // Nobody can delete a run
+      allow delete: if false;
+      
+      function isRunDM() {
+        let data = get(/databases/$(database)/documents/runs/$(runId)).data;
+        return request.auth.uid == data.dm
+      }
+      
+      function isRunDMOrPlayer() {
+        let data = get(/databases/$(database)/documents/runs/$(runId)).data;
+        return request.auth.uid == data.dm || request.auth.uid in data.players
+      }
+    
+      match /steps/{stepId} {
+        // Anyone can see the steps
+        allow read: if true;
+        // Only the run's DM can create steps
+        allow create: if request.auth != null && isRunDM();
+        // Only the run's DM or players can update steps
+        allow update: if request.auth != null && isRunDMOrPlayer();
+        // Nobody can delete a step
+        allow delete: if false;
+      }
+    }
+
+    match /users/{userId} {
+      // Only authenticated users can access someone's profiles
+      allow read: if request.auth != null;
+      // Authenticated users can create their own profile, but not with DM privileges
+      allow create: if request.auth != null
+                    && request.resource.data.id == request.auth.uid
+                    && request.resource.data.canDM == false;
+      // Authenticated users can update their own profile, except for their DM privileges.
+      allow update: if request.auth != null
+                    && resource.data.id == request.auth.uid
+                    && !("canDM" in request.resource.data);
+      // Nobody can delete a user profile
+      allow delete: if false;
     }
   }
 }
