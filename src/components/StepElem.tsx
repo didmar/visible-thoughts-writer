@@ -168,7 +168,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
         {step?.initT !== undefined && isDM && (
           <Item key={0}>{renderSection(step, Section.InitT)}</Item>
         )}
-        {step?.ppt !== undefined && isDM && (
+        {step?.ppt !== undefined && (
           <Item key={1}>{renderSection(step, Section.Ppt)}</Item>
         )}
         {step?.ppptT !== undefined && isDM && (
