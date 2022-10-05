@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { Run, getRuns, createRun } from '../firebase-app';
+import { Run, createRun, onRunsCreated } from '../firebase-app';
 import '../App.css';
 import { AppBar, Button, Toolbar, Typography } from '@mui/material';
 import HelpAndFeedback from './HelpAndFeedback';
@@ -9,16 +9,28 @@ import { useAuth } from './Auth';
 
 function RunsPane(): JSX.Element {
   const [runs, setRuns] = useState<Run[] | undefined>(undefined);
+  const [newRuns, setNewRuns] = useState<Run[] | undefined>(undefined);
   const [newTitle, setNewTitle] = useState<string>('');
   const [newRunId, setNewRunId] = useState<string | undefined>(undefined);
 
   const currentUser = useAuth();
 
+  // Set up a listener
   useEffect(() => {
-    void (async function () {
-      setRuns(await getRuns());
-    })();
+    console.log('RunsPane > useEffect [] ');
+    return () => {
+      onRunsCreated(setNewRuns);
+    };
   }, []);
+
+  // When new runs are created, add them to the list of runs
+  useEffect(() => {
+    console.log('RunsPane > useEffect [newRuns]: ', newRuns);
+    if (newRuns !== undefined) {
+      const updateRuns = runs === undefined ? newRuns : [...runs, ...newRuns];
+      setRuns(updateRuns);
+    }
+  }, [newRuns]);
 
   const renderCreateRun = (): JSX.Element => {
     if (currentUser == null || !currentUser.canDM()) {

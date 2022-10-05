@@ -14,6 +14,7 @@ import {
   getDoc,
   updateDoc,
   setDoc,
+  onSnapshot,
 } from '@firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import firebaseConfig from './firebase.creds.json';
@@ -101,6 +102,28 @@ export async function createRun(title: string, dm: string): Promise<string> {
     handleFirebaseError()
   );
   return doc.id;
+}
+
+export function onRunsCreated(callback: (newRuns: Run[]) => void): void {
+  onSnapshot(
+    query(runsCol),
+    (snapshot) => {
+      const newRuns: Run[] = [];
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          const data = change.doc.data();
+          newRuns.push(
+            new Run(change.doc.id, data.title, data.ltts, data.dm, data.players)
+          );
+        }
+      });
+
+      if (newRuns.length > 0) {
+        callback(newRuns);
+      }
+    },
+    handleFirebaseError()
+  );
 }
 
 export enum Role {
