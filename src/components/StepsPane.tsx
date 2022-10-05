@@ -295,7 +295,12 @@ function StepsPane(): JSX.Element {
       <Container maxWidth="lg" sx={{ mt: 2, mb: 2 }}>
         <Grid container spacing={3}>
           {/* Steps */}
-          <Grid item xs={12} md={8} lg={9}>
+          <Grid
+            item
+            xs={12}
+            md={role === Role.DM ? 8 : 12}
+            lg={role === Role.DM ? 9 : 12}
+          >
             <Paper
               sx={{
                 p: 2,
@@ -338,26 +343,28 @@ function StepsPane(): JSX.Element {
           </Grid>
 
           {/* Long-term thoughts */}
-          <Grid
-            item
-            xs={0}
-            md={4}
-            lg={3}
-            display={{ xs: 'none', md: 'block', lg: 'block' }}
-          >
-            <Paper
-              sx={{
-                p: 2,
-                display: 'flex',
-                flexDirection: 'column',
-                height: '70vh',
-                overflow: 'auto',
-              }}
+          {role === Role.DM && (
+            <Grid
+              item
+              xs={0}
+              md={4}
+              lg={3}
+              display={{ xs: 'none', md: 'block', lg: 'block' }}
             >
-              <h4> Long-term thoughts</h4>
-              {renderLongTermThoughts(ltts)}
-            </Paper>
-          </Grid>
+              <Paper
+                sx={{
+                  p: 2,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '70vh',
+                  overflow: 'auto',
+                }}
+              >
+                <h4> Long-term thoughts</h4>
+                {renderLongTermThoughts(ltts)}
+              </Paper>
+            </Grid>
+          )}
 
           {/* Compose */}
           <Grid item xs={12} md={8} lg={9}>
