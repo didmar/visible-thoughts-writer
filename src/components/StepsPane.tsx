@@ -17,7 +17,6 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import {
-  getLastNSteps,
   Step,
   getStepN,
   Thought,
@@ -35,6 +34,8 @@ import {
   Run,
   getUserRoleInRun,
   Role,
+  onStepsChanged,
+  mergeStepsWithUpdates,
 } from '../firebase-app';
 import StepElem, { renderLongTermThoughts } from './StepElem';
 import Composer from './Composer';
@@ -50,7 +51,12 @@ function StepsPane(): JSX.Element {
   const { runId } = useParams<string>();
 
   const [run, setRun] = useState<Run | null | undefined>(undefined);
+
   const [steps, setSteps] = useState<Step[] | undefined>(undefined);
+  const [updatedSteps, setUpdatedSteps] = useState<Step[] | undefined>(
+    undefined
+  );
+
   const [xStepAgo, setXStepAgo] = useState<Step | undefined>(undefined);
   const [ltts, setLtts] = useState<Thought[]>([]);
   const [title, setTitle] = useState<string | undefined>(undefined);
@@ -60,26 +66,31 @@ function StepsPane(): JSX.Element {
 
   // Initialize run and steps
   useEffect(() => {
+    console.log('StepsPane > useEffect []');
+
+    if (runId === undefined) {
+      throw new Error('StepsPane with no runId!');
+    }
+
     void (async function () {
-      console.log(' ### useEffect runId  ###');
-      if (runId !== undefined) {
-        // Init run
-        const run = await getRun(runId);
-        if (run === undefined) {
-          console.log('Run not found');
-          setRun(null);
-        } else {
-          setRun(run);
-          // Init steps
-          const _steps = await getLastNSteps(runId, 3);
-          setSteps(_steps);
-        }
+      // Init run
+      const run = await getRun(runId);
+      if (run === undefined) {
+        console.log('Run not found');
+        setRun(null);
+      } else {
+        setRun(run);
       }
+
+      // Create listener for new steps and updates
+      await onStepsChanged(runId, setUpdatedSteps);
     })();
   }, []);
 
-  // When currentUser change
+  // When user change, initialize the role
   useEffect(() => {
+    console.log('StepsPane > useEffect [currentUser]: ', currentUser);
+
     void (async function () {
       // Init role of user for this particular run
       const uid = currentUser?.uid();
@@ -93,33 +104,57 @@ function StepsPane(): JSX.Element {
     })();
   }, [currentUser]);
 
+  // When steps are updated
+  useEffect(() => {
+    console.log('StepsPane > useEffect [updatedSteps]: ', updatedSteps);
+
+    if (updatedSteps === undefined || updatedSteps.length === 0) return;
+
+    // When using React.StrictMode, will be called with 3 steps
+    // that have undefined attributes!
+    if (updatedSteps[0].n === undefined) return;
+
+    const _steps = mergeStepsWithUpdates(steps, updatedSteps);
+    setSteps(_steps);
+  }, [updatedSteps]);
+
   // When steps change
   useEffect(() => {
+    console.log('StepsPane > useEffect [steps]: ', steps);
+
+    if (runId === undefined) return;
+    if (steps === undefined) return;
+
     void (async function () {
-      if (runId !== undefined && steps !== undefined) {
-        // Must init first/next step?
-        const section = getNextSection();
-        if (section === undefined) {
-          // Create the next step
-          const currentStep =
-            steps.length !== 0 ? steps[steps.length - 1] : undefined;
-          const newStep = createNextStep(currentStep);
-          console.log('Created new step: ', newStep);
-          await addStep(runId, newStep);
-          setSteps([...steps, newStep]);
-        } else {
-          // Init step from x steps ago
-          const lastN = steps[steps.length - 1].n;
-          const _xStepAgo = await getStepN(runId, Math.max(lastN - X, 1));
+      const section = getNextSection();
+      // Did we reach the end of the step?
+      // Create the next step if we are the DM
+      if (section === undefined && role === Role.DM) {
+        const currentStep =
+          steps.length !== 0 ? steps[steps.length - 1] : undefined;
+        const newStep = createNextStep(currentStep);
+        await addStep(runId, newStep);
+      } else {
+        // Note: the else clause is to optimize the number of calls to Firestore.
+        // If we add a new step, we will came back here anyways!
+
+        // Init step from x steps ago, if needed
+        const lastN = steps[steps.length - 1].n;
+        const nMinusX = Math.max(lastN - X, 1);
+        if (xStepAgo === undefined || xStepAgo.n !== nMinusX) {
+          const _xStepAgo = await getStepN(runId, nMinusX);
           if (_xStepAgo !== undefined) {
             setXStepAgo(_xStepAgo);
           }
-          // Init long term thoughts and run title
-          const run = await getRun(runId);
-          if (run !== undefined) {
-            setTitle(run.title);
-            setLtts(run.lttsToArray());
-          }
+        }
+
+        // Init long term thoughts and run title
+        const run = await getRun(runId);
+        if (run !== undefined) {
+          setTitle(run.title);
+          setLtts(run.lttsToArray());
+        } else {
+          throw new Error(`Run ${runId} not found!`);
         }
       }
     })();
@@ -163,20 +198,14 @@ function StepsPane(): JSX.Element {
         throw new Error(`Unknown section: ${Section[section]}`);
     }
 
-    // Update in Firebase
+    // Update in Firebase (will trigger onStepsChanged
+    // and update the UI indirectly)
     void (async () => {
       await updateStep(runId, lastStep.n, update);
       if (lttsUpdate.length !== 0) {
         await updateRunLongTermThoughtsForStep(runId, lastStep.n);
       }
     })();
-
-    // Update our states
-    const updatedLastStep: Step = { ...lastStep, ...update };
-    setSteps([...steps.slice(0, -1), updatedLastStep]);
-    if (lttsUpdate.length !== 0) {
-      setLtts([...ltts, ...lttsUpdate]);
-    }
   };
 
   function getNextSection(): Section | undefined {

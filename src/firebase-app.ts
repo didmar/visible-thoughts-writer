@@ -15,6 +15,7 @@ import {
   updateDoc,
   setDoc,
   onSnapshot,
+  where,
 } from '@firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import * as firebaseConfig from './firebase.creds.json';
@@ -258,43 +259,12 @@ export class Step {
   }
 }
 
-export async function getSteps(runId: string): Promise<Step[]> {
-  const stepsCol = collection(db, 'runs', runId, 'steps');
-  const stepsSnapshot = await getDocs(stepsCol).catch(handleFirebaseError());
-  return stepsSnapshot.docs.map((doc) => {
-    const data = doc.data();
-    console.log(data);
-    return new Step(
-      data.n,
-      data.initT,
-      data.ppt,
-      data.ppptT,
-      data.act,
-      data.pactT,
-      data.out
-    );
-  });
-}
-
-export async function getLastNSteps(
-  runId: string,
-  _limit: number
-): Promise<Step[]> {
+async function getLastNSteps(runId: string, _limit: number): Promise<Step[]> {
   const stepsCol = collection(db, 'runs', runId, 'steps');
   const q = query(stepsCol, orderBy('n', 'desc'), limit(_limit));
   const stepsSnapshot = await getDocs(q).catch(handleFirebaseError());
   return stepsSnapshot.docs.reverse().map((doc) => {
-    const data = doc.data();
-    // console.log(data);
-    return new Step(
-      data.n,
-      data.initT,
-      data.ppt,
-      data.ppptT,
-      data.act,
-      data.pactT,
-      data.out
-    );
+    return Step.fromDocData(doc.data());
   });
 }
 
@@ -304,14 +274,12 @@ export async function updateStep(
   update: Partial<Step>
 ): Promise<void> {
   const docRef = doc(db, 'runs', runId, 'steps', n.toString());
-  console.log('update: ', update);
   await updateDoc(docRef, update).catch(handleFirebaseError());
 }
 
 export async function addStep(runId: string, step: Step): Promise<void> {
   const docRef = doc(db, 'runs', runId, 'steps', step.n.toString());
   const obj = withoutUndefinedValues({ ...step });
-  console.log('obj: ', obj);
   await setDoc(docRef, obj).catch(handleFirebaseError());
 }
 
@@ -351,6 +319,57 @@ export async function getStepN(
   } else {
     return undefined;
   }
+}
+
+export async function onStepsChanged(
+  runId: string,
+  callback: (updatedSteps: Step[]) => void
+): Promise<void> {
+  // Get the last 3 steps to start with
+  const _steps = await getLastNSteps(runId, 3);
+  const lastN = _steps.length > 0 ? _steps[_steps.length - 1].n : 1;
+  if (lastN > 1) {
+    callback(_steps);
+  }
+
+  // For listening to added or modified steps, query starting from last step
+  // in order to not fetch all the steps from the beginning!
+  // (They will be loaded on demand if user scrolls up)
+  const q = query(
+    collection(db, 'runs', runId, 'steps'),
+    where('n', '>=', lastN)
+  );
+
+  onSnapshot(
+    q,
+    (snapshot) => {
+      const updatedSteps: Step[] = [];
+      snapshot.docChanges().forEach((change) => {
+        console.log('change.type: ', change);
+        console.log('change.doc.data(): ', change.doc.data());
+
+        if (change.type === 'added' || change.type === 'modified') {
+          updatedSteps.push(Step.fromDocData(change.doc.data()));
+        }
+      });
+      console.log('updatedSteps.length: ', updatedSteps.length);
+      if (updatedSteps.length > 0) {
+        callback(updatedSteps);
+      }
+    },
+    handleFirebaseError()
+  );
+}
+
+export function mergeStepsWithUpdates(
+  steps: Step[] | undefined,
+  updatedSteps: Step[]
+): Step[] {
+  if (steps === undefined) return updatedSteps;
+  const stepsMap = new Map<number, Step>();
+  steps.forEach((step) => stepsMap.set(step.n, step));
+  updatedSteps.forEach((step) => stepsMap.set(step.n, step));
+  return Array.from(stepsMap.values()).sort((a, b) => a.n - b.n);
 }
 
 function collectLongTermThoughts(step: Step): Thought[] {
