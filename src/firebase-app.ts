@@ -377,14 +377,10 @@ export async function updateRunLongTermThoughtsForStep(
 export class UserProfile {
   id: string; // corresponds to the uid for firebase authentication
   canDM: boolean; // whether the user can be a DM for a run, or not
-  plays?: string[]; // reference to a run
-  dms?: string[]; // reference to a run
 
-  constructor(id: string, canDM: boolean, plays?: string[], dms?: string[]) {
+  constructor(id: string, canDM: boolean) {
     this.id = id;
     this.canDM = canDM;
-    this.plays = plays;
-    this.dms = dms;
   }
 }
 
@@ -402,7 +398,7 @@ export async function getUserProfile(
   const runSnapshot = await getDoc(runRef).catch(handleFirebaseError());
   const data = runSnapshot.data();
   if (data !== undefined) {
-    return new UserProfile(uid, data.role, data.plays, data.dms);
+    return new UserProfile(uid, data.role);
   } else {
     return undefined;
   }
