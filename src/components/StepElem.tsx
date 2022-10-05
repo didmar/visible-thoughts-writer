@@ -22,6 +22,7 @@ const Item = styled(Paper)(({ theme }) => ({
 
 interface StepElemProps {
   step: Step;
+  isDM: boolean;
 }
 
 export function renderLongTermThoughts(ltts: Thought[]): JSX.Element {
@@ -158,24 +159,25 @@ function renderSection(step: Step, section: Section): JSX.Element | undefined {
 
 const StepElem: React.FunctionComponent<StepElemProps> = ({
   step,
+  isDM,
 }: StepElemProps) => {
   return (
     <div className="StepsPane" key={42}>
       <h3 key={0}>Step #{step.n}</h3>
       <Stack key={1} spacing={2}>
-        {step?.initT !== undefined && (
+        {step?.initT !== undefined && isDM && (
           <Item key={0}>{renderSection(step, Section.InitT)}</Item>
         )}
-        {step?.ppt !== undefined && (
+        {step?.ppt !== undefined && isDM && (
           <Item key={1}>{renderSection(step, Section.Ppt)}</Item>
         )}
-        {step?.ppptT !== undefined && (
+        {step?.ppptT !== undefined && isDM && (
           <Item key={2}>{renderSection(step, Section.PpptT)}</Item>
         )}
         {step?.act !== undefined && (
           <Item key={3}>{renderSection(step, Section.Act)}</Item>
         )}
-        {step?.pactT !== undefined && (
+        {step?.pactT !== undefined && isDM && (
           <Item key={4}>{renderSection(step, Section.PactT)}</Item>
         )}
         {step?.out !== undefined && (

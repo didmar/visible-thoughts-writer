@@ -298,7 +298,11 @@ function StepsPane(): JSX.Element {
                   ?.slice()
                   .reverse()
                   .map((step) => (
-                    <StepElem key={step.n} step={step} />
+                    <StepElem
+                      key={step.n}
+                      step={step}
+                      isDM={role === Role.DM}
+                    />
                   ))}
               </InfiniteScroll>
             </Paper>
@@ -358,7 +362,9 @@ function StepsPane(): JSX.Element {
                 overflow: 'auto',
               }}
             >
-              {xStepAgo !== undefined && <StepElem step={xStepAgo} />}
+              {xStepAgo !== undefined && (
+                <StepElem step={xStepAgo} isDM={role === Role.DM} />
+              )}
             </Paper>
           </Grid>
         </Grid>
