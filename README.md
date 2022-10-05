@@ -24,3 +24,7 @@ firebase login
 npm run build
 firebase deploy
 ```
+
+## Unit testing
+
+`npm run test` to run the unit tests.
