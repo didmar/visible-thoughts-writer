@@ -17,7 +17,7 @@ import {
   onSnapshot,
 } from '@firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import firebaseConfig from './firebase.creds.json';
+import * as firebaseConfig from './firebase.creds.json';
 import { withoutUndefinedValues } from './utils';
 
 const app = initializeApp(firebaseConfig);
