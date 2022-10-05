@@ -420,16 +420,21 @@ export class UserProfile {
   id: string; // corresponds to the uid for firebase authentication
   canDM: boolean; // whether the user can be a DM for a run, or not
 
-  constructor(id: string, canDM: boolean) {
+  constructor(id: string, canDM?: boolean) {
     this.id = id;
-    this.canDM = canDM;
+    this.canDM = canDM ?? true;
+  }
+
+  static fromDocData(data?: DocumentData): UserProfile | undefined {
+    if (data === undefined) return undefined;
+    return new UserProfile(data.id, data.canDM);
   }
 }
 
 export async function createUserProfile(uid: string): Promise<void> {
   await setDoc(
     doc(db, 'users', uid),
-    Object.assign({}, new UserProfile(uid, false))
+    Object.assign({}, new UserProfile(uid))
   ).catch(handleFirebaseError());
 }
 
@@ -438,12 +443,7 @@ export async function getUserProfile(
 ): Promise<UserProfile | undefined> {
   const runRef = doc(db, 'users', uid);
   const runSnapshot = await getDoc(runRef).catch(handleFirebaseError());
-  const data = runSnapshot.data();
-  if (data !== undefined) {
-    return new UserProfile(uid, data.canDM);
-  } else {
-    return undefined;
-  }
+  return UserProfile.fromDocData(runSnapshot.data());
 }
 
 export async function getOrCreateUserProfile(
@@ -451,7 +451,7 @@ export async function getOrCreateUserProfile(
 ): Promise<UserProfile> {
   const profile = await getUserProfile(uid);
   if (profile === undefined) {
-    const newProfile = new UserProfile(uid, false);
+    const newProfile = new UserProfile(uid);
     await setDoc(doc(db, 'users', uid), Object.assign({}, newProfile)).catch(
       handleFirebaseError()
     );
