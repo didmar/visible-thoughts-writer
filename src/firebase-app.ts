@@ -398,7 +398,7 @@ export async function getUserProfile(
   const runSnapshot = await getDoc(runRef).catch(handleFirebaseError());
   const data = runSnapshot.data();
   if (data !== undefined) {
-    return new UserProfile(uid, data.role);
+    return new UserProfile(uid, data.canDM);
   } else {
     return undefined;
   }
