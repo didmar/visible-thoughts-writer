@@ -38,3 +38,12 @@ export function setWindowStatus(windowStatus: WindowStatus): void {
       break;
   }
 }
+
+export async function playDing(): Promise<void> {
+  const ding = document.getElementById('ding') as HTMLAudioElement;
+  if (ding === null) console.error('Ding sound element not found!');
+  console.log('Ding!');
+  await ding?.play().catch(
+    (e) => console.log(e) // will err if user has blocked audio autoplay
+  );
+}

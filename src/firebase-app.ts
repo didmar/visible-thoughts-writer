@@ -321,15 +321,21 @@ export async function getStepN(
   }
 }
 
+export interface UpdatedSteps {
+  added: Step[];
+  modified: Step[];
+}
+
 export async function onStepsChanged(
   runId: string,
-  callback: (updatedSteps: Step[]) => void
+  callback: (updatedSteps: UpdatedSteps) => void
 ): Promise<void> {
   // Get the last 3 steps to start with
   const _steps = await getLastNSteps(runId, 3);
   const lastN = _steps.length > 0 ? _steps[_steps.length - 1].n : 1;
   if (lastN > 1) {
-    callback(_steps);
+    const updatedSteps: UpdatedSteps = { added: _steps, modified: [] };
+    callback(updatedSteps);
   }
 
   // For listening to added or modified steps, query starting from last step
@@ -343,17 +349,21 @@ export async function onStepsChanged(
   onSnapshot(
     q,
     (snapshot) => {
-      const updatedSteps: Step[] = [];
+      const added: Step[] = [];
+      const modified: Step[] = [];
       snapshot.docChanges().forEach((change) => {
         console.log('change.type: ', change);
         console.log('change.doc.data(): ', change.doc.data());
 
-        if (change.type === 'added' || change.type === 'modified') {
-          updatedSteps.push(Step.fromDocData(change.doc.data()));
+        if (change.type === 'added') {
+          added.push(Step.fromDocData(change.doc.data()));
+        } else if (change.type === 'modified') {
+          modified.push(Step.fromDocData(change.doc.data()));
         }
       });
-      console.log('updatedSteps.length: ', updatedSteps.length);
-      if (updatedSteps.length > 0) {
+
+      if (added.length > 0 || modified.length > 0) {
+        const updatedSteps: UpdatedSteps = { added, modified };
         callback(updatedSteps);
       }
     },
@@ -363,13 +373,36 @@ export async function onStepsChanged(
 
 export function mergeStepsWithUpdates(
   steps: Step[] | undefined,
-  updatedSteps: Step[]
-): Step[] {
-  if (steps === undefined) return updatedSteps;
+  updatedSteps: UpdatedSteps
+): { merged: Step[]; lastStepModified: boolean } {
+  if (steps === undefined)
+    return {
+      merged: [...updatedSteps.modified, ...updatedSteps.added],
+      lastStepModified: false,
+    };
+
   const stepsMap = new Map<number, Step>();
   steps.forEach((step) => stepsMap.set(step.n, step));
-  updatedSteps.forEach((step) => stepsMap.set(step.n, step));
-  return Array.from(stepsMap.values()).sort((a, b) => a.n - b.n);
+  updatedSteps.added.forEach((step) => stepsMap.set(step.n, step));
+  updatedSteps.modified.forEach((step) => stepsMap.set(step.n, step));
+  const merged = Array.from(stepsMap.values()).sort((a, b) => a.n - b.n);
+
+  let lastStepModified = false;
+  if (updatedSteps.modified.length > 0) {
+    const lastStep = merged[merged.length - 1];
+    const lastN = lastStep.n;
+    for (const step of updatedSteps.modified) {
+      if (step.n === lastN) {
+        lastStepModified = true;
+        break;
+      }
+    }
+  }
+
+  return {
+    merged,
+    lastStepModified,
+  };
 }
 
 function collectLongTermThoughts(step: Step): Thought[] {

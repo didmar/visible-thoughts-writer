@@ -36,6 +36,7 @@ import {
   Role,
   onStepsChanged,
   mergeStepsWithUpdates,
+  UpdatedSteps,
 } from '../firebase-app';
 import StepElem, { renderLongTermThoughts } from './StepElem';
 import Composer from './Composer';
@@ -43,7 +44,7 @@ import HelpAndFeedback from './HelpAndFeedback';
 import UserMenu from './UserMenu';
 import PageNotFound from './PageNotFound';
 import { useAuth } from './Auth';
-import { setWindowStatus, WindowStatus } from '../utils';
+import { playDing, setWindowStatus, WindowStatus } from '../utils';
 
 // How many steps ago to give a hint of
 const X = 50;
@@ -54,7 +55,7 @@ function StepsPane(): JSX.Element {
   const [run, setRun] = useState<Run | null | undefined>(undefined);
 
   const [steps, setSteps] = useState<Step[] | undefined>(undefined);
-  const [updatedSteps, setUpdatedSteps] = useState<Step[] | undefined>(
+  const [updatedSteps, setUpdatedSteps] = useState<UpdatedSteps | undefined>(
     undefined
   );
 
@@ -109,14 +110,33 @@ function StepsPane(): JSX.Element {
   useEffect(() => {
     console.log('StepsPane > useEffect [updatedSteps]: ', updatedSteps);
 
-    if (updatedSteps === undefined || updatedSteps.length === 0) return;
+    if (updatedSteps === undefined) return;
 
     // When using React.StrictMode, will be called with 3 steps
     // that have undefined attributes!
-    if (updatedSteps[0].n === undefined) return;
+    if (updatedSteps.added.length > 0 && updatedSteps.added[0].n === undefined)
+      return;
 
-    const _steps = mergeStepsWithUpdates(steps, updatedSteps);
-    setSteps(_steps);
+    const { merged, lastStepModified } = mergeStepsWithUpdates(
+      steps,
+      updatedSteps
+    );
+
+    // Should will ring the notification bell?
+    if (lastStepModified) {
+      const lastStep = merged[merged.length - 1];
+      const nextSection = getNextSectionForStep(lastStep);
+      if (
+        (nextSection === Section.Act && role === Role.Player) ||
+        (nextSection === Section.PactT && role === Role.DM)
+      ) {
+        void (async function () {
+          await playDing();
+        })();
+      }
+    }
+
+    setSteps(merged);
   }, [updatedSteps]);
 
   // When steps change
