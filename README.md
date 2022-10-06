@@ -2,6 +2,8 @@
 
 ## Setup
 
+### Initial setup
+
 Create a project on Firebase with Firestore and Hosting.
 
 Rename `src/firebase.creds.json.temp` in `src/firebase.creds.json` and edit it with the credential from the Firebase project.
@@ -15,6 +17,8 @@ npm install -g firebase-tools
 firebase login
 ```
 
+### Run development version locally
+
 `npm run start` to run the app in the development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
@@ -24,13 +28,19 @@ To populate the database with random data:
 npx tsx scripts/populate.ts
 ```
 
-To build and deploy:
+For unit testing, run `npm run test`.
+
+### Run production build locally
 
 ```bash
-npm run build
-firebase deploy
+npm install -g serve
+npm run build && serve -s build
+```
+
+### Deploy to hosting service
+
+```bash
+npm run build && firebase deploy
 ```
 
 ## Unit testing
-
-`npm run test` to run the unit tests.
