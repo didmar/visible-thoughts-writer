@@ -16,16 +16,22 @@ import {
   setDoc,
   onSnapshot,
   where,
+  connectFirestoreEmulator,
 } from '@firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import * as firebaseConfig from './firebase.creds.json';
 import { withoutUndefinedValues } from './utils';
+import conf from './conf.json';
 
 const app = initializeApp(firebaseConfig);
 
 // const analytics = getAnalytics(app);
 
 export const db = getFirestore(app);
+if (conf.useEmulators) {
+  console.log('Connecting to firestore emulator');
+  connectFirestoreEmulator(db, 'localhost', 8080);
+}
 
 export const auth = getAuth(app);
 

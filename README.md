@@ -6,9 +6,11 @@
 
 Create a project on Firebase with Firestore and Hosting.
 
-Rename `src/firebase.creds.json.temp` in `src/firebase.creds.json` and edit it with the credential from the Firebase project.
+Rename `src/firebase.creds.json.temp` into `src/firebase.creds.json` and edit it with the credential from the Firebase project.
 
-Rename `src/conf.json.temp` in `src/conf.json` and edit it with the link to the help & feedback document.
+Rename `src/conf.json.temp` into `src/conf.json` and edit it with the link to the help & feedback document.
+
+Rename `extensions/firestore-send-email.env.template` into `extensions/firestore-send-email.env.template` and edit it to change `yourname` and `provider.com`.
 
 Connect to your Firebase project:
 
@@ -16,6 +18,17 @@ Connect to your Firebase project:
 npm install -g firebase-tools
 firebase login
 ```
+
+### Using emulators (optional)
+
+To make some local tests without interacting with the production environement,
+you can run emulators for all the Firebase services (except Hosting):
+
+```bash
+firebase emulators:start
+```
+
+Then see below to run the React app.
 
 ### Run development version locally
 
@@ -42,5 +55,3 @@ npm run build && serve -s build
 ```bash
 npm run build && firebase deploy
 ```
-
-## Unit testing

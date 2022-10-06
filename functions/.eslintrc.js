@@ -1,7 +1,7 @@
 module.exports = {
   root: true,
   env: {
-    es2021: true,
+    es6: true,
     node: true,
   },
   extends: [
@@ -15,10 +15,9 @@ module.exports = {
     // 'plugin:import/typescript',
     // 'google',
   ],
-  parser: '@typescript-eslint/parser', // Specifies the ESLint parser
+  parser: '@typescript-eslint/parser',
   parserOptions: {
     project: ['tsconfig.json', 'tsconfig.dev.json'],
-    ecmaVersion: 'latest',
     sourceType: 'module',
   },
   ignorePatterns: [
