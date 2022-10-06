@@ -18,9 +18,7 @@ function RunsPane(): JSX.Element {
   // Set up a listener
   useEffect(() => {
     console.log('RunsPane > useEffect [] ');
-    return () => {
-      onRunsCreated(setNewRuns);
-    };
+    onRunsCreated(setNewRuns);
   }, []);
 
   // When new runs are created, add them to the list of runs
