@@ -102,7 +102,13 @@ export async function createRun(title: string, dm: string): Promise<string> {
   const doc = await addDoc(runsCol, { title, dm, players: [], ltts: {} }).catch(
     handleFirebaseError()
   );
-  return doc.id;
+  const runId = doc.id;
+
+  // Create the first step as well
+  const firstStep = createNextStep(undefined);
+  await addStep(runId, firstStep);
+
+  return runId;
 }
 
 export function onRunsCreated(callback: (newRuns: Run[]) => void): void {
