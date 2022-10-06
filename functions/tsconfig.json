@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "module": "commonjs", // Specify module code generation
+    "moduleResolution": "node", // Resolve modules using Node.js style
+    "outDir": "lib",
+    "sourceMap": true, // Generate corresponding .map file
+    "declaration": true, // Generate corresponding .d.ts file
+    "strict": true, // Enable all strict type checking options
+    "target": "es2021", // Specify ECMAScript target version
+    "noImplicitReturns": true, // Enable error reporting for codepaths that do not explicitly return in a function.
+    "noUnusedLocals": true, // Report errors on unused locals
+    "esModuleInterop": false, // Disables namespace imports (import * as fs from "fs") and enables CJS/AMD/UMD style imports (import fs from "fs")
+    "forceConsistentCasingInFileNames": true, // Disallow inconsistently-cased references to the same file.
+    "noFallthroughCasesInSwitch": true, // Report errors for fallthrough cases in switch statement
+    "resolveJsonModule": true, // Include modules imported with .json extension
+    "isolatedModules": true, // Unconditionally emit imports for unresolved files
+    "noEmit": true, // Do not emit output (meaning do not compile code, only perform type checking)
+    "noUnusedParameters": true, // Report errors on unused parameters
+    "incremental": true // Enable incremental compilation by reading/writing information from prior compilations to a file on disk
+  },
+  "compileOnSave": true,
+  "include": ["src"]
+}
