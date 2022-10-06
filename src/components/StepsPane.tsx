@@ -43,6 +43,7 @@ import HelpAndFeedback from './HelpAndFeedback';
 import UserMenu from './UserMenu';
 import PageNotFound from './PageNotFound';
 import { useAuth } from './Auth';
+import { setWindowStatus, WindowStatus } from '../utils';
 
 // How many steps ago to give a hint of
 const X = 50;
@@ -216,26 +217,32 @@ function StepsPane(): JSX.Element {
 
   function renderComposer(): JSX.Element {
     if (role === undefined) {
+      setWindowStatus(WindowStatus.WAITING);
       return <>Loading...</>;
     }
     if (role !== Role.Player && role !== Role.DM) {
+      setWindowStatus(WindowStatus.WAITING);
       return <>Only designated players can participate</>;
     }
 
     const section = getNextSection();
     if (section === undefined) {
+      setWindowStatus(WindowStatus.WAITING);
       return <>Wait...</>; // Waiting for the next step to be created
     }
 
     // Is it our time to write?
     if (section === Section.Act) {
       if (role !== Role.Player) {
+        setWindowStatus(WindowStatus.WAITING);
         return <>Wait for the player to write their part...</>;
       }
     } else if (role !== Role.DM) {
+      setWindowStatus(WindowStatus.WAITING);
       return <>Wait for the DM to write their part...</>;
     }
 
+    setWindowStatus(WindowStatus.READY);
     return <Composer section={section} onSubmitted={onSubmitted} />;
   }
 
