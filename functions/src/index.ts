@@ -37,11 +37,12 @@ exports.notifyUpdateByEmail = firestore
     // Get the corresponding run document
     const runId = context.params.runId as string;
     logger.info('Retrieve runs doc with id ', runId);
-    const docRef = db.doc(`runs/${runId}`);
-    const run = await docRef.get();
+    const runDocRef = db.doc(`runs/${runId}`);
+    const run = await runDocRef.get();
     const runData = run?.data() as { players: string[]; dm: string };
-    logger.info('runData: ', runData);
+    logger.info('runData: ', JSON.stringify(runData));
 
+    // Get uids
     let uids = [];
     if (role === Role.Player) {
       logger.info('Getting players uids');
@@ -55,9 +56,36 @@ exports.notifyUpdateByEmail = firestore
       return null;
     }
 
+    // Check whether the user has already been notified or not
+    const n: number = parseInt(context.params.stepId as string);
+    const uidsToNotify = [];
+    for (const uid of uids) {
+      const path = `users/${uid}/runs/${runId}`;
+      logger.info(`Getting doc ${path}`);
+      const notifStatusDocRef = db.doc(path);
+      const notifStatus = await notifStatusDocRef.get();
+      if (notifStatus.exists) {
+        const notifStatusData = notifStatus?.data() as {
+          n: number;
+          notified: boolean;
+        };
+        logger.info(`notifStatusData: ${JSON.stringify(notifStatusData)}`);
+        // If the last step they saw is before the current step, they need to be notified,
+        // or if they have not been notified yet for the current step, they need to be notified
+        if (notifStatusData.n < n || !notifStatusData.notified) {
+          uidsToNotify.push(uid);
+        }
+      } else {
+        logger.info(`Document ${path} does not exist`);
+      }
+    }
+    logger.info('uidsToNotify: ', JSON.stringify(uidsToNotify));
+
+    // TODO: check that the user opted in for email notifications
+
     // Collect the email addresses for those uids
     const emails = await Promise.all(
-      uids.map(async (uid) => await admin.auth().getUser(uid))
+      uidsToNotify.map(async (uid) => await admin.auth().getUser(uid))
     ).then((userRecords) =>
       userRecords.flatMap((userRecord) =>
         userRecord.email !== undefined ? [userRecord.email] : []

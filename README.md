@@ -4,13 +4,15 @@
 
 ### Initial setup
 
-Create a project on Firebase with Firestore and Hosting.
+Create a project on [Firebase](https://console.firebase.google.com) and enable Authentication, Firestore, Hosting and Functions.
+
+For the application to send emails, [create a free account on SendGrid](https://signup.sendgrid.com/) and then [create an API key for SMTP relay](https://app.sendgrid.com/guide/integrate/langs/smtp) (or use another SMTP relay service).
 
 Rename `src/firebase.creds.json.temp` into `src/firebase.creds.json` and edit it with the credential from the Firebase project.
 
 Rename `src/conf.json.temp` into `src/conf.json` and edit it with the link to the help & feedback document.
 
-Rename `extensions/firestore-send-email.env.template` into `extensions/firestore-send-email.env.template` and edit it to change `yourname` and `provider.com`.
+Rename `extensions/firestore-send-email.env.template` into `extensions/firestore-send-email.env.template` and edit it to change `<your_name>`, `<your_email_address>` and `<your_api_key>` with your SendGrid API key
 
 Connect to your Firebase project:
 
