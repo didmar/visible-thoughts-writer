@@ -66,22 +66,35 @@ exports.notifyUpdateByEmail = firestore
       const notifStatus = await notifStatusDocRef.get();
       if (notifStatus.exists) {
         const notifStatusData = notifStatus?.data() as {
-          n: number;
-          notified: boolean;
+          n: number | undefined;
+          notified: boolean | undefined;
         };
         logger.info(`notifStatusData: ${JSON.stringify(notifStatusData)}`);
         // If the last step they saw is before the current step, they need to be notified,
         // or if they have not been notified yet for the current step, they need to be notified
-        if (notifStatusData.n < n || !notifStatusData.notified) {
-          uidsToNotify.push(uid);
+        if (
+          (notifStatusData.n !== undefined && notifStatusData.n < n) ||
+          (notifStatusData.notified !== undefined && !notifStatusData.notified)
+        ) {
+          const userDocRef = db.doc(`users/${uid}`);
+          const user = await userDocRef.get();
+          if (user.exists) {
+            const userData = user?.data() as {
+              emailNotif: boolean | undefined;
+            };
+            // Did the user ask for email notifications?
+            if (userData.emailNotif === true) {
+              uidsToNotify.push(uid);
+            }
+          } else {
+            logger.error(`User profile document not found for ${uid}!`);
+          }
         }
       } else {
-        logger.info(`Document ${path} does not exist`);
+        logger.error(`Document ${path} does not exist`);
       }
     }
     logger.info('uidsToNotify: ', JSON.stringify(uidsToNotify));
-
-    // TODO: check that the user opted in for email notifications
 
     // Collect the email addresses for those uids
     const emails = await Promise.all(
