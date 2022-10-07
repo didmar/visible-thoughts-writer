@@ -18,7 +18,7 @@ import {
   where,
   connectFirestoreEmulator,
 } from '@firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import * as firebaseConfig from './firebase.creds.json';
 import { withoutUndefinedValues } from './utils';
 import conf from './conf.json';
@@ -29,10 +29,14 @@ const app = initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
 
+export const auth = getAuth(app);
+
 // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
 if (conf.useEmulators) {
   console.log('Connecting to firestore emulator');
   connectFirestoreEmulator(db, 'localhost', 8080);
+  console.log('Connecting to auth emulator');
+  connectAuthEmulator(auth, 'http://localhost:9099');
 }
 
 export const auth = getAuth(app);
