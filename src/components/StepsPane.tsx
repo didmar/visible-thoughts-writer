@@ -37,6 +37,7 @@ import {
   onStepsChanged,
   mergeStepsWithUpdates,
   UpdatedSteps,
+  updateUserRunState,
 } from '../firebase-app';
 import StepElem, { renderLongTermThoughts } from './StepElem';
 import Composer from './Composer';
@@ -110,6 +111,10 @@ function StepsPane(): JSX.Element {
   useEffect(() => {
     console.log('StepsPane > useEffect [updatedSteps]: ', updatedSteps);
 
+    if (runId === undefined) {
+      throw new Error('StepsPane with no runId!');
+    }
+
     if (updatedSteps === undefined) return;
 
     // When using React.StrictMode, will be called with 3 steps
@@ -123,15 +128,19 @@ function StepsPane(): JSX.Element {
     );
 
     // Should will ring the notification bell?
-    if (lastStepModified) {
+    if (lastStepModified && currentUser !== undefined && currentUser !== null) {
       const lastStep = merged[merged.length - 1];
       const nextSection = getNextSectionForStep(lastStep);
       if (
-        (nextSection === Section.Act && role === Role.Player) ||
-        (nextSection === Section.PactT && role === Role.DM)
+        (nextSection === Section.Act &&
+          (role === Role.Player || role === Role.Both)) ||
+        (nextSection === Section.PactT &&
+          (role === Role.DM || role === Role.Both))
       ) {
         void (async function () {
           await playDing();
+          // Indicates that the user has been notified of their cue on this step
+          await updateUserRunState(currentUser.uid(), runId, role, lastStep.n);
         })();
       }
     }

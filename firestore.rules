@@ -45,6 +45,22 @@ service cloud.firestore {
                     && request.resource.data.id == request.auth.uid;
       // Nobody can delete a user profile
       allow delete: if false;
+
+      match /runs/{runId} {
+        function isRunDMOrPlayer() {
+          let data = get(/databases/$(database)/documents/runs/$(runId)).data;
+          return request.auth.uid == data.dm || request.auth.uid in data.players
+        }
+
+        // Users can read/write their own run states,
+        // provided that they are either DM or player on that run
+        allow create, read, write: if request.auth != null
+                                    && request.auth.uid == userId
+                                    && isRunDMOrPlayer();
+        // Users can delete their own run states
+        allow delete: if request.auth != null
+                        && request.auth.uid == userId;
+      }
     }
   }
 }

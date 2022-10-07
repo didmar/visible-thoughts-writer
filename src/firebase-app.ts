@@ -39,8 +39,6 @@ if (conf.useEmulators) {
   connectAuthEmulator(auth, 'http://localhost:9099');
 }
 
-export const auth = getAuth(app);
-
 const handleFirebaseError =
   (contextMsg?: string) =>
   (error: FirebaseError): never => {
@@ -120,6 +118,9 @@ export async function createRun(title: string, dm: string): Promise<string> {
   const firstStep = createNextStep(undefined);
   await addStep(runId, firstStep);
 
+  // Create a UserRunState for this run in the DM's profile
+  await createUserRunState(dm, runId, Role.DM);
+
   return runId;
 }
 
@@ -148,6 +149,7 @@ export function onRunsCreated(callback: (newRuns: Run[]) => void): void {
 export enum Role {
   Player = 'player',
   DM = 'dm',
+  Both = 'both',
 }
 
 export async function getUserRoleInRun(
@@ -156,8 +158,11 @@ export async function getUserRoleInRun(
 ): Promise<Role | null> {
   const run = await getRun(runId);
   if (run === undefined) return null;
-  if (run.dm === uid) return Role.DM;
-  if (run.players.includes(uid)) return Role.Player;
+  const isDM = run.dm === uid;
+  const isPlayer = run.players.includes(uid);
+  if (isDM && isPlayer) return Role.Both;
+  if (isDM) return Role.DM;
+  if (isPlayer) return Role.Player;
   return null;
 }
 
@@ -512,4 +517,45 @@ export async function getOrCreateUserProfile(
   } else {
     return profile;
   }
+}
+
+// Document type for the runs sub-collection of the users collection.
+// Keeps track of what was already notified to the user, and what their role is.
+export class UserRunState {
+  role: Role; // whether the user is a player of the run, a DM, or both
+  lastStepNotified: number; // last step for which the user has been notified that it was their turn
+  // (when ready for the action section for the player, or the post-action thoughts section for the DM).
+
+  constructor(role: Role, lastStepNotified?: number) {
+    this.role = role;
+    this.lastStepNotified = lastStepNotified ?? 0;
+  }
+
+  static fromDocData(data?: DocumentData): UserRunState | undefined {
+    if (data === undefined) return undefined;
+    return new UserRunState(data.role, data.lastStepNotified);
+  }
+}
+
+export async function createUserRunState(
+  userId: string,
+  runId: string,
+  role: Role
+): Promise<void> {
+  const status = new UserRunState(role);
+  await setDoc(
+    doc(db, 'users', userId, 'runs', runId),
+    Object.assign({}, status)
+  ).catch(handleFirebaseError());
+}
+
+export async function updateUserRunState(
+  userId: string,
+  runId: string,
+  role: Role,
+  lastStepNotified: number
+): Promise<void> {
+  const docRef = doc(db, 'users', userId, 'runs', runId);
+  const update: Partial<UserRunState> = { role, lastStepNotified };
+  await setDoc(docRef, update, { merge: true }).catch(handleFirebaseError());
 }
