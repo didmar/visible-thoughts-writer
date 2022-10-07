@@ -28,6 +28,8 @@ const app = initializeApp(firebaseConfig);
 // const analytics = getAnalytics(app);
 
 export const db = getFirestore(app);
+
+// eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
 if (conf.useEmulators) {
   console.log('Connecting to firestore emulator');
   connectFirestoreEmulator(db, 'localhost', 8080);
