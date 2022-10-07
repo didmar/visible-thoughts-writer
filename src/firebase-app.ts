@@ -466,15 +466,17 @@ export async function updateRunLongTermThoughtsForStep(
 export class UserProfile {
   id: string; // corresponds to the uid for firebase authentication
   canDM: boolean; // whether the user can be a DM for a run, or not
+  emailNotif: boolean; // whether the user wants to receive email notifications, or not
 
-  constructor(id: string, canDM?: boolean) {
+  constructor(id: string, canDM?: boolean, emailNotif?: boolean) {
     this.id = id;
     this.canDM = canDM ?? true;
+    this.emailNotif = emailNotif ?? false;
   }
 
   static fromDocData(data?: DocumentData): UserProfile | undefined {
     if (data === undefined) return undefined;
-    return new UserProfile(data.id, data.canDM);
+    return new UserProfile(data.id, data.canDM, data.emailNotif);
   }
 }
 
