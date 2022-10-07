@@ -23,14 +23,20 @@ firebase login
 
 ### Using emulators (optional)
 
-To make some local tests without interacting with the production environement,
-you can run emulators for all the Firebase services (except Hosting):
+To make some local tests without interacting with the production environment,
+you can run emulators for all the Firebase services (except Hosting).
+
+Optional: to have Cloud functions working, you need to set up the `GOOGLE_APPLICATION_CREDENTIALS` environment variable, see [here](https://firebase.google.com/docs/functions/local-emulator#set_up_admin_credentials_optional).
+
+Run the following command to start the emulators:
 
 ```bash
 firebase emulators:start
 ```
 
-Then see below to run the React app.
+and edit `src/conf.json` to set `useEmulators` to `true`, for the React app to use them.
+
+Then, see below to run the React app either in development or production mode.
 
 ### Run development version locally
 
