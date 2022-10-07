@@ -3,6 +3,10 @@ src/conf.json
 src/firebase.creds.json
 .firebase
 .firebaserc
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+extensions/firestore-send-email.env
 
 # dependencies
 /node_modules

@@ -4,11 +4,15 @@
 
 ### Initial setup
 
-Create a project on Firebase with Firestore and Hosting.
+Create a project on [Firebase](https://console.firebase.google.com) and enable Authentication, Firestore, Hosting and Functions.
 
-Rename `src/firebase.creds.json.temp` in `src/firebase.creds.json` and edit it with the credential from the Firebase project.
+For the application to send emails, [create a free account on SendGrid](https://signup.sendgrid.com/) and then [create an API key for SMTP relay](https://app.sendgrid.com/guide/integrate/langs/smtp) (or use another SMTP relay service).
 
-Rename `src/conf.json.temp` in `src/conf.json` and edit it with the link to the help & feedback document.
+Rename `src/firebase.creds.json.temp` into `src/firebase.creds.json` and edit it with the credential from the Firebase project.
+
+Rename `src/conf.json.temp` into `src/conf.json` and edit it with the link to the help & feedback document.
+
+Rename `extensions/firestore-send-email.env.template` into `extensions/firestore-send-email.env.template` and edit it to change `<your_name>`, `<your_email_address>` and `<your_api_key>` with your SendGrid API key
 
 Connect to your Firebase project:
 
@@ -16,6 +20,23 @@ Connect to your Firebase project:
 npm install -g firebase-tools
 firebase login
 ```
+
+### Using emulators (optional)
+
+To make some local tests without interacting with the production environment,
+you can run emulators for all the Firebase services (except Hosting).
+
+Optional: to have Cloud functions working, you need to set up the `GOOGLE_APPLICATION_CREDENTIALS` environment variable, see [here](https://firebase.google.com/docs/functions/local-emulator#set_up_admin_credentials_optional).
+
+Run the following command to start the emulators:
+
+```bash
+firebase emulators:start
+```
+
+and edit `src/conf.json` to set `useEmulators` to `true`, for the React app to use them.
+
+Then, see below to run the React app either in development or production mode.
 
 ### Run development version locally
 
@@ -42,5 +63,3 @@ npm run build && serve -s build
 ```bash
 npm run build && firebase deploy
 ```
-
-## Unit testing
