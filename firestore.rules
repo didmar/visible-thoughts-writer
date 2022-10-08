@@ -35,6 +35,11 @@ service cloud.firestore {
         // Nobody can delete a step
         allow delete: if false;
       }
+
+      match /invites/{inviteId} {
+        // Only the run's DM can interact with invitations
+        allow read, write: if request.auth != null && isRunDM();
+      }
     }
 
     match /users/{userId} {

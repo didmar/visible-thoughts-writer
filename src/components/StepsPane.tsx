@@ -46,6 +46,7 @@ import UserMenu from './UserMenu';
 import PageNotFound from './PageNotFound';
 import { useAuth } from './Auth';
 import { playDing, setWindowStatus, WindowStatus } from '../utils';
+import RunSettingsModal from './RunSettingsModal';
 
 // How many steps ago to give a hint of
 const X = 50;
@@ -317,6 +318,9 @@ function StepsPane(): JSX.Element {
           </Typography>
 
           <HelpAndFeedback />
+          {(role === Role.DM || role === Role.Both) && (
+            <RunSettingsModal run={run} />
+          )}
           <UserMenu />
 
           {/*

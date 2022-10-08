@@ -18,6 +18,11 @@ import {
   where,
   connectFirestoreEmulator,
 } from '@firebase/firestore';
+import {
+  getFunctions,
+  connectFunctionsEmulator,
+  httpsCallable,
+} from 'firebase/functions';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import * as firebaseConfig from './firebase.creds.json';
 import { withoutUndefinedValues } from './utils';
@@ -31,12 +36,16 @@ export const db = getFirestore(app);
 
 export const auth = getAuth(app);
 
+const functions = getFunctions(app);
+
 // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
 if (conf.useEmulators) {
   console.log('Connecting to firestore emulator');
   connectFirestoreEmulator(db, 'localhost', 8080);
   console.log('Connecting to auth emulator');
   connectAuthEmulator(auth, 'http://localhost:9099');
+  console.log('Connecting to functions emulator');
+  connectFunctionsEmulator(functions, 'localhost', 5001);
 }
 
 const handleFirebaseError =
@@ -470,6 +479,22 @@ export async function updateRunLongTermThoughtsForStep(
   await updateDoc(docRef, payload).catch(handleFirebaseError());
 }
 
+// Invites collection
+
+export interface Invite {
+  email: string;
+}
+
+export async function createInvite(
+  runId: string,
+  email: string
+): Promise<string> {
+  const colRef = collection(db, 'runs', runId, 'invites');
+  const invite: Invite = { email };
+  const doc = await addDoc(colRef, invite).catch(handleFirebaseError());
+  return doc.id;
+}
+
 // Users collection
 
 export class UserProfile {
@@ -559,3 +584,9 @@ export async function updateUserRunState(
   const update: Partial<UserRunState> = { role, lastStepNotified };
   await setDoc(docRef, update, { merge: true }).catch(handleFirebaseError());
 }
+
+// ===============
+// Cloud functions
+// ===============
+
+export const confirmInvite = httpsCallable(functions, 'confirmInvite');

@@ -1,8 +1,10 @@
-import { firestore, logger, config } from 'firebase-functions';
+import { firestore, logger, config, https } from 'firebase-functions';
 
 import admin = require('firebase-admin');
 admin.initializeApp(config().firebase);
 const db = admin.firestore();
+
+const baseURL = 'https://visible-thoughts-writer.web.app';
 
 enum Role {
   Player = 'player',
@@ -145,7 +147,7 @@ exports.notifyUpdateByEmail = firestore
             to: email,
             message: {
               subject: '[Visible Thoughts Writer] Ready to continue your run!',
-              html: `<a href="https://visible-thoughts-writer.web.app/runs/${runId}">Click here</a> to continue the adventure, ${roleToNotify}!`,
+              html: `<a href="${baseURL}/runs/${runId}">Click here</a> to continue the adventure, ${roleToNotify}!`,
             },
           })
       )
@@ -153,3 +155,104 @@ exports.notifyUpdateByEmail = firestore
 
     return null;
   });
+
+// When an invitation is created by a DM, send an email to the invited player
+// with a link to an invitation page
+exports.processInvite = firestore
+  .document('runs/{runId}/invites/{inviteId}')
+  .onCreate(async (snapshot, context) => {
+    const inviteData: FirebaseFirestore.DocumentData | undefined =
+      snapshot.data();
+    if (inviteData === undefined) return null;
+
+    // Get the corresponding run document
+    const runId = context.params.runId as string;
+    logger.info('Retrieve runs doc with id ', runId);
+    const runDocRef = db.doc(`runs/${runId}`);
+    const run = await runDocRef.get();
+    if (!run.exists) {
+      logger.error(`Run ${runId} doesn't exist!`);
+      return null;
+    }
+    const { title, dm } = run?.data() as { title: string; dm: string };
+    logger.info('title: ', title);
+    logger.info('dm: ', dm);
+
+    // Send the invitation via email
+    const { email } = inviteData as { email: string };
+    const inviteId = snapshot.id;
+    const token = runId + '-' + inviteId;
+    logger.info('token: ', token);
+    await db.collection('mail').add({
+      to: email,
+      message: {
+        subject: '[Visible Thoughts Writer] Invitation to play!',
+        html:
+          `<p>You have been invited to play on a run, <a href="${baseURL}/runs/${runId}">"${title}"</a>.</p></br>` +
+          `<p>Ready? Click <a href="${baseURL}/invite?token=${token}">HERE</a> to accept the invitation!</p>`,
+      },
+    });
+
+    return null;
+  });
+
+exports.confirmInvite = https.onCall(async (data, context) => {
+  logger.info('START !!!');
+
+  if (context === undefined) {
+    throw new https.HttpsError(
+      'failed-precondition',
+      'The function must be called with a context.'
+    );
+  }
+  if (context.auth === undefined) {
+    throw new https.HttpsError(
+      'failed-precondition',
+      'The function must be called while authenticated.'
+    );
+  }
+
+  const uid = context.auth.uid; // Authenticated user that accepted the invite
+  console.log('uid: ', uid);
+
+  const token: string | undefined = data; // Message text should contain the token for the invite
+  if (token === undefined) {
+    throw new https.HttpsError(
+      'failed-precondition',
+      'Token must be provided!'
+    );
+  }
+  logger.info('token: ', token);
+  const [runId, inviteId] = token.split('-');
+  if (inviteId === undefined) {
+    throw new https.HttpsError('failed-precondition', 'Invalid token!');
+  }
+  logger.info(`Got invite ${inviteId} for run ${runId}`);
+
+  // Check that the token is valid
+  const inviteDocRef = db.doc(`runs/${runId}/invites/${inviteId}`);
+  const inviteDoc = await inviteDocRef.get();
+  if (!inviteDoc.exists) {
+    throw new https.HttpsError(
+      'not-found',
+      `Invite does not exist or was already used! Ask the DM to send you a new one.`
+    );
+  }
+
+  const batch = db.batch();
+  // Add the player to the list of players for the run
+  batch.update(db.doc(`runs/${runId}`), {
+    players: admin.firestore.FieldValue.arrayUnion(uid),
+  });
+  // Initialize the user run state
+  batch.create(db.doc(`users/${uid}/runs/${runId}`), {
+    lastStepNotified: 0,
+    role: Role.Player,
+  });
+  // Delete the invite
+  batch.delete(inviteDocRef);
+  const results = await batch.commit();
+  logger.info('results: ', JSON.stringify(results));
+
+  return null;
+});
