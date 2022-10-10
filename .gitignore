@@ -7,6 +7,7 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 extensions/firestore-send-email.env
+/export
 
 # dependencies
 /node_modules

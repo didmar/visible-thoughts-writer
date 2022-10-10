@@ -1,3 +1,4 @@
+import { Menu } from '@mui/icons-material';
 import {
   AppBar,
   Box,
@@ -8,45 +9,41 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
-import {
-  Menu,
-  // Settings,
-  // AccountCircle,
-} from '@mui/icons-material';
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
 import InfiniteScroll from 'react-infinite-scroll-component';
+import { Link, useParams } from 'react-router-dom';
 import {
-  Step,
-  getStepN,
-  Thought,
-  Bullet,
-  getNextSectionForStep,
-  Section,
   addStep,
-  TextYBR,
-  SectionContent,
-  updateStep,
-  createNextStep,
-  getRun,
-  updateRunLongTermThoughtsForStep,
+  Bullet,
   collectSectionLtts,
-  Run,
+  createNextStep,
+  getNextSectionForStep,
+  getRun,
+  getStepN,
   getUserRoleInRun,
-  Role,
-  onStepsChanged,
   mergeStepsWithUpdates,
+  onStepsChanged,
+  Role,
+  Run,
+  Section,
+  SectionContent,
+  Step,
+  TextYBR,
+  Thought,
   UpdatedSteps,
+  updateRunLongTermThoughtsForStep,
+  updateStep,
   updateUserRunState,
 } from '../firebase-app';
-import StepElem, { renderLongTermThoughts } from './StepElem';
-import Composer from './Composer';
-import HelpAndFeedback from './HelpAndFeedback';
-import UserMenu from './UserMenu';
-import PageNotFound from './PageNotFound';
-import { useAuth } from './Auth';
 import { playDing, setWindowStatus, WindowStatus } from '../utils';
+import { useAuth } from './Auth';
+import Composer from './composer/Composer';
+import { ComposerMode } from './composer/types';
+import HelpAndFeedback from './HelpAndFeedback';
+import PageNotFound from './PageNotFound';
 import RunSettingsModal from './RunSettingsModal';
+import StepElem, { renderLongTermThoughts } from './StepElem';
+import UserMenu from './UserMenu';
 
 // How many steps ago to give a hint of
 const X = 50;
@@ -191,7 +188,11 @@ function StepsPane(): JSX.Element {
     })();
   }, [steps]);
 
-  const onSubmitted = (section: Section, content: SectionContent): void => {
+  const onSubmitted = (
+    n: number,
+    section: Section,
+    content: SectionContent
+  ): void => {
     if (runId === undefined) {
       throw new Error('onSubmitted called before runId was initialized!');
     }
@@ -199,32 +200,50 @@ function StepsPane(): JSX.Element {
       throw new Error('onSubmitted called before steps were initialized!');
     }
 
-    const lastStep = steps[steps.length - 1];
+    // Get the step that we modified
+    const step = steps.find((s) => s.n === n);
+    if (step === undefined) {
+      throw new Error(
+        `Got an update for step ${n}, but we have not loaded it yet!`
+      );
+    }
 
     let update;
     let lttsUpdate: Thought[] = [];
     switch (section) {
-      case Section.InitT:
-        update = { initT: content as Bullet[] | null };
-        lttsUpdate = collectSectionLtts(content as Bullet[] | null);
+      case Section.InitT: {
+        const initT = content !== null ? (content.value as Bullet[]) : null;
+        update = { initT };
+        lttsUpdate = collectSectionLtts(initT);
         break;
-      case Section.Ppt:
-        update = { ppt: content as string | null };
+      }
+      case Section.Ppt: {
+        const ppt = content !== null ? (content.value as string) : null;
+        update = { ppt };
         break;
-      case Section.PpptT:
-        update = { ppptT: content as Bullet[] | null };
-        lttsUpdate = collectSectionLtts(content as Bullet[] | null);
+      }
+      case Section.PpptT: {
+        const ppptT = content !== null ? (content.value as Bullet[]) : null;
+        update = { ppptT };
+        lttsUpdate = collectSectionLtts(ppptT);
         break;
-      case Section.Act:
-        update = { act: content as TextYBR | null };
+      }
+      case Section.Act: {
+        const act = content !== null ? (content.value as TextYBR) : null;
+        update = { act };
         break;
-      case Section.PactT:
-        update = { pactT: content as Bullet[] | null };
-        lttsUpdate = collectSectionLtts(content as Bullet[] | null);
+      }
+      case Section.PactT: {
+        const pactT = content !== null ? (content.value as Bullet[]) : null;
+        update = { pactT };
+        lttsUpdate = collectSectionLtts(pactT);
         break;
-      case Section.Out:
-        update = { out: content as TextYBR | null };
+      }
+      case Section.Out: {
+        const out = content !== null ? (content.value as TextYBR) : null;
+        update = { out };
         break;
+      }
       default:
         throw new Error(`Unknown section: ${Section[section]}`);
     }
@@ -232,9 +251,9 @@ function StepsPane(): JSX.Element {
     // Update in Firebase (will trigger onStepsChanged
     // and update the UI indirectly)
     void (async () => {
-      await updateStep(runId, lastStep.n, update);
+      await updateStep(runId, n, update);
       if (lttsUpdate.length !== 0) {
-        await updateRunLongTermThoughtsForStep(runId, lastStep.n);
+        await updateRunLongTermThoughtsForStep(runId, n);
       }
     })();
   };
@@ -246,7 +265,7 @@ function StepsPane(): JSX.Element {
   }
 
   function renderComposer(): JSX.Element {
-    if (role === undefined) {
+    if (role === undefined || steps === undefined || steps.length === 0) {
       setWindowStatus(WindowStatus.WAITING);
       return <>Loading...</>;
     }
@@ -273,7 +292,14 @@ function StepsPane(): JSX.Element {
     }
 
     setWindowStatus(WindowStatus.READY);
-    return <Composer section={section} onSubmitted={onSubmitted} />;
+    return (
+      <Composer
+        initMode={ComposerMode.CREATE}
+        n={steps[steps.length - 1].n}
+        section={section}
+        onSubmitted={onSubmitted}
+      />
+    );
   }
 
   async function loadMoreSteps(): Promise<void> {
@@ -346,7 +372,7 @@ function StepsPane(): JSX.Element {
                 p: 2,
                 display: 'flex',
                 flexDirection: 'column-reverse',
-                height: '70vh',
+                height: '60vh',
                 overflow: 'auto',
               }}
               id="scrollableDiv"
@@ -376,6 +402,7 @@ function StepsPane(): JSX.Element {
                       key={step.n}
                       step={step}
                       isDM={role === Role.DM}
+                      onSubmitted={onSubmitted}
                     />
                   ))}
               </InfiniteScroll>
@@ -418,7 +445,7 @@ function StepsPane(): JSX.Element {
                 p: 2,
                 display: 'flex',
                 flexDirection: 'column',
-                height: '15vh',
+                height: '25vh',
                 overflow: 'auto',
               }}
             >

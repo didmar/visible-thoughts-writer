@@ -47,3 +47,28 @@ export async function playDing(): Promise<void> {
     (e) => console.log(e) // will err if user has blocked audio autoplay
   );
 }
+
+export function arraysContainsArray<T>(arrs: T[][], arr: T[]): boolean {
+  return (
+    arrs.find(
+      (elem: T[]) =>
+        elem.length === arr.length &&
+        elem.every((value, index) => value === arr[index])
+    ) !== undefined
+  );
+}
+
+export function* intersperse<T, U>(
+  a: T[],
+  delim: U
+): Generator<T | U, void, unknown> {
+  let first = true;
+  for (const x of a) {
+    if (!first) yield delim;
+    first = false;
+    yield x;
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export function noop(): void {}
