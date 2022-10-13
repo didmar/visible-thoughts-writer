@@ -39,7 +39,7 @@ export const auth = getAuth(app);
 const functions = getFunctions(app);
 
 // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-if (conf.useEmulators) {
+if (conf?.useEmulators) {
   console.log('Connecting to firestore emulator');
   connectFirestoreEmulator(db, 'localhost', 8080);
   console.log('Connecting to auth emulator');
@@ -208,7 +208,23 @@ export enum Section {
   Out,
 }
 
-export type SectionContent = Bullet[] | TextYBR | string | null;
+export function isThoughtSection(section: Section): boolean {
+  return (
+    section === Section.InitT ||
+    section === Section.PpptT ||
+    section === Section.PactT
+  );
+}
+
+export function isYBRSection(section: Section): boolean {
+  return section === Section.Act || section === Section.Out;
+}
+
+export type SectionContent =
+  | { kind: 'bullets'; value: Bullet[] }
+  | { kind: 'ybrtext'; value: TextYBR }
+  | { kind: 'text'; value: string }
+  | null;
 
 export function getNextSectionForStep(step?: Step): Section | undefined {
   if (step === undefined) return undefined; // no step yet, must create
