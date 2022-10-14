@@ -69,7 +69,9 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               )}
               section={Section.InitT}
               n={step.n}
-              editable={isDM && step.initT !== null}
+              editable={
+                onSubmitted !== undefined && isDM && step.initT !== null
+              }
               onSubmitted={onSubmitted ?? noop}
             />
           </Item>
@@ -83,7 +85,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               )}
               section={Section.Ppt}
               n={step.n}
-              editable={isDM && step.ppt !== null}
+              editable={onSubmitted !== undefined && isDM && step.ppt !== null}
               onSubmitted={onSubmitted ?? noop}
             />
           </Item>
@@ -99,7 +101,9 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               )}
               section={Section.PpptT}
               n={step.n}
-              editable={isDM && step.ppptT !== null}
+              editable={
+                onSubmitted !== undefined && isDM && step.ppptT !== null
+              }
               onSubmitted={onSubmitted ?? noop}
             />
           </Item>
@@ -127,7 +131,9 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               )}
               section={Section.PactT}
               n={step.n}
-              editable={isDM && step.pactT !== null}
+              editable={
+                onSubmitted !== undefined && isDM && step.pactT !== null
+              }
               onSubmitted={onSubmitted ?? noop}
             />
           </Item>
@@ -141,7 +147,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               )}
               section={Section.Out}
               n={step.n}
-              editable={isDM && step.out !== null}
+              editable={onSubmitted !== undefined && isDM && step.out !== null}
               onSubmitted={onSubmitted ?? noop}
             />
           </Item>
