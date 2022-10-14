@@ -51,6 +51,9 @@ const X = 50;
 function StepsPane(): JSX.Element {
   const { runId } = useParams<string>();
 
+  // State for the initial value of the run.
+  // Will not be updated after the initial load, but we will update
+  // the ltts via a separate ltts state.
   const [run, setRun] = useState<Run | null | undefined>(undefined);
 
   const [steps, setSteps] = useState<Step[] | undefined>(undefined);
@@ -80,7 +83,10 @@ function StepsPane(): JSX.Element {
         console.log('Run not found');
         setRun(null);
       } else {
+        console.log('*** Init run, title and ltts');
         setRun(run);
+        setTitle(run.title);
+        setLtts(run.sortedLtts());
       }
 
       // Create listener for new steps and updates
@@ -176,11 +182,12 @@ function StepsPane(): JSX.Element {
           }
         }
 
-        // Init long term thoughts and run title
-        const run = await getRun(runId);
-        if (run !== undefined) {
-          setTitle(run.title);
-          setLtts(run.lttsToArray());
+        // FIXME: this is not efficient, we should only get it once,
+        // and then update the ltts without a round-trip to Firestore.
+        const updatedRun = await getRun(runId);
+        if (updatedRun !== undefined) {
+          setTitle(updatedRun.title);
+          setLtts(updatedRun.sortedLtts());
         } else {
           throw new Error(`Run ${runId} not found!`);
         }
@@ -214,7 +221,9 @@ function StepsPane(): JSX.Element {
       case Section.InitT: {
         const initT = content !== null ? (content.value as Bullet[]) : null;
         update = { initT };
-        lttsUpdate = collectSectionLtts(initT);
+        lttsUpdate = [initT, step.ppptT ?? null, step.pactT ?? null].flatMap(
+          collectSectionLtts
+        );
         break;
       }
       case Section.Ppt: {
@@ -225,7 +234,9 @@ function StepsPane(): JSX.Element {
       case Section.PpptT: {
         const ppptT = content !== null ? (content.value as Bullet[]) : null;
         update = { ppptT };
-        lttsUpdate = collectSectionLtts(ppptT);
+        lttsUpdate = [step.initT ?? null, ppptT, step.pactT ?? null].flatMap(
+          collectSectionLtts
+        );
         break;
       }
       case Section.Act: {
@@ -236,7 +247,9 @@ function StepsPane(): JSX.Element {
       case Section.PactT: {
         const pactT = content !== null ? (content.value as Bullet[]) : null;
         update = { pactT };
-        lttsUpdate = collectSectionLtts(pactT);
+        lttsUpdate = [step.initT ?? null, step.ppptT ?? null, pactT].flatMap(
+          collectSectionLtts
+        );
         break;
       }
       case Section.Out: {
@@ -248,13 +261,17 @@ function StepsPane(): JSX.Element {
         throw new Error(`Unknown section: ${Section[section]}`);
     }
 
-    // Update in Firebase (will trigger onStepsChanged
-    // and update the UI indirectly)
+    // Update in Firestore, that will trigger onStepsChanged
+    // and update the UI indirectly
     void (async () => {
-      await updateStep(runId, n, update);
+      // Update ltts BEFORE updating the step, because the step update
+      // will trigger a call to onStepsChanged, which will refetch
+      // the ltts from the run document and update the UI.
       if (lttsUpdate.length !== 0) {
-        await updateRunLongTermThoughtsForStep(runId, n);
+        await updateRunLongTermThoughtsForStep(runId, n, lttsUpdate);
       }
+
+      await updateStep(runId, n, update);
     })();
   };
 

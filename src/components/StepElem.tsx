@@ -25,13 +25,13 @@ interface StepElemProps {
 }
 
 export function renderLongTermThoughts(ltts: Thought[]): JSX.Element {
-  const b = ltts.map((thought, index) => (
-    <li key={index}>{renderThought(thought, 1)}</li>
+  const lis = ltts.map((thought, index) => (
+    <li key={index}>{renderThought(thought)}</li>
   ));
-  return <ul>{b}</ul>;
+  return <ul>{lis}</ul>;
 }
 
-function renderThought(thought: Thought, index: number): JSX.Element {
+function renderThought(thought: Thought): JSX.Element {
   const leaf: ThoughtText = {
     type: 'thought',
     thoughtType: thought.type,
@@ -40,7 +40,6 @@ function renderThought(thought: Thought, index: number): JSX.Element {
   };
   return (
     <RenderedLeaf
-      key={index}
       leaf={leaf}
       text={leaf}
       attributes={{ 'data-slate-leaf': true }}

@@ -81,18 +81,14 @@ export class Run {
     this.players = players;
   }
 
-  lttsToArray(): Thought[] {
+  sortedLtts(): Thought[] {
     if (this.ltts === undefined) return [];
 
-    const thoughts: Thought[] = [];
-    const ns: number[] = Object.keys(this.ltts)
-      .map((id) => parseInt(id))
-      .sort((a, b) => (a < b ? a : b));
-    for (const n of ns) {
-      thoughts.push(...this.ltts[n.toString()]);
-    }
-
-    return thoughts;
+    const arr: Array<[number, Thought[]]> = Object.entries(this.ltts).map(
+      ([n, thoughts]) => [parseInt(n), thoughts]
+    );
+    arr.sort(([na], [nb]) => na - nb);
+    return arr.flatMap(([, thoughts]) => thoughts);
   }
 }
 
@@ -400,8 +396,8 @@ export async function onStepsChanged(
       const added: Step[] = [];
       const modified: Step[] = [];
       snapshot.docChanges().forEach((change) => {
-        console.log('change.type: ', change);
-        console.log('change.doc.data(): ', change.doc.data());
+        // console.log('change.type: ', change);
+        // console.log('change.doc.data(): ', change.doc.data());
 
         if (change.type === 'added') {
           added.push(Step.fromDocData(change.doc.data()));
@@ -466,31 +462,14 @@ export function collectSectionLtts(
   return bullets.flatMap((bullet) => bullet.T.filter((thought) => thought.lt));
 }
 
-export async function getRunLongTermThoughts(
-  runId: string
-): Promise<Thought[]> {
-  const run = await getRun(runId);
-  if (run !== undefined) {
-    return run.lttsToArray();
-  } else {
-    return [];
-  }
-}
-
 export async function updateRunLongTermThoughtsForStep(
   runId: string,
-  n: number
+  n: number,
+  stepLtts: Thought[]
 ): Promise<void> {
-  const stepN = await getStepN(runId, n);
-  if (stepN === undefined) {
-    return;
-  }
-
-  const ltts: Thought[] = collectLongTermThoughts(stepN);
-
   const docRef = doc(db, 'runs', runId);
   const payload = {
-    [`ltts.${n}`]: ltts.map((ltt) => Object.assign({}, ltt)),
+    [`ltts.${n}`]: stepLtts.map((ltt) => Object.assign({}, ltt)),
   };
   await updateDoc(docRef, payload).catch(handleFirebaseError());
 }
