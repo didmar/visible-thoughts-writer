@@ -1,14 +1,21 @@
-import { useState } from 'react';
-import {
-  Typography,
-  Button,
-  IconButton,
-  TextField,
-  FormControl,
-  Box,
-  Modal,
-} from '@mui/material';
+import { AccountCircle } from '@mui/icons-material';
+import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import SettingsIcon from '@mui/icons-material/Settings';
+import {
+  Avatar,
+  Box,
+  Button,
+  FormControl,
+  IconButton,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Modal,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { FormEvent, useState } from 'react';
 import isEmail from 'validator/lib/isEmail';
 import { createInvite, Run } from '../firebase-app';
 
@@ -36,7 +43,37 @@ function RunSettingsModal({ run }: Props): JSX.Element {
   const [email, setEmail] = useState<string>('');
   const [placeholder, setPlaceholder] = useState<string>('');
 
-  const onInvite = (): void => {
+  const playersList = (
+    <List>
+      {run.players.length > 0 ? (
+        run.players.map((player, index) => (
+          <ListItem
+            key={index}
+            secondaryAction={
+              <IconButton edge="end" aria-label="remove">
+                <RemoveCircleIcon />
+              </IconButton>
+            }
+          >
+            <ListItemAvatar>
+              <Avatar>
+                <AccountCircle />
+              </Avatar>
+            </ListItemAvatar>
+            <ListItemText primary={player} />
+          </ListItem>
+        ))
+      ) : (
+        <ListItem key={0}>
+          <ListItemText primary={'No player yet!'} />
+        </ListItem>
+      )}
+    </List>
+  );
+
+  const onInvite = (event: FormEvent): void => {
+    event.preventDefault();
+
     if (!isEmail(email)) return;
 
     void (async function () {
@@ -48,6 +85,38 @@ function RunSettingsModal({ run }: Props): JSX.Element {
     setEmail('');
     setPlaceholder('Invite sent!');
   };
+
+  const invitePlayerForm = (
+    <Box sx={{ mt: 2 }}>
+      <form onSubmit={onInvite}>
+        <FormControl>
+          <TextField
+            error={email !== '' && !isEmail(email)}
+            id="email-input"
+            label="Email"
+            name="email-input"
+            variant="outlined"
+            size={'small'}
+            helperText={placeholder}
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setPlaceholder('');
+            }}
+          />
+        </FormControl>
+
+        <Button
+          sx={{ ml: 2 }}
+          type="submit"
+          variant="contained"
+          disabled={!isEmail(email)}
+        >
+          Invite player
+        </Button>
+      </form>
+    </Box>
+  );
 
   return run !== undefined && run !== null ? (
     <div>
@@ -64,46 +133,13 @@ function RunSettingsModal({ run }: Props): JSX.Element {
           <Typography id="modal-modal-title" variant="h3">
             Run settings
           </Typography>
-          <div>
-            <Typography variant="h5">Players:</Typography>
-            <div>
-              <ul>
-                {run.players.length > 0 ? (
-                  run.players.map((player, index) => (
-                    <li key={index}>{player}</li>
-                  ))
-                ) : (
-                  <>No players yet!</>
-                )}
-              </ul>
-            </div>
-            <form>
-              <FormControl>
-                <TextField
-                  error={email !== '' && !isEmail(email)}
-                  id="email-input"
-                  label="Email"
-                  name="email-input"
-                  variant="outlined"
-                  size={'small'}
-                  helperText={placeholder}
-                  value={email}
-                  onChange={(event) => {
-                    setEmail(event.target.value);
-                    setPlaceholder('');
-                  }}
-                />
-              </FormControl>
-
-              <Button
-                variant="contained"
-                onClick={onInvite}
-                disabled={!isEmail(email)}
-              >
-                Invite player
-              </Button>
-            </form>
-          </div>
+          <Box>
+            <Typography sx={{ mt: 4 }} component="div" variant="h5">
+              Players:
+            </Typography>
+            {playersList}
+            {invitePlayerForm}
+          </Box>
         </Box>
       </Modal>
     </div>
