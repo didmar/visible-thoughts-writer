@@ -9,7 +9,6 @@ import {
   Section,
   ThoughtType,
 } from '../../firebase-app';
-import { noop } from '../../utils';
 import LTButton from './LTButton';
 import ThoughtTypeButton from './ThoughtTypeButton';
 import { ComposerMode } from './types';
@@ -121,14 +120,13 @@ const ComposerToolbar = React.forwardRef(
         mode: ComposerMode;
         section: Section;
         onSubmit: () => void;
-        onCanceled?: () => void;
+        onCanceled: () => void;
       } & BaseProps
     >,
     ref: Ref<HTMLDivElement> | undefined
   ) => {
     return (
       <Menu
-        {...props}
         ref={ref}
         className={cx(
           className,
@@ -157,7 +155,7 @@ const ComposerToolbar = React.forwardRef(
           </Button>
         ) : (
           <div style={{ float: 'right' }}>
-            <Button onClick={props.onCanceled ?? noop}>Cancel</Button>
+            <Button onClick={props.onCanceled}>Cancel</Button>
             <Button onClick={props.onSubmit}>Edit</Button>
           </div>
         )}
