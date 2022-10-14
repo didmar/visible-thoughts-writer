@@ -15,9 +15,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import isEmail from 'validator/lib/isEmail';
-import { createInvite, Run } from '../firebase-app';
+import { createInvite, removePlayerFromRun, Run } from '../firebase-app';
 
 const style = {
   position: 'absolute',
@@ -40,17 +40,41 @@ function RunSettingsModal({ run }: Props): JSX.Element {
   const handleOpen = (): void => setOpen(true);
   const handleClose = (): void => setOpen(false);
 
+  const [players, setPlayers] = useState<string[]>([]);
+  const handleRemovePlayer = (playerId: string): void => {
+    if (
+      !confirm(
+        `This will exclude player ${playerId} from the run. Are you sure?`
+      )
+    )
+      return;
+
+    void (async function () {
+      await removePlayerFromRun(run.id, playerId);
+    })();
+    setPlayers(players.filter((other) => other !== playerId));
+  };
+
   const [email, setEmail] = useState<string>('');
   const [placeholder, setPlaceholder] = useState<string>('');
 
+  useEffect(() => {
+    console.log('RunSettingsModal > useEffect []');
+    setPlayers(run.players);
+  }, []);
+
   const playersList = (
     <List>
-      {run.players.length > 0 ? (
-        run.players.map((player, index) => (
+      {players.length > 0 ? (
+        players.map((playerId, index) => (
           <ListItem
             key={index}
             secondaryAction={
-              <IconButton edge="end" aria-label="remove">
+              <IconButton
+                edge="end"
+                aria-label="remove"
+                onClick={() => handleRemovePlayer(playerId)}
+              >
                 <RemoveCircleIcon />
               </IconButton>
             }
@@ -60,12 +84,12 @@ function RunSettingsModal({ run }: Props): JSX.Element {
                 <AccountCircle />
               </Avatar>
             </ListItemAvatar>
-            <ListItemText primary={player} />
+            <ListItemText primary={playerId} />
           </ListItem>
         ))
       ) : (
         <ListItem key={0}>
-          <ListItemText primary={'No player yet!'} />
+          <ListItemText primary={'No players'} />
         </ListItem>
       )}
     </List>

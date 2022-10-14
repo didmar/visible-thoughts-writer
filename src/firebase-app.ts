@@ -1,32 +1,34 @@
 import { FirebaseError, initializeApp } from 'firebase/app';
 // import { getAnalytics } from "firebase/analytics";
 import {
-  getFirestore,
-  collection,
-  getDocs,
   addDoc,
-  writeBatch,
+  collection,
+  connectFirestoreEmulator,
+  deleteDoc,
   doc,
-  query,
-  orderBy,
-  limit,
   DocumentData,
   getDoc,
-  updateDoc,
-  setDoc,
+  getDocs,
+  getFirestore,
+  limit,
   onSnapshot,
+  orderBy,
+  query,
+  setDoc,
+  updateDoc,
   where,
-  connectFirestoreEmulator,
+  writeBatch,
+  arrayRemove,
 } from '@firebase/firestore';
+import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import {
-  getFunctions,
   connectFunctionsEmulator,
+  getFunctions,
   httpsCallable,
 } from 'firebase/functions';
-import { connectAuthEmulator, getAuth } from 'firebase/auth';
+import conf from './conf.json';
 import * as firebaseConfig from './firebase.creds.json';
 import { withoutUndefinedValues } from './utils';
-import conf from './conf.json';
 
 const app = initializeApp(firebaseConfig);
 
@@ -169,6 +171,21 @@ export async function getUserRoleInRun(
   if (isDM) return Role.DM;
   if (isPlayer) return Role.Player;
   return null;
+}
+
+export async function removePlayerFromRun(
+  runId: string,
+  uid: string
+): Promise<void> {
+  // Delete the player from the run
+  await updateDoc(doc(db, `runs/${runId}`), {
+    players: arrayRemove(uid),
+  }).catch(handleFirebaseError());
+
+  // Also delete the UserRunState for this run in the player's profile
+  await deleteDoc(doc(db, 'users', uid, 'runs', runId)).catch(
+    handleFirebaseError()
+  );
 }
 
 // Steps and thought sections
