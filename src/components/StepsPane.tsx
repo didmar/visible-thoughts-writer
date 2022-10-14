@@ -472,7 +472,11 @@ function StepsPane(): JSX.Element {
                 }}
               >
                 {xStepAgo !== undefined && (
-                  <StepElem step={xStepAgo} isDM={role === Role.DM} />
+                  <StepElem
+                    step={xStepAgo}
+                    isDM={role === Role.DM}
+                    title={`${X} steps ago...`}
+                  />
                 )}
               </Paper>
             </Grid>

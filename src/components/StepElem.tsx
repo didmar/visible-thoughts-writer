@@ -21,6 +21,7 @@ interface StepElemProps {
   step: Step;
   isDM: boolean;
   onSubmitted?: (n: number, section: Section, content: SectionContent) => void;
+  title?: string;
 }
 
 export function renderLongTermThoughts(ltts: Thought[]): JSX.Element {
@@ -53,10 +54,11 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
   step,
   isDM,
   onSubmitted,
+  title,
 }: StepElemProps) => {
   return (
     <div className="StepsPane" key={42}>
-      <h3 key={0}>Step #{step.n}</h3>
+      <h3 key={0}>{title ?? `Step #${step.n}`}</h3>
       <Stack key={1} spacing={2}>
         {step?.initT !== undefined && isDM && (
           <Item key={0}>
