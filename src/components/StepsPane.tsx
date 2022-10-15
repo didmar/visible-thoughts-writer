@@ -22,6 +22,7 @@ import {
   getStepN,
   getUserRoleInRun,
   isDM,
+  isOurTurnToWrite,
   isPlayer,
   mergeStepsWithUpdates,
   onStepsChanged,
@@ -29,7 +30,6 @@ import {
   Run,
   Section,
   SectionContent,
-  shouldBeNotified,
   Step,
   TextYBR,
   Thought,
@@ -73,6 +73,12 @@ function StepsPane(): JSX.Element {
   const currentUser = useAuth();
 
   const windowIsActive = useWindowActivity();
+  useEffect(() => {
+    console.log('%%%%% windowIsActive: ', windowIsActive);
+    if (windowIsActive) {
+      setWindowStatus(WindowStatus.WAITING);
+    }
+  }, [windowIsActive]);
 
   // Initialize run and steps
   useEffect(() => {
@@ -137,15 +143,16 @@ function StepsPane(): JSX.Element {
       updatedSteps
     );
 
-    // Should will ring the notification bell?
+    // Is there some changes that could mean it is user's turn to write?
     if (lastStepModified && currentUser !== undefined && currentUser !== null) {
       const lastStep = merged[merged.length - 1];
-      const nextSection = getNextSectionForStep(lastStep);
-      if (shouldBeNotified(role, nextSection)) {
+      if (isOurTurnToWrite(role, lastStep)) {
         void (async function () {
           // Sound the bell, except if the user is both DM and player
+          // or if the window is active
           if (role !== Role.Both && !windowIsActive) {
             await playDing();
+            setWindowStatus(WindowStatus.READY);
           }
           // Update the user's run state, to indicate that the user has been
           // notified of their cue on this step, and that there is not need to
@@ -289,32 +296,26 @@ function StepsPane(): JSX.Element {
 
   function renderComposer(): JSX.Element {
     if (role === undefined || steps === undefined || steps.length === 0) {
-      setWindowStatus(WindowStatus.WAITING);
       return <>Loading...</>;
     }
     if (role === null) {
-      setWindowStatus(WindowStatus.WAITING);
       return <>Only designated users can participate</>;
     }
 
     const section = getNextSection();
     if (section === undefined) {
-      setWindowStatus(WindowStatus.WAITING);
       return <>Wait...</>; // Waiting for the next step to be created
     }
 
     // Is it our time to write?
     if (section === Section.Act) {
       if (!isPlayer(role)) {
-        setWindowStatus(WindowStatus.WAITING);
         return <>Wait for the player to write their part...</>;
       }
     } else if (!isDM(role)) {
-      setWindowStatus(WindowStatus.WAITING);
       return <>Wait for the DM to write their part...</>;
     }
 
-    setWindowStatus(WindowStatus.READY);
     return (
       <Composer
         initMode={ComposerMode.CREATE}

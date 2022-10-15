@@ -167,10 +167,11 @@ export function isPlayer(role: Role | null | undefined): boolean {
   return role === Role.Player || role === Role.Both;
 }
 
-export const shouldBeNotified = (
+export const isOurTurnToWrite = (
   role: Role | null | undefined,
-  nextSection: Section | undefined
+  lastStep: Step | undefined
 ): boolean => {
+  const nextSection = getNextSectionForStep(lastStep);
   return (
     role !== undefined &&
     role !== null &&
