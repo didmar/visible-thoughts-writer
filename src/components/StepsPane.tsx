@@ -21,12 +21,15 @@ import {
   getRun,
   getStepN,
   getUserRoleInRun,
+  isDM,
+  isPlayer,
   mergeStepsWithUpdates,
   onStepsChanged,
   Role,
   Run,
   Section,
   SectionContent,
+  shouldBeNotified,
   Step,
   TextYBR,
   Thought,
@@ -34,9 +37,6 @@ import {
   updateRunLongTermThoughtsForStep,
   updateStep,
   updateUserRunState,
-  isDM,
-  isPlayer,
-  shouldBeNotified,
 } from '../firebase-app';
 import { playDing, setWindowStatus, WindowStatus } from '../utils';
 import { useAuth } from './Auth';
@@ -47,6 +47,7 @@ import PageNotFound from './PageNotFound';
 import RunSettingsModal from './RunSettingsModal';
 import StepElem, { renderLongTermThoughts } from './StepElem';
 import UserMenu from './UserMenu';
+import { useWindowActivity } from './WindowContextProvider';
 
 // How many steps ago to give a hint of
 const X = 50;
@@ -70,6 +71,8 @@ function StepsPane(): JSX.Element {
   const [role, setRole] = useState<Role | null | undefined>(undefined);
 
   const currentUser = useAuth();
+
+  const windowIsActive = useWindowActivity();
 
   // Initialize run and steps
   useEffect(() => {
@@ -141,7 +144,7 @@ function StepsPane(): JSX.Element {
       if (shouldBeNotified(role, nextSection)) {
         void (async function () {
           // Sound the bell, except if the user is both DM and player
-          if (role !== Role.Both) {
+          if (role !== Role.Both && !windowIsActive) {
             await playDing();
           }
           // Update the user's run state, to indicate that the user has been
