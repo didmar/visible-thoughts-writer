@@ -1,25 +1,27 @@
-import LoginIcon from '@mui/icons-material/Login';
-import LogoutIcon from '@mui/icons-material/Logout';
+import { FirebaseError } from '@firebase/app';
 import { AccountCircle } from '@mui/icons-material';
+import LogoutIcon from '@mui/icons-material/Logout';
 import MoreIcon from '@mui/icons-material/More';
 import {
   Box,
+  Button,
   IconButton,
   ListItemIcon,
   Menu,
   MenuItem,
   Typography,
+  useTheme,
 } from '@mui/material';
 import { signOut } from 'firebase/auth';
-import { useState, MouseEvent } from 'react';
-import { useAuth } from './Auth';
+import { forwardRef, MouseEvent, useState } from 'react';
+import { LinkProps, NavLink, useLocation } from 'react-router-dom';
 import { auth } from '../firebase-app';
-import { FirebaseError } from '@firebase/app';
-import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from './Auth';
 
 export const UserMenu = (): JSX.Element => {
   const currentUser = useAuth();
   const location = useLocation();
+  const { palette } = useTheme();
 
   const handleProfile = (): void => {
     console.log('handleProfile');
@@ -61,12 +63,28 @@ export const UserMenu = (): JSX.Element => {
     setMobileMoreAnchorEl(event.currentTarget);
   };
 
+  const LinkToLoginBehavior = forwardRef<any, Omit<LinkProps, 'to'>>(
+    (props, ref) => (
+      <NavLink
+        ref={ref}
+        to="/login"
+        {...props}
+        role={undefined}
+        state={location.pathname}
+        style={{
+          color: palette.primary.main,
+          backgroundColor: palette.primary.contrastText,
+          borderColor: palette.primary.main,
+        }}
+      />
+    )
+  );
+  LinkToLoginBehavior.displayName = 'LinkToLoginBehavior';
+
   const renderLoginButton = (
-    <IconButton size="large" edge="end" aria-label="login" color="inherit">
-      <Link to={{ pathname: '/login' }} state={location.pathname}>
-        <LoginIcon />
-      </Link>
-    </IconButton>
+    <Button component={LinkToLoginBehavior} variant="contained">
+      Sign in
+    </Button>
   );
 
   const mobileMenuId = 'primary-search-account-menu-mobile';
