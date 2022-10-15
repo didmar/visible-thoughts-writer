@@ -2,6 +2,7 @@ import { FirebaseError, initializeApp } from 'firebase/app';
 // import { getAnalytics } from "firebase/analytics";
 import {
   addDoc,
+  arrayRemove,
   collection,
   connectFirestoreEmulator,
   deleteDoc,
@@ -18,7 +19,6 @@ import {
   updateDoc,
   where,
   writeBatch,
-  arrayRemove,
 } from '@firebase/firestore';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import {
@@ -505,6 +505,12 @@ export async function createInvite(
   const invite: Invite = { email };
   const doc = await addDoc(colRef, invite).catch(handleFirebaseError());
   return doc.id;
+}
+
+export async function getInvites(runId: string): Promise<Invite[]> {
+  const colRef = collection(db, 'runs', runId, 'invites');
+  const snapshot = await getDocs(colRef).catch(handleFirebaseError());
+  return snapshot.docs.map((doc) => doc.data() as Invite);
 }
 
 // Users collection

@@ -1,4 +1,5 @@
 import { AccountCircle } from '@mui/icons-material';
+import PendingIcon from '@mui/icons-material/Pending';
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import SettingsIcon from '@mui/icons-material/Settings';
 import {
@@ -13,11 +14,18 @@ import {
   ListItemText,
   Modal,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { FormEvent, useEffect, useState } from 'react';
 import isEmail from 'validator/lib/isEmail';
-import { createInvite, removePlayerFromRun, Run } from '../firebase-app';
+import {
+  createInvite,
+  getInvites,
+  Invite,
+  removePlayerFromRun,
+  Run,
+} from '../firebase-app';
 
 const style = {
   position: 'absolute',
@@ -55,12 +63,18 @@ function RunSettingsModal({ run }: Props): JSX.Element {
     setPlayers(players.filter((other) => other !== playerId));
   };
 
+  const [invites, setInvites] = useState<Invite[]>([]);
+
   const [email, setEmail] = useState<string>('');
   const [placeholder, setPlaceholder] = useState<string>('');
 
   useEffect(() => {
     console.log('RunSettingsModal > useEffect []');
     setPlayers(run.players);
+
+    void (async function () {
+      await getInvites(run.id).then((invites) => setInvites(invites));
+    })();
   }, []);
 
   const playersList = (
@@ -89,9 +103,26 @@ function RunSettingsModal({ run }: Props): JSX.Element {
         ))
       ) : (
         <ListItem key={0}>
-          <ListItemText primary={'No players'} />
+          <ListItemText primary={'No registered players'} />
         </ListItem>
       )}
+    </List>
+  );
+
+  const pendingInvitationsList = (
+    <List>
+      {invites.map((invite, index) => (
+        <ListItem key={index}>
+          <Tooltip title="Pending invitation">
+            <ListItemAvatar>
+              <Avatar>
+                <PendingIcon />
+              </Avatar>
+            </ListItemAvatar>
+          </Tooltip>
+          <ListItemText primary={invite.email} />
+        </ListItem>
+      ))}
     </List>
   );
 
@@ -162,6 +193,7 @@ function RunSettingsModal({ run }: Props): JSX.Element {
               Players:
             </Typography>
             {playersList}
+            {pendingInvitationsList}
             {invitePlayerForm}
           </Box>
         </Box>
