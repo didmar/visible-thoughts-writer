@@ -74,7 +74,6 @@ function StepsPane(): JSX.Element {
 
   const windowIsActive = useWindowActivity();
   useEffect(() => {
-    console.log('%%%%% windowIsActive: ', windowIsActive);
     if (windowIsActive) {
       setWindowStatus(WindowStatus.WAITING);
     }
@@ -92,10 +91,9 @@ function StepsPane(): JSX.Element {
       // Init run
       const run = await getRun(runId);
       if (run === undefined) {
-        console.log('Run not found');
+        console.error('Run not found');
         setRun(null);
       } else {
-        console.log('*** Init run, title and ltts');
         setRun(run);
         setTitle(run.title);
         setLtts(run.sortedLtts());
@@ -116,7 +114,6 @@ function StepsPane(): JSX.Element {
       if (runId !== undefined && uid !== undefined) {
         const role = await getUserRoleInRun(uid, runId);
         setRole(role);
-        console.log('User has role: ', role);
       } else {
         setRole(null); // Guest
       }
