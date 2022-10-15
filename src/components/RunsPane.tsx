@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { Run, createRun, onRunsCreated } from '../firebase-app';
 import '../App.css';
-import { AppBar, Button, Toolbar, Typography } from '@mui/material';
+import { AppBar, Box, Button, Toolbar, Typography } from '@mui/material';
 import HelpAndFeedback from './HelpAndFeedback';
 import UserMenu from './UserMenu';
 import { useAuth } from './Auth';
@@ -36,7 +36,7 @@ function RunsPane(): JSX.Element {
     }
 
     return (
-      <div style={{ padding: 5 }}>
+      <Box sx={{ padding: 2 }}>
         <input
           placeholder="Title..."
           onChange={(event) => {
@@ -45,6 +45,8 @@ function RunsPane(): JSX.Element {
         />
         <Button
           variant="contained"
+          sx={{ ml: 2 }}
+          disabled={newTitle === ''}
           onClick={() => {
             void (async function () {
               console.log('newTitle ', newTitle);
@@ -59,7 +61,7 @@ function RunsPane(): JSX.Element {
             <Navigate replace to={`/runs/${newRunId}`} />
           )}
         </Button>
-      </div>
+      </Box>
     );
   };
 
