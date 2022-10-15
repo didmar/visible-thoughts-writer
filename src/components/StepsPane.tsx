@@ -34,6 +34,9 @@ import {
   updateRunLongTermThoughtsForStep,
   updateStep,
   updateUserRunState,
+  isDM,
+  isPlayer,
+  shouldBeNotified,
 } from '../firebase-app';
 import { playDing, setWindowStatus, WindowStatus } from '../utils';
 import { useAuth } from './Auth';
@@ -135,15 +138,15 @@ function StepsPane(): JSX.Element {
     if (lastStepModified && currentUser !== undefined && currentUser !== null) {
       const lastStep = merged[merged.length - 1];
       const nextSection = getNextSectionForStep(lastStep);
-      if (
-        (nextSection === Section.Act &&
-          (role === Role.Player || role === Role.Both)) ||
-        (nextSection === Section.PactT &&
-          (role === Role.DM || role === Role.Both))
-      ) {
+      if (shouldBeNotified(role, nextSection)) {
         void (async function () {
-          await playDing();
-          // Indicates that the user has been notified of their cue on this step
+          // Sound the bell, except if the user is both DM and player
+          if (role !== Role.Both) {
+            await playDing();
+          }
+          // Update the user's run state, to indicate that the user has been
+          // notified of their cue on this step, and that there is not need to
+          // sent a notification by email.
           await updateUserRunState(currentUser.uid(), runId, role, lastStep.n);
         })();
       }
@@ -163,7 +166,7 @@ function StepsPane(): JSX.Element {
       const section = getNextSection();
       // Did we reach the end of the step?
       // Create the next step if we are the DM
-      if (section === undefined && role === Role.DM) {
+      if (section === undefined && isDM(role)) {
         const currentStep =
           steps.length !== 0 ? steps[steps.length - 1] : undefined;
         const newStep = createNextStep(currentStep);
@@ -286,9 +289,9 @@ function StepsPane(): JSX.Element {
       setWindowStatus(WindowStatus.WAITING);
       return <>Loading...</>;
     }
-    if (role !== Role.Player && role !== Role.DM) {
+    if (role === null) {
       setWindowStatus(WindowStatus.WAITING);
-      return <>Only designated players can participate</>;
+      return <>Only designated users can participate</>;
     }
 
     const section = getNextSection();
@@ -299,11 +302,11 @@ function StepsPane(): JSX.Element {
 
     // Is it our time to write?
     if (section === Section.Act) {
-      if (role !== Role.Player) {
+      if (!isPlayer(role)) {
         setWindowStatus(WindowStatus.WAITING);
         return <>Wait for the player to write their part...</>;
       }
-    } else if (role !== Role.DM) {
+    } else if (!isDM(role)) {
       setWindowStatus(WindowStatus.WAITING);
       return <>Wait for the DM to write their part...</>;
     }
@@ -361,9 +364,7 @@ function StepsPane(): JSX.Element {
           </Typography>
 
           <HelpAndFeedback />
-          {(role === Role.DM || role === Role.Both) && (
-            <RunSettingsModal run={run} />
-          )}
+          {isDM(role) && <RunSettingsModal run={run} />}
           <UserMenu />
 
           {/*
@@ -378,12 +379,7 @@ function StepsPane(): JSX.Element {
       <Container maxWidth="lg" sx={{ mt: 2, mb: 2 }}>
         <Grid container spacing={3}>
           {/* Steps */}
-          <Grid
-            item
-            xs={12}
-            md={role === Role.DM ? 8 : 12}
-            lg={role === Role.DM ? 9 : 12}
-          >
+          <Grid item xs={12} md={isDM(role) ? 8 : 12} lg={isDM(role) ? 9 : 12}>
             <Paper
               sx={{
                 p: 2,
@@ -418,7 +414,7 @@ function StepsPane(): JSX.Element {
                     <StepElem
                       key={step.n}
                       step={step}
-                      isDM={role === Role.DM}
+                      role={role}
                       onSubmitted={onSubmitted}
                     />
                   ))}
@@ -427,7 +423,7 @@ function StepsPane(): JSX.Element {
           </Grid>
 
           {/* Long-term thoughts */}
-          {role === Role.DM && (
+          {isDM(role) && (
             <Grid
               item
               xs={0}
@@ -451,12 +447,7 @@ function StepsPane(): JSX.Element {
           )}
 
           {/* Compose */}
-          <Grid
-            item
-            xs={12}
-            md={role === Role.DM ? 8 : 12}
-            lg={role === Role.DM ? 9 : 12}
-          >
+          <Grid item xs={12} md={isDM(role) ? 8 : 12} lg={isDM(role) ? 9 : 12}>
             <Paper
               sx={{
                 p: 2,
@@ -471,7 +462,7 @@ function StepsPane(): JSX.Element {
           </Grid>
 
           {/* X steps ago */}
-          {role === Role.DM && (
+          {isDM(role) && (
             <Grid
               item
               xs={0}
@@ -491,7 +482,7 @@ function StepsPane(): JSX.Element {
                 {xStepAgo !== undefined && (
                   <StepElem
                     step={xStepAgo}
-                    isDM={role === Role.DM}
+                    role={role}
                     title={`${X} steps ago...`}
                   />
                 )}

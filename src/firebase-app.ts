@@ -159,6 +159,26 @@ export enum Role {
   Both = 'both',
 }
 
+export function isDM(role: Role | null | undefined): boolean {
+  return role === Role.DM || role === Role.Both;
+}
+
+export function isPlayer(role: Role | null | undefined): boolean {
+  return role === Role.Player || role === Role.Both;
+}
+
+export const shouldBeNotified = (
+  role: Role | null | undefined,
+  nextSection: Section | undefined
+): boolean => {
+  return (
+    role !== undefined &&
+    role !== null &&
+    ((nextSection === Section.Act && isPlayer(role)) ||
+      (nextSection === Section.PactT && isDM(role)))
+  );
+};
+
 export async function getUserRoleInRun(
   uid: string,
   runId: string
@@ -595,9 +615,10 @@ export async function createUserRunState(
 export async function updateUserRunState(
   userId: string,
   runId: string,
-  role: Role,
+  role: Role | null | undefined,
   lastStepNotified: number
 ): Promise<void> {
+  if (role === null || role === undefined) return;
   const docRef = doc(db, 'users', userId, 'runs', runId);
   const update: Partial<UserRunState> = { role, lastStepNotified };
   await setDoc(docRef, update, { merge: true }).catch(handleFirebaseError());

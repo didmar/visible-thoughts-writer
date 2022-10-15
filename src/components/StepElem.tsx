@@ -1,7 +1,14 @@
 import { Paper } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import { styled } from '@mui/material/styles';
-import { Section, SectionContent, Step, Thought } from '../firebase-app';
+import {
+  isDM,
+  Role,
+  Section,
+  SectionContent,
+  Step,
+  Thought,
+} from '../firebase-app';
 import { noop } from '../utils';
 import Composer from './composer/Composer';
 import { toCustomElement } from './composer/parsing';
@@ -19,7 +26,7 @@ const Item = styled(Paper)(({ theme }) => ({
 
 interface StepElemProps {
   step: Step;
-  isDM: boolean;
+  role: Role | null | undefined;
   onSubmitted?: (n: number, section: Section, content: SectionContent) => void;
   title?: string;
 }
@@ -51,7 +58,7 @@ function renderThought(thought: Thought): JSX.Element {
 
 const StepElem: React.FunctionComponent<StepElemProps> = ({
   step,
-  isDM,
+  role,
   onSubmitted,
   title,
 }: StepElemProps) => {
@@ -59,7 +66,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
     <div className="StepsPane" key={42}>
       <h3 key={0}>{title ?? `Step #${step.n}`}</h3>
       <Stack key={1} spacing={2}>
-        {step?.initT !== undefined && isDM && (
+        {step?.initT !== undefined && isDM(role) && (
           <Item key={0}>
             <Composer
               initMode={ComposerMode.VIEW}
@@ -71,7 +78,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               section={Section.InitT}
               n={step.n}
               editable={
-                onSubmitted !== undefined && isDM && step.initT !== null
+                onSubmitted !== undefined && isDM(role) && step.initT !== null
               }
               onSubmitted={onSubmitted ?? noop}
             />
@@ -86,12 +93,14 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               )}
               section={Section.Ppt}
               n={step.n}
-              editable={onSubmitted !== undefined && isDM && step.ppt !== null}
+              editable={
+                onSubmitted !== undefined && isDM(role) && step.ppt !== null
+              }
               onSubmitted={onSubmitted ?? noop}
             />
           </Item>
         )}
-        {step?.ppptT !== undefined && isDM && (
+        {step?.ppptT !== undefined && isDM(role) && (
           <Item key={2}>
             <Composer
               initMode={ComposerMode.VIEW}
@@ -103,7 +112,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               section={Section.PpptT}
               n={step.n}
               editable={
-                onSubmitted !== undefined && isDM && step.ppptT !== null
+                onSubmitted !== undefined && isDM(role) && step.ppptT !== null
               }
               onSubmitted={onSubmitted ?? noop}
             />
@@ -118,10 +127,16 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               )}
               n={step.n}
               section={Section.Act}
+              editable={
+                onSubmitted !== undefined &&
+                role === Role.Both &&
+                step.act !== null
+              }
+              onSubmitted={onSubmitted ?? noop}
             />
           </Item>
         )}
-        {step?.pactT !== undefined && isDM && (
+        {step?.pactT !== undefined && isDM(role) && (
           <Item key={4}>
             <Composer
               initMode={ComposerMode.VIEW}
@@ -133,7 +148,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               section={Section.PactT}
               n={step.n}
               editable={
-                onSubmitted !== undefined && isDM && step.pactT !== null
+                onSubmitted !== undefined && isDM(role) && step.pactT !== null
               }
               onSubmitted={onSubmitted ?? noop}
             />
@@ -148,7 +163,9 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               )}
               section={Section.Out}
               n={step.n}
-              editable={onSubmitted !== undefined && isDM && step.out !== null}
+              editable={
+                onSubmitted !== undefined && isDM(role) && step.out !== null
+              }
               onSubmitted={onSubmitted ?? noop}
             />
           </Item>
