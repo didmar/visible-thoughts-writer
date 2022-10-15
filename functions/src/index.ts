@@ -239,19 +239,37 @@ exports.confirmInvite = https.onCall(async (data, context) => {
     );
   }
 
+  // Check if the user has already a role in the run
+  const userRunStateDocRef = db.doc(`users/${uid}/runs/${runId}`);
+  const userRunStateDoc = await userRunStateDocRef.get();
+  let previousRole = undefined;
+  if (userRunStateDoc.exists) {
+    const { role } = userRunStateDoc?.data() as { role: Role | undefined };
+    if (previousRole !== undefined) previousRole = role;
+  }
+  const newRole: Role =
+    previousRole === Role.DM || previousRole === Role.Both
+      ? Role.Both
+      : Role.Player;
+
   const batch = db.batch();
   // Add the player to the list of players for the run
   batch.update(db.doc(`runs/${runId}`), {
     players: admin.firestore.FieldValue.arrayUnion(uid),
   });
-  // Initialize the user run state
-  batch.create(db.doc(`users/${uid}/runs/${runId}`), {
+  // Set the user run state
+  batch.set(userRunStateDocRef, {
     lastStepNotified: 0,
-    role: Role.Player,
+    role: newRole,
   });
   // Delete the invite
   batch.delete(inviteDocRef);
-  const results = await batch.commit();
+  const results = await batch.commit().catch((err) => {
+    throw new https.HttpsError(
+      'internal',
+      `Oops, something went wrong internally: ${err}`
+    );
+  });
   logger.info('results: ', JSON.stringify(results));
 
   return null;
