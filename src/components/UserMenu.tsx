@@ -1,5 +1,5 @@
 import { FirebaseError } from '@firebase/app';
-import { AccountCircle } from '@mui/icons-material';
+import { AccountCircle, Settings } from '@mui/icons-material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MoreIcon from '@mui/icons-material/More';
 import {
@@ -17,6 +17,7 @@ import { forwardRef, MouseEvent, useState } from 'react';
 import { LinkProps, NavLink, useLocation } from 'react-router-dom';
 import { auth } from '../firebase-app';
 import { useAuth } from './Auth';
+import UserAvatar from './UserAvatar';
 
 export const UserMenu = (): JSX.Element => {
   const currentUser = useAuth();
@@ -114,9 +115,8 @@ export const UserMenu = (): JSX.Element => {
   );
 
   const renderLoggedUser = [
-    <MenuItem key="0">{currentUser?.email()}</MenuItem>,
-
     <MenuItem key="1" onClick={handleProfile} disabled>
+      <Settings />
       Profile
     </MenuItem>,
 
@@ -147,6 +147,8 @@ export const UserMenu = (): JSX.Element => {
     </Menu>
   );
 
+  if (currentUser === undefined) return <>Loading</>;
+
   return (
     <>
       <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
@@ -160,7 +162,7 @@ export const UserMenu = (): JSX.Element => {
             onClick={handleUserMenuOpen}
             color="inherit"
           >
-            <AccountCircle />
+            <UserAvatar user={currentUser} />
           </IconButton>
         ) : (
           renderLoginButton

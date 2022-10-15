@@ -4,7 +4,7 @@ import 'firebaseui/dist/firebaseui.css';
 import { auth, getOrCreateUserProfile, UserProfile } from '../firebase-app';
 
 // Combine the Firebase auth data with the user's profile data.
-class User {
+export class User {
   userProfile: UserProfile;
   firebaseUser: firebaseAuth.User;
 
