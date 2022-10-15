@@ -134,6 +134,7 @@ function RunSettingsModal({ run }: Props): JSX.Element {
     void (async function () {
       const inviteId = await createInvite(run.id, email);
       console.log('inviteId: ', inviteId);
+      setInvites([...invites, { email }]);
     })();
 
     // Clear input
