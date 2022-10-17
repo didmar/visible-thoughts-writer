@@ -4,9 +4,10 @@ import {
   GoogleAuthProvider,
   onAuthStateChanged,
 } from 'firebase/auth';
-import { useRef, useEffect, useState } from 'react';
-import 'firebaseui/dist/firebaseui.css';
 import * as firebaseui from 'firebaseui';
+import 'firebaseui/dist/firebaseui.css';
+import { useEffect, useRef, useState } from 'react';
+import { getOrCreateUserProfile } from '../firebase-app';
 
 export const uiConfig = {
   signInFlow: 'popup',
@@ -60,6 +61,13 @@ export const StyledFirebaseAuth = ({
     const unregisterAuthObserver = onAuthStateChanged(firebaseAuth, (user) => {
       if (user !== null && userSignedIn) firebaseUiWidget.reset();
       setUserSignedIn(user !== null);
+
+      if (user !== null) {
+        // Will create user profile if not existing already
+        void (async () => {
+          await getOrCreateUserProfile(user.uid, user.displayName ?? user.uid);
+        })();
+      }
     });
 
     if (uiCallback !== undefined && uiCallback !== null) {
