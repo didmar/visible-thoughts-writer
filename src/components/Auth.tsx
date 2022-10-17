@@ -49,7 +49,11 @@ const AuthProvider = ({ children }: Props): JSX.Element => {
       console.log('onAuthStateChanged');
       if (firebaseUser !== null) {
         void (async function () {
-          const userProfile = await getOrCreateUserProfile(firebaseUser.uid);
+          const name = firebaseUser.displayName ?? firebaseUser.uid;
+          const userProfile = await getOrCreateUserProfile(
+            firebaseUser.uid,
+            name
+          );
           setCurrentUser(new User(userProfile, firebaseUser));
         })();
       } else {

@@ -1,5 +1,5 @@
 import { FirebaseError } from '@firebase/app';
-import { AccountCircle, Settings } from '@mui/icons-material';
+import { AccountCircle } from '@mui/icons-material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MoreIcon from '@mui/icons-material/More';
 import {
@@ -18,16 +18,13 @@ import { LinkProps, NavLink, useLocation } from 'react-router-dom';
 import { auth } from '../firebase-app';
 import { useAuth } from './Auth';
 import UserAvatar from './UserAvatar';
+import UserProfileModal from './UserProfileModal';
 
 export const UserMenu = (): JSX.Element => {
   const currentUser = useAuth();
   const location = useLocation();
   const { palette } = useTheme();
 
-  const handleProfile = (): void => {
-    console.log('handleProfile');
-    // TODO implement
-  };
   const handleLogout = (): void => {
     console.log('handleLogout');
     signOut(auth)
@@ -115,11 +112,7 @@ export const UserMenu = (): JSX.Element => {
   );
 
   const renderLoggedUser = [
-    <MenuItem key="1" onClick={handleProfile} disabled>
-      <Settings />
-      Profile
-    </MenuItem>,
-
+    <UserProfileModal key="1" />,
     <MenuItem key="2" onClick={handleLogout}>
       <LogoutIcon />
       <p>Logout</p>

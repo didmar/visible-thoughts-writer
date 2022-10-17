@@ -538,25 +538,44 @@ export async function getInvites(runId: string): Promise<Invite[]> {
 
 export class UserProfile {
   id: string; // corresponds to the uid for firebase authentication
+  name: string; // the user's screen name
   canDM: boolean; // whether the user can be a DM for a run, or not
+  soundNotif: boolean; // whether the user wants to receive sound notifications, or not
   emailNotif: boolean; // whether the user wants to receive email notifications, or not
 
-  constructor(id: string, canDM?: boolean, emailNotif?: boolean) {
+  constructor(
+    id: string,
+    name: string,
+    canDM?: boolean,
+    soundNotif?: boolean,
+    emailNotif?: boolean
+  ) {
     this.id = id;
+    this.name = name;
     this.canDM = canDM ?? true;
+    this.soundNotif = soundNotif ?? false;
     this.emailNotif = emailNotif ?? false;
   }
 
   static fromDocData(data?: DocumentData): UserProfile | undefined {
     if (data === undefined) return undefined;
-    return new UserProfile(data.id, data.canDM, data.emailNotif);
+    return new UserProfile(
+      data.id,
+      data.name,
+      data.canDM,
+      data.soundNotif,
+      data.emailNotif
+    );
   }
 }
 
-export async function createUserProfile(uid: string): Promise<void> {
+export async function createUserProfile(
+  uid: string,
+  name: string
+): Promise<void> {
   await setDoc(
     doc(db, 'users', uid),
-    Object.assign({}, new UserProfile(uid))
+    Object.assign({}, new UserProfile(uid, name))
   ).catch(handleFirebaseError());
 }
 
@@ -569,11 +588,12 @@ export async function getUserProfile(
 }
 
 export async function getOrCreateUserProfile(
-  uid: string
+  uid: string,
+  name: string
 ): Promise<UserProfile> {
   const profile = await getUserProfile(uid);
   if (profile === undefined) {
-    const newProfile = new UserProfile(uid);
+    const newProfile = new UserProfile(uid, name);
     await setDoc(doc(db, 'users', uid), Object.assign({}, newProfile)).catch(
       handleFirebaseError()
     );
@@ -581,6 +601,15 @@ export async function getOrCreateUserProfile(
   } else {
     return profile;
   }
+}
+
+export async function updateUserProfile(
+  uid: string,
+  update: Partial<UserProfile>
+): Promise<void> {
+  console.log('>>> updateUserProfile: ', update);
+  const docRef = doc(db, 'users', uid);
+  await updateDoc(docRef, update).catch(handleFirebaseError());
 }
 
 // Document type for the runs sub-collection of the users collection.
