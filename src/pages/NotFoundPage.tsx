@@ -1,7 +1,7 @@
 import { Button, Typography } from '@mui/material';
 import { Home } from '@mui/icons-material';
 
-function PageNotFound(): JSX.Element {
+function NotFoundPage(): JSX.Element {
   return (
     <div
       style={{
@@ -26,4 +26,4 @@ function PageNotFound(): JSX.Element {
   );
 }
 
-export default PageNotFound;
+export default NotFoundPage;

@@ -12,6 +12,14 @@ import {
 import { useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Link, useParams } from 'react-router-dom';
+import { useAuth } from '../components/Auth';
+import Composer from '../components/composer/Composer';
+import { ComposerMode } from '../components/composer/types';
+import HelpAndFeedback from '../components/HelpAndFeedback';
+import RunSettingsModal from '../components/RunSettingsModal';
+import StepElem, { renderLongTermThoughts } from '../components/StepElem';
+import UserMenu from '../components/UserMenu';
+import { useWindowActivity } from '../components/WindowContextProvider';
 import {
   addStep,
   Bullet,
@@ -39,15 +47,7 @@ import {
   updateUserRunState,
 } from '../firebase-app';
 import { playDing, setWindowStatus, WindowStatus } from '../utils';
-import { useAuth } from '../components/Auth';
-import Composer from '../components/composer/Composer';
-import { ComposerMode } from '../components/composer/types';
-import HelpAndFeedback from '../components/HelpAndFeedback';
-import PageNotFound from '../components/PageNotFound';
-import RunSettingsModal from '../components/RunSettingsModal';
-import StepElem, { renderLongTermThoughts } from '../components/StepElem';
-import UserMenu from '../components/UserMenu';
-import { useWindowActivity } from '../components/WindowContextProvider';
+import NotFoundPage from './NotFoundPage';
 
 // How many steps ago to give a hint of
 const X = 50;
@@ -496,7 +496,7 @@ function RunPage(): JSX.Element {
   ) : run === undefined ? (
     <>Loading...</>
   ) : (
-    <PageNotFound />
+    <NotFoundPage />
   );
 }
 

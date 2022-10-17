@@ -7,6 +7,7 @@ import { WindowContextProvider } from './components/WindowContextProvider';
 import HomePage from './pages/HomePage';
 import InvitePage from './pages/InvitePage';
 import LoginPage from './pages/LoginPage';
+import NotFoundPage from './pages/NotFoundPage';
 import RunPage from './pages/RunPage';
 
 function App(): JSX.Element {
@@ -20,6 +21,7 @@ function App(): JSX.Element {
             <Route path="/runs/:runId" element={<RunPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/invite" element={<InvitePage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </WindowContextProvider>
       </AuthProvider>
