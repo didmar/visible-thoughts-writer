@@ -1,3 +1,5 @@
+import NotificationsOffIcon from '@mui/icons-material/NotificationsOff';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import SettingsIcon from '@mui/icons-material/Settings';
 import {
   Box,
@@ -17,6 +19,7 @@ import {
   updateUserProfile,
   UserProfile,
 } from '../firebase-app';
+import { playDing } from '../utils';
 import { useAuth } from './Auth';
 
 const style = {
@@ -106,6 +109,28 @@ function UserProfileModal(): JSX.Element {
     </Box>
   );
 
+  const soundTestButton = (
+    <Button
+      sx={{ ml: 2 }}
+      variant="outlined"
+      startIcon={
+        soundNotif === true ? (
+          <NotificationsActiveIcon />
+        ) : (
+          <NotificationsOffIcon />
+        )
+      }
+      disabled={soundNotif !== true}
+      onClick={() => {
+        void (async function () {
+          await playDing();
+        })();
+      }}
+    >
+      Test sound
+    </Button>
+  );
+
   const handleChangeSoundNotif = (
     event: React.ChangeEvent<HTMLInputElement>
   ): void => {
@@ -122,7 +147,12 @@ function UserProfileModal(): JSX.Element {
       control={
         <Switch checked={soundNotif} onChange={handleChangeSoundNotif} />
       }
-      label="Sound notifications"
+      label={
+        <>
+          {'Sound notifications'}
+          {soundTestButton}
+        </>
+      }
     />
   );
 
@@ -164,7 +194,7 @@ function UserProfileModal(): JSX.Element {
           </Typography>
           <Box>
             {nameEditForm}
-            <FormGroup>
+            <FormGroup sx={{ mt: 2 }}>
               {soundNotifSwitch}
               {emailNotifSwitch}
             </FormGroup>
