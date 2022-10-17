@@ -550,6 +550,7 @@ export class UserProfile {
     soundNotif?: boolean,
     emailNotif?: boolean
   ) {
+    if (name.length > UserProfile.maxNameLength) throw Error('Name too long');
     this.id = id;
     this.name = name;
     this.canDM = canDM ?? true;
@@ -567,6 +568,8 @@ export class UserProfile {
       data.emailNotif
     );
   }
+
+  static maxNameLength = 64;
 }
 
 export async function createUserProfile(

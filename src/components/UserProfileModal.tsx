@@ -94,6 +94,7 @@ function UserProfileModal(): JSX.Element {
             onChange={(event) => {
               setNewName(event.target.value);
             }}
+            inputProps={{ maxLength: UserProfile.maxNameLength }}
           />
         </FormControl>
 
