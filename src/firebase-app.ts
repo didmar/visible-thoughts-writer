@@ -607,9 +607,22 @@ export async function updateUserProfile(
   uid: string,
   update: Partial<UserProfile>
 ): Promise<void> {
-  console.log('>>> updateUserProfile: ', update);
   const docRef = doc(db, 'users', uid);
   await updateDoc(docRef, update).catch(handleFirebaseError());
+}
+
+export async function onUserProfileChanged(
+  uid: string,
+  callback: (userProfile: UserProfile) => void
+): Promise<void> {
+  onSnapshot(
+    doc(db, 'users', uid),
+    (doc) => {
+      const userProfile = UserProfile.fromDocData(doc.data());
+      if (userProfile !== undefined) callback(userProfile);
+    },
+    handleFirebaseError()
+  );
 }
 
 // Document type for the runs sub-collection of the users collection.

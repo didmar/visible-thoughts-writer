@@ -22,6 +22,7 @@ import {
   isPlayer,
   mergeStepsWithUpdates,
   onStepsChanged,
+  onUserProfileChanged,
   Role,
   Run,
   Section,
@@ -33,6 +34,7 @@ import {
   updateRunLongTermThoughtsForStep,
   updateStep,
   updateUserRunState,
+  UserProfile,
 } from '../firebase-app';
 import { playDing, setWindowStatus, WindowStatus } from '../utils';
 import NotFoundPage from './NotFoundPage';
@@ -56,6 +58,9 @@ function RunPage(): JSX.Element {
   const [xStepAgo, setXStepAgo] = useState<Step | undefined>(undefined);
   const [ltts, setLtts] = useState<Thought[]>([]);
   const [role, setRole] = useState<Role | null | undefined>(undefined);
+  const [userProfile, setUserProfile] = useState<UserProfile | undefined>(
+    undefined
+  );
 
   const currentUser = useAuth();
 
@@ -87,6 +92,8 @@ function RunPage(): JSX.Element {
 
       // Create listener for new steps and updates
       await onStepsChanged(runId, setUpdatedSteps);
+      // Create listener for user profile change (for sound notifs)
+      await onUserProfileChanged(runId, setUserProfile);
     })();
   }, []);
 
@@ -131,9 +138,12 @@ function RunPage(): JSX.Element {
       const lastStep = merged[merged.length - 1];
       if (isOurTurnToWrite(role, lastStep)) {
         void (async function () {
-          // Sound the bell, except if the user is both DM and player
-          // or if the window is active
-          if (role !== Role.Both && !windowIsActive) {
+          // Should we sound the bell and change window title?
+          if (
+            role !== Role.Both &&
+            !windowIsActive &&
+            userProfile?.soundNotif === true
+          ) {
             await playDing();
             setWindowStatus(WindowStatus.READY);
           }
