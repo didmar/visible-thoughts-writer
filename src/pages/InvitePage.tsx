@@ -1,8 +1,8 @@
 import { Box, Button, Typography } from '@mui/material';
 import { useLocation, Link, Navigate } from 'react-router-dom';
 import { useState } from 'react';
-import { useAuth } from './Auth';
-import StyledFirebaseAuth, { uiConfig } from './StyledFirebaseAuth';
+import { useAuth } from '../components/Auth';
+import StyledFirebaseAuth, { uiConfig } from '../components/StyledFirebaseAuth';
 import { auth, confirmInvite } from '../firebase-app';
 
 const style = {

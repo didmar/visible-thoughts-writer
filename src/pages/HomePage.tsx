@@ -3,11 +3,11 @@ import { Link, Navigate } from 'react-router-dom';
 import { Run, createRun, onRunsCreated } from '../firebase-app';
 import '../App.css';
 import { AppBar, Box, Button, Toolbar, Typography } from '@mui/material';
-import HelpAndFeedback from './HelpAndFeedback';
-import UserMenu from './UserMenu';
-import { useAuth } from './Auth';
+import HelpAndFeedback from '../components/HelpAndFeedback';
+import UserMenu from '../components/UserMenu';
+import { useAuth } from '../components/Auth';
 
-function RunsPane(): JSX.Element {
+function HomePage(): JSX.Element {
   const [runs, setRuns] = useState<Run[] | undefined>(undefined);
   const [newRuns, setNewRuns] = useState<Run[] | undefined>(undefined);
   const [newTitle, setNewTitle] = useState<string>('');
@@ -17,13 +17,13 @@ function RunsPane(): JSX.Element {
 
   // Set up a listener
   useEffect(() => {
-    console.log('RunsPane > useEffect [] ');
+    console.log('HomePage > useEffect [] ');
     onRunsCreated(setNewRuns);
   }, []);
 
   // When new runs are created, add them to the list of runs
   useEffect(() => {
-    console.log('RunsPane > useEffect [newRuns]: ', newRuns);
+    console.log('HomePage > useEffect [newRuns]: ', newRuns);
     if (newRuns !== undefined) {
       const updateRuns = runs === undefined ? newRuns : [...runs, ...newRuns];
       setRuns(updateRuns);
@@ -85,7 +85,7 @@ function RunsPane(): JSX.Element {
   };
 
   return (
-    <div className="RunsPane">
+    <div className="HomePage">
       <>
         <AppBar position="static">
           <Toolbar>
@@ -103,4 +103,4 @@ function RunsPane(): JSX.Element {
   );
 }
 
-export default RunsPane;
+export default HomePage;

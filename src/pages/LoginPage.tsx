@@ -1,9 +1,9 @@
 import { useLocation, Navigate } from 'react-router-dom';
-import { useAuth } from './Auth';
+import { useAuth } from '../components/Auth';
 import { auth } from '../firebase-app';
-import { StyledFirebaseAuth, uiConfig } from './StyledFirebaseAuth';
+import { StyledFirebaseAuth, uiConfig } from '../components/StyledFirebaseAuth';
 
-const LogIn = (): JSX.Element => {
+const LoginPage = (): JSX.Element => {
   const location = useLocation();
   const from: string = location.state ?? '/';
 
@@ -24,4 +24,4 @@ const LogIn = (): JSX.Element => {
   return <Navigate replace to={from} />;
 };
 
-export default LogIn;
+export default LoginPage;

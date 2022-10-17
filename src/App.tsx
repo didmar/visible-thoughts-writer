@@ -3,11 +3,11 @@ import { Fragment } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import './App.css';
 import AuthProvider from './components/Auth';
-import InvitePage from './components/InvitePage';
-import LogIn from './components/LogIn';
-import RunsPane from './components/RunsPane';
-import StepsPane from './components/StepsPane';
 import { WindowContextProvider } from './components/WindowContextProvider';
+import HomePage from './pages/HomePage';
+import InvitePage from './pages/InvitePage';
+import LoginPage from './pages/LoginPage';
+import RunPage from './pages/RunPage';
 
 function App(): JSX.Element {
   return (
@@ -16,9 +16,9 @@ function App(): JSX.Element {
       <AuthProvider>
         <WindowContextProvider>
           <Routes>
-            <Route path="/" element={<RunsPane />} />
-            <Route path="/runs/:runId" element={<StepsPane />} />
-            <Route path="/login" element={<LogIn />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/runs/:runId" element={<RunPage />} />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/invite" element={<InvitePage />} />
           </Routes>
         </WindowContextProvider>

@@ -39,20 +39,20 @@ import {
   updateUserRunState,
 } from '../firebase-app';
 import { playDing, setWindowStatus, WindowStatus } from '../utils';
-import { useAuth } from './Auth';
-import Composer from './composer/Composer';
-import { ComposerMode } from './composer/types';
-import HelpAndFeedback from './HelpAndFeedback';
-import PageNotFound from './PageNotFound';
-import RunSettingsModal from './RunSettingsModal';
-import StepElem, { renderLongTermThoughts } from './StepElem';
-import UserMenu from './UserMenu';
-import { useWindowActivity } from './WindowContextProvider';
+import { useAuth } from '../components/Auth';
+import Composer from '../components/composer/Composer';
+import { ComposerMode } from '../components/composer/types';
+import HelpAndFeedback from '../components/HelpAndFeedback';
+import PageNotFound from '../components/PageNotFound';
+import RunSettingsModal from '../components/RunSettingsModal';
+import StepElem, { renderLongTermThoughts } from '../components/StepElem';
+import UserMenu from '../components/UserMenu';
+import { useWindowActivity } from '../components/WindowContextProvider';
 
 // How many steps ago to give a hint of
 const X = 50;
 
-function StepsPane(): JSX.Element {
+function RunPage(): JSX.Element {
   const { runId } = useParams<string>();
 
   // State for the initial value of the run.
@@ -81,10 +81,10 @@ function StepsPane(): JSX.Element {
 
   // Initialize run and steps
   useEffect(() => {
-    console.log('StepsPane > useEffect []');
+    console.log('RunPage > useEffect []');
 
     if (runId === undefined) {
-      throw new Error('StepsPane with no runId!');
+      throw new Error('RunPage with no runId!');
     }
 
     void (async function () {
@@ -106,7 +106,7 @@ function StepsPane(): JSX.Element {
 
   // When user change, initialize the role
   useEffect(() => {
-    console.log('StepsPane > useEffect [currentUser]: ', currentUser);
+    console.log('RunPage > useEffect [currentUser]: ', currentUser);
 
     void (async function () {
       // Init role of user for this particular run
@@ -122,10 +122,10 @@ function StepsPane(): JSX.Element {
 
   // When steps are updated
   useEffect(() => {
-    console.log('StepsPane > useEffect [updatedSteps]: ', updatedSteps);
+    console.log('RunPage > useEffect [updatedSteps]: ', updatedSteps);
 
     if (runId === undefined) {
-      throw new Error('StepsPane with no runId!');
+      throw new Error('RunPage with no runId!');
     }
 
     if (updatedSteps === undefined) return;
@@ -164,7 +164,7 @@ function StepsPane(): JSX.Element {
 
   // When steps change
   useEffect(() => {
-    console.log('StepsPane > useEffect [steps]: ', steps);
+    console.log('RunPage > useEffect [steps]: ', steps);
 
     if (runId === undefined) return;
     if (steps === undefined) return;
@@ -500,4 +500,4 @@ function StepsPane(): JSX.Element {
   );
 }
 
-export default StepsPane;
+export default RunPage;
