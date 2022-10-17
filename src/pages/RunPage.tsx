@@ -1,24 +1,12 @@
-import { Menu } from '@mui/icons-material';
-import {
-  AppBar,
-  Box,
-  Container,
-  Grid,
-  IconButton,
-  Paper,
-  Toolbar,
-  Typography,
-} from '@mui/material';
+import { Box, Container, Grid, Paper } from '@mui/material';
 import { useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useAuth } from '../components/Auth';
 import Composer from '../components/composer/Composer';
 import { ComposerMode } from '../components/composer/types';
-import HelpAndFeedback from '../components/HelpAndFeedback';
-import RunSettingsModal from '../components/RunSettingsModal';
+import Navbar from '../components/Navbar';
 import StepElem, { renderLongTermThoughts } from '../components/StepElem';
-import UserMenu from '../components/UserMenu';
 import { useWindowActivity } from '../components/WindowContextProvider';
 import {
   addStep,
@@ -67,7 +55,6 @@ function RunPage(): JSX.Element {
 
   const [xStepAgo, setXStepAgo] = useState<Step | undefined>(undefined);
   const [ltts, setLtts] = useState<Thought[]>([]);
-  const [title, setTitle] = useState<string | undefined>(undefined);
   const [role, setRole] = useState<Role | null | undefined>(undefined);
 
   const currentUser = useAuth();
@@ -95,7 +82,6 @@ function RunPage(): JSX.Element {
         setRun(null);
       } else {
         setRun(run);
-        setTitle(run.title);
         setLtts(run.sortedLtts());
       }
 
@@ -196,7 +182,6 @@ function RunPage(): JSX.Element {
         // and then update the ltts without a round-trip to Firestore.
         const updatedRun = await getRun(runId);
         if (updatedRun !== undefined) {
-          setTitle(updatedRun.title);
           setLtts(updatedRun.sortedLtts());
         } else {
           throw new Error(`Run ${runId} not found!`);
@@ -347,36 +332,7 @@ function RunPage(): JSX.Element {
         overflow: 'auto',
       }}
     >
-      <AppBar position="static">
-        <Toolbar>
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            aria-label="menu"
-            sx={{ mr: 2 }}
-          >
-            <Link to="/">
-              <Menu />
-            </Link>
-          </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            {title !== undefined ? title : ''}
-          </Typography>
-
-          <HelpAndFeedback />
-          {isDM(role) && <RunSettingsModal run={run} />}
-          <UserMenu />
-
-          {/*
-          <IconButton size="large" aria-label="search" color="inherit">
-            <Settings />
-          </IconButton>
-
-           */}
-        </Toolbar>
-      </AppBar>
-
+      <Navbar run={run} />
       <Container maxWidth="lg" sx={{ mt: 2, mb: 2 }}>
         <Grid container spacing={3}>
           {/* Steps */}

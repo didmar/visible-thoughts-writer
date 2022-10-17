@@ -1,11 +1,10 @@
+import { Box, Button } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { Run, createRun, onRunsCreated } from '../firebase-app';
 import '../App.css';
-import { AppBar, Box, Button, Toolbar, Typography } from '@mui/material';
-import HelpAndFeedback from '../components/HelpAndFeedback';
-import UserMenu from '../components/UserMenu';
 import { useAuth } from '../components/Auth';
+import Navbar from '../components/Navbar';
+import { createRun, onRunsCreated, Run } from '../firebase-app';
 
 function HomePage(): JSX.Element {
   const [runs, setRuns] = useState<Run[] | undefined>(undefined);
@@ -87,15 +86,7 @@ function HomePage(): JSX.Element {
   return (
     <div className="HomePage">
       <>
-        <AppBar position="static">
-          <Toolbar>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              Visible Thoughts Writer
-            </Typography>
-            <HelpAndFeedback />
-            <UserMenu />
-          </Toolbar>
-        </AppBar>
+        <Navbar />
         {renderCreateRun()}
         {renderRunsList()}
       </>
