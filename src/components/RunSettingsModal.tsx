@@ -22,9 +22,11 @@ import isEmail from 'validator/lib/isEmail';
 import {
   createInvite,
   getInvites,
+  getUserProfile,
   Invite,
   removePlayerFromRun,
   Run,
+  UserProfile,
 } from '../firebase-app';
 
 const style = {
@@ -48,7 +50,7 @@ function RunSettingsModal({ run }: Props): JSX.Element {
   const handleOpen = (): void => setOpen(true);
   const handleClose = (): void => setOpen(false);
 
-  const [players, setPlayers] = useState<string[]>([]);
+  const [players, setPlayers] = useState<UserProfile[]>([]);
   const handleRemovePlayer = (playerId: string): void => {
     if (
       !confirm(
@@ -60,7 +62,7 @@ function RunSettingsModal({ run }: Props): JSX.Element {
     void (async function () {
       await removePlayerFromRun(run.id, playerId);
     })();
-    setPlayers(players.filter((other) => other !== playerId));
+    setPlayers(players.filter((other) => other.id !== playerId));
   };
 
   const [invites, setInvites] = useState<Invite[]>([]);
@@ -70,9 +72,19 @@ function RunSettingsModal({ run }: Props): JSX.Element {
 
   useEffect(() => {
     console.log('RunSettingsModal > useEffect []');
-    setPlayers(run.players);
 
+    const playerIds = run.players;
     void (async function () {
+      const userProfiles = await Promise.all(
+        playerIds.map(async (playerId) => {
+          const player = await getUserProfile(playerId);
+          if (player === undefined)
+            throw new Error(`Player ${playerId} not found!`);
+          return player;
+        })
+      );
+      setPlayers(userProfiles);
+
       await getInvites(run.id).then((invites) => setInvites(invites));
     })();
   }, []);
@@ -80,14 +92,14 @@ function RunSettingsModal({ run }: Props): JSX.Element {
   const playersList = (
     <List>
       {players.length > 0 ? (
-        players.map((playerId, index) => (
+        players.map((player, index) => (
           <ListItem
             key={index}
             secondaryAction={
               <IconButton
-                edge="end"
+                edge="start"
                 aria-label="remove"
-                onClick={() => handleRemovePlayer(playerId)}
+                onClick={() => handleRemovePlayer(player.id)}
               >
                 <RemoveCircleIcon />
               </IconButton>
@@ -98,7 +110,7 @@ function RunSettingsModal({ run }: Props): JSX.Element {
                 <AccountCircle />
               </Avatar>
             </ListItemAvatar>
-            <ListItemText primary={playerId} />
+            <ListItemText primary={player.name} />
           </ListItem>
         ))
       ) : (
