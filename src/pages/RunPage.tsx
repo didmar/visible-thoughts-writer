@@ -1,4 +1,4 @@
-import { Box, Container, Grid, Paper } from '@mui/material';
+import { Box, Container, Grid, Paper, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { useParams } from 'react-router-dom';
@@ -333,6 +333,8 @@ function RunPage(): JSX.Element {
     setSteps([previousStep, ...steps]);
   }
 
+  const panePadding = 1;
+
   return run !== undefined && run !== null ? (
     <Box
       component="main"
@@ -349,7 +351,7 @@ function RunPage(): JSX.Element {
           <Grid item xs={12} md={isDM(role) ? 8 : 12} lg={isDM(role) ? 9 : 12}>
             <Paper
               sx={{
-                p: 2,
+                p: panePadding,
                 display: 'flex',
                 flexDirection: 'column-reverse',
                 height: '60vh',
@@ -400,15 +402,16 @@ function RunPage(): JSX.Element {
             >
               <Paper
                 sx={{
-                  p: 2,
+                  p: panePadding,
                   display: 'flex',
                   flexDirection: 'column',
-                  height: '70vh',
-                  overflow: 'auto',
+                  height: '60vh',
                 }}
               >
-                <h4> Long-term thoughts</h4>
-                {renderLongTermThoughts(ltts)}
+                <Typography variant="h6">Long-term thoughts</Typography>
+                <Box sx={{ overflow: 'auto' }}>
+                  {renderLongTermThoughts(ltts)}
+                </Box>
               </Paper>
             </Grid>
           )}
@@ -417,7 +420,7 @@ function RunPage(): JSX.Element {
           <Grid item xs={12} md={isDM(role) ? 8 : 12} lg={isDM(role) ? 9 : 12}>
             <Paper
               sx={{
-                p: 2,
+                p: panePadding,
                 display: 'flex',
                 flexDirection: 'column',
                 height: '25vh',
@@ -439,20 +442,18 @@ function RunPage(): JSX.Element {
             >
               <Paper
                 sx={{
-                  p: 2,
+                  p: panePadding,
                   display: 'flex',
                   flexDirection: 'column',
-                  height: '15vh',
-                  overflow: 'auto',
+                  height: '25vh',
                 }}
               >
-                {xStepAgo !== undefined && (
-                  <StepElem
-                    step={xStepAgo}
-                    role={role}
-                    title={`${X} steps ago...`}
-                  />
-                )}
+                <Typography variant="h6">{`${X} steps ago...`}</Typography>
+                <Box sx={{ overflow: 'auto' }}>
+                  {xStepAgo !== undefined && (
+                    <StepElem step={xStepAgo} role={role} title={''} />
+                  )}
+                </Box>
               </Paper>
             </Grid>
           )}

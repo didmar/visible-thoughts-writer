@@ -1,4 +1,4 @@
-import { Paper } from '@mui/material';
+import { Box, Paper, Typography } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import { styled } from '@mui/material/styles';
 import {
@@ -63,8 +63,12 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
   title,
 }: StepElemProps) => {
   return (
-    <div className="StepsPane" key={42}>
-      <h3 key={0}>{title ?? `Step #${step.n}`}</h3>
+    <Box className="StepsPane" sx={{ mt: 1, mb: 1 }} key={42}>
+      {title !== '' && (
+        <Typography variant="h6" key={0}>
+          {title ?? `Step #${step.n}`}
+        </Typography>
+      )}
       <Stack key={1} spacing={2}>
         {step?.initT !== undefined && isDM(role) && (
           <Item key={0}>
@@ -171,7 +175,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
           </Item>
         )}
       </Stack>
-    </div>
+    </Box>
   );
 };
 
