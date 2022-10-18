@@ -107,11 +107,13 @@ function RunSettingsModal({ run }: Props): JSX.Element {
               </IconButton>
             }
           >
-            <ListItemAvatar>
-              <Avatar>
-                <AccountCircle />
-              </Avatar>
-            </ListItemAvatar>
+            <Tooltip title="Registered player">
+              <ListItemAvatar>
+                <Avatar>
+                  <AccountCircle />
+                </Avatar>
+              </ListItemAvatar>
+            </Tooltip>
             <ListItemText primary={player.name} />
           </ListItem>
         ))
