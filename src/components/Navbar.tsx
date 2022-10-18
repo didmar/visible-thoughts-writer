@@ -1,7 +1,7 @@
-import { AppBar, IconButton, Toolbar, Typography } from '@mui/material';
-import { Link } from 'react-router-dom';
 import { Menu } from '@mui/icons-material';
+import { AppBar, Box, IconButton, Toolbar, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import '../App.css';
 import HelpAndFeedback from '../components/HelpAndFeedback';
 import UserMenu from '../components/UserMenu';
@@ -33,11 +33,20 @@ const Navbar = ({ run }: Props): JSX.Element => {
     })();
   }, [currentUser]);
 
-  const homePageTitle: JSX.Element = (
-    <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-      Visible Thoughts Writer
+  const pageTitle = (title: string): JSX.Element => (
+    <Typography
+      variant="h6"
+      component="div"
+      noWrap
+      sx={{
+        flexGrow: 1,
+      }}
+    >
+      {title}
     </Typography>
   );
+
+  const homePageTitle = pageTitle('Visible Thoughts Writer');
 
   const homeIcon: JSX.Element = (
     <Link to="/">
@@ -54,37 +63,32 @@ const Navbar = ({ run }: Props): JSX.Element => {
   );
 
   const runPageTitle = (_run: Run): JSX.Element => {
+    const title = _run.title !== undefined ? _run.title : '';
     return (
       <>
         {homeIcon}
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          {_run.title !== undefined ? _run.title : ''}
-        </Typography>
+        {pageTitle(title)}
       </>
     );
   };
 
-  const title = run === undefined ? homePageTitle : runPageTitle(run);
+  const titleElement = run === undefined ? homePageTitle : runPageTitle(run);
 
   const runSettings = run !== undefined && isDM(role) && (
     <RunSettingsModal run={run} />
   );
 
   return (
-    <AppBar position="static">
-      <Toolbar>
-        {title}
-        <HelpAndFeedback />
-        {runSettings}
-        <UserMenu />
-
-        {/*
-          <IconButton size="large" aria-label="search" color="inherit">
-            <Settings />
-          </IconButton>
-        */}
-      </Toolbar>
-    </AppBar>
+    <Box sx={{ flexGrow: 1 }}>
+      <AppBar position="static">
+        <Toolbar>
+          {titleElement}
+          <HelpAndFeedback />
+          {runSettings}
+          <UserMenu />
+        </Toolbar>
+      </AppBar>
+    </Box>
   );
 };
 

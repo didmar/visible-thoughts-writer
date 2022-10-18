@@ -191,7 +191,7 @@ function RunSettingsModal({ run }: Props): JSX.Element {
   );
 
   return run !== undefined && run !== null ? (
-    <div>
+    <Box>
       <IconButton size="large" onClick={handleOpen} color="inherit">
         <SettingsIcon />
       </IconButton>
@@ -215,7 +215,7 @@ function RunSettingsModal({ run }: Props): JSX.Element {
           </Box>
         </Box>
       </Modal>
-    </div>
+    </Box>
   ) : (
     <></>
   );
