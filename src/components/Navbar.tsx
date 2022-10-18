@@ -3,7 +3,7 @@ import { AppBar, Box, IconButton, Toolbar, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../App.css';
-import HelpAndFeedback from '../components/HelpAndFeedback';
+import HelpAndFeedback from './HelpModal';
 import UserMenu from '../components/UserMenu';
 import { getUserRoleInRun, isDM, Role, Run } from '../firebase-app';
 import { useAuth } from './Auth';
