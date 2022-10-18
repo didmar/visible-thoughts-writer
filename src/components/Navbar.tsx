@@ -40,17 +40,17 @@ const Navbar = ({ run }: Props): JSX.Element => {
   );
 
   const homeIcon: JSX.Element = (
-    <IconButton
-      size="large"
-      edge="start"
-      color="inherit"
-      aria-label="menu"
-      sx={{ mr: 2 }}
-    >
-      <Link to="/">
+    <Link to="/">
+      <IconButton
+        size="large"
+        edge="start"
+        color="inherit"
+        aria-label="menu"
+        sx={{ mr: 2 }}
+      >
         <Menu />
-      </Link>
-    </IconButton>
+      </IconButton>
+    </Link>
   );
 
   const runPageTitle = (_run: Run): JSX.Element => {
