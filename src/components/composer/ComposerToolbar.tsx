@@ -125,6 +125,8 @@ const ComposerToolbar = React.forwardRef(
     >,
     ref: Ref<HTMLDivElement> | undefined
   ) => {
+    if (props.mode === ComposerMode.VIEW) return <></>;
+
     return (
       <Menu
         ref={ref}

@@ -219,6 +219,7 @@ const Composer = ({
             </Grid>
             {mode !== ComposerMode.VIEW && (
               <ComposerToolbar
+                mode={mode}
                 section={section}
                 onSubmit={submit}
                 onCanceled={cancel}
