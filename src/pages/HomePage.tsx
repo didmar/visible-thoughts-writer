@@ -1,4 +1,4 @@
-import { Box, Button } from '@mui/material';
+import { Box, Button, FormControl, TextField, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import '../App.css';
@@ -29,40 +29,53 @@ function HomePage(): JSX.Element {
     }
   }, [newRuns]);
 
-  const renderCreateRun = (): JSX.Element => {
-    if (currentUser == null || !currentUser.canDM()) {
-      return <></>;
-    }
+  const onCreateRun = (event: React.FormEvent): void => {
+    event.preventDefault();
+    if (currentUser === null || currentUser === undefined) return;
 
-    return (
-      <Box sx={{ padding: 2 }}>
-        <input
-          placeholder="Title..."
-          onChange={(event) => {
-            setNewTitle(event.target.value);
-          }}
-        />
-        <Button
-          variant="contained"
-          sx={{ ml: 2 }}
-          disabled={newTitle === ''}
-          onClick={() => {
-            void (async function () {
-              console.log('newTitle ', newTitle);
-              const runId = await createRun(newTitle, currentUser.uid());
-              console.log('runId ', newTitle);
-              setNewRunId(runId);
-            })();
-          }}
-        >
-          Create Run
-          {newRunId !== undefined && (
-            <Navigate replace to={`/runs/${newRunId}`} />
-          )}
-        </Button>
-      </Box>
-    );
+    void (async function () {
+      console.log('newTitle ', newTitle);
+      const runId = await createRun(newTitle, currentUser.uid());
+      console.log('runId ', newTitle);
+      setNewRunId(runId);
+    })();
   };
+
+  const createRunForm =
+    currentUser?.canDM() ?? false ? (
+      <Box sx={{ mb: 2 }}>
+        <form onSubmit={onCreateRun}>
+          <FormControl>
+            <TextField
+              id="name-input"
+              // label="Run name"
+              name="name-input"
+              variant="outlined"
+              size={'small'}
+              value={newTitle}
+              onChange={(event) => {
+                setNewTitle(event.target.value);
+              }}
+              inputProps={{ maxLength: 256 }}
+            />
+          </FormControl>
+
+          <Button
+            sx={{ ml: 2 }}
+            type="submit"
+            variant="contained"
+            disabled={newTitle === ''}
+          >
+            Create run
+            {newRunId !== undefined && (
+              <Navigate replace to={`/runs/${newRunId}`} />
+            )}
+          </Button>
+        </form>
+      </Box>
+    ) : (
+      <></>
+    );
 
   const renderRunsList = (): JSX.Element => {
     if (runs === undefined) {
@@ -70,8 +83,8 @@ function HomePage(): JSX.Element {
     }
 
     return (
-      <div style={{ padding: 5 }}>
-        <h1>Runs</h1>
+      <Box>
+        <Typography variant="h5">Runs</Typography>
         <ul>
           {runs?.map((run) => (
             <li key={run.id}>
@@ -79,7 +92,7 @@ function HomePage(): JSX.Element {
             </li>
           ))}
         </ul>
-      </div>
+      </Box>
     );
   };
 
@@ -87,8 +100,10 @@ function HomePage(): JSX.Element {
     <div className="HomePage">
       <>
         <Navbar />
-        {renderCreateRun()}
-        {renderRunsList()}
+        <Box className="HomePage" sx={{ ml: 2, mt: 2 }}>
+          {createRunForm}
+          {renderRunsList()}
+        </Box>
       </>
     </div>
   );
