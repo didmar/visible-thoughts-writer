@@ -2,12 +2,12 @@ import {
   Descendant,
   Editor,
   Node,
+  NodeEntry,
   Text as SlateText,
   Transforms,
-  NodeEntry,
 } from 'slate';
 import { Section, ThoughtType } from '../../firebase-app';
-import { CustomEditor, CustomElement, ThoughtText } from './types';
+import { CustomEditor, CustomElement, CustomText, ThoughtText } from './types';
 
 export function resetEditor(
   editor: Editor,
@@ -167,4 +167,14 @@ export const beginningOfBullet = (editor: CustomEditor): boolean => {
   const { selection } = editor;
   if (selection === null) return false;
   return selection.anchor.offset === 0;
+};
+
+export const isLastBulletElementEmpty = (editor: CustomEditor): boolean => {
+  const { selection } = editor;
+  const at =
+    selection !== null
+      ? Editor.unhangRange(editor, selection).anchor
+      : Editor.end(editor, []);
+  const [node] = Editor.node(editor, at) as NodeEntry<CustomText>;
+  return node.type === 'thought' && node.text === '';
 };

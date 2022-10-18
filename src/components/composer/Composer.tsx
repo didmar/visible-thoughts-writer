@@ -40,7 +40,12 @@ import {
   EndOfThoughtText,
   ThoughtText,
 } from './types';
-import { beginningOfBullet, getInitialValue, resetEditor } from './utils';
+import {
+  beginningOfBullet,
+  getInitialValue,
+  isLastBulletElementEmpty,
+  resetEditor,
+} from './utils';
 import {
   handleYBRHotkey,
   handleYBRTag,
@@ -248,8 +253,11 @@ const withCustomization = (editor: CustomEditor): CustomEditor => {
       // but is put into the SimpleText child
       Transforms.insertText(editor, '\n');
     } else {
-      // If BulletElement, new line will create a new BulletElement
-      insertBreak();
+      // If BulletElement, new line will create a new BulletElement,
+      // unless the current BulletElement is empty
+      if (!isLastBulletElementEmpty(editor)) {
+        insertBreak();
+      }
     }
   };
 
