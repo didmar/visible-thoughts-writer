@@ -51,11 +51,13 @@ function RunSettingsModal({ run }: Props): JSX.Element {
   const handleClose = (): void => setOpen(false);
 
   const [players, setPlayers] = useState<UserProfile[]>([]);
+
   const handleRemovePlayer = (playerId: string): void => {
+    const name = players.find((player) => player.id === playerId)?.name;
+    if (name === undefined) throw new Error('Player not found!');
+
     if (
-      !confirm(
-        `This will exclude player ${playerId} from the run. Are you sure?`
-      )
+      !confirm(`This will exclude player ${name} from the run. Are you sure?`)
     )
       return;
 
