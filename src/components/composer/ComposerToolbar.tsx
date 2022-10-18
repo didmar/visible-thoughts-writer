@@ -121,6 +121,7 @@ const ComposerToolbar = React.forwardRef(
         section: Section;
         onSubmit: () => void;
         onCanceled: () => void;
+        isSubmittable: () => boolean;
       } & BaseProps
     >,
     ref: Ref<HTMLDivElement> | undefined
@@ -152,13 +153,21 @@ const ComposerToolbar = React.forwardRef(
         )}
         {isYBRSection(props.section) && <YBRButton />}
         {props.mode === ComposerMode.CREATE ? (
-          <Button style={{ float: 'right' }} onClick={props.onSubmit}>
+          <Button
+            style={{ float: 'right' }}
+            disabled={!props.isSubmittable()}
+            onClick={props.onSubmit}
+          >
             Submit
           </Button>
         ) : (
           <div style={{ float: 'right' }}>
-            <Button onClick={props.onCanceled}>Cancel</Button>
-            <Button onClick={props.onSubmit}>Edit</Button>
+            {props.mode === ComposerMode.EDIT && (
+              <Button onClick={props.onCanceled}>Cancel</Button>
+            )}
+            <Button disabled={!props.isSubmittable()} onClick={props.onSubmit}>
+              Edit
+            </Button>
           </div>
         )}
       </Menu>

@@ -91,14 +91,15 @@ const Composer = ({
     withCustomization(withReact(withHistory(createEditor())))
   );
 
-  const submit = (): void => {
-    const content = parse(editor.children as CustomElement[]);
+  const [content, setContent] = useState<SectionContent>(null);
 
-    // Prevent editing the content into null
-    if (content === null && mode === ComposerMode.EDIT) {
-      console.log("Can't submit null content!");
-      return;
-    }
+  const isSubmittable = (): boolean => {
+    return !(content === null && mode === ComposerMode.EDIT);
+  };
+
+  const submit = (): void => {
+    // const content = parse(editor.children as CustomElement[]);
+
     onSubmitted?.(n, section, content);
 
     // After editing, go back to view mode
@@ -161,9 +162,11 @@ const Composer = ({
             value={
               initValue !== undefined ? initValue : getInitialValue(section)
             }
-            /* onChange={(_) => {
-              console.log('editor.children: ', JSON.stringify(editor.children));
-            }} */
+            onChange={(_) => {
+              // console.log('editor.children: ', JSON.stringify(editor.children));
+              setContent(parse(editor.children as CustomElement[]));
+              // console.log('content: ', JSON.stringify(content));
+            }}
           >
             <Grid container spacing={0}>
               <Grid item xs={11} md={11} lg={11}>
@@ -223,6 +226,7 @@ const Composer = ({
                 section={section}
                 onSubmit={submit}
                 onCanceled={cancel}
+                isSubmittable={isSubmittable}
               />
             )}
           </Slate>
