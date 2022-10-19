@@ -1,4 +1,5 @@
 import { css, cx } from '@emotion/css';
+import { Box } from '@mui/material';
 import { isHotkey } from 'is-hotkey';
 import { KeyboardEvent } from 'react';
 import { Editor, Node, NodeEntry, Text as SlateText, Transforms } from 'slate';
@@ -18,37 +19,45 @@ const TITLE = `Toggle the "yo be real" tag (hotkey: ${YBR_HOTKEY})`;
 const YBRButton = (): JSX.Element => {
   const editor = useSlate();
   return (
-    <ToolbarButton
-      active={isYBRActive(editor)}
-      onMouseDown={(event: MouseEvent) => {
-        event.preventDefault();
-        toggleYBR(editor);
+    <Box
+      sx={{
+        justifyContent: 'flex-start',
+        alignContent: 'space-between',
+        alignSelf: 'center',
+        flexShrink: 1,
       }}
-      color={COLOR}
-      title={TITLE}
     >
-      <ToolbarIcon>&nbsp;{'YoBeReal'}&nbsp;</ToolbarIcon>
-    </ToolbarButton>
+      <ToolbarButton
+        active={isYBRActive(editor)}
+        onMouseDown={(event: MouseEvent) => {
+          event.preventDefault();
+          toggleYBR(editor);
+        }}
+        color={COLOR}
+        title={TITLE}
+      >
+        <ToolbarIcon>&nbsp;{'YoBeReal'}&nbsp;</ToolbarIcon>
+      </ToolbarButton>
+    </Box>
   );
 };
 
 export const YBRTag = (): JSX.Element => {
   return (
-    <span
-      title={'Thought with "Yo be real" tag'}
-      className={cx(
-        css`
-          margin: 0;
-          position: relative;
-          top: 33%;
-          border: 1px solid;
-          padding: 10px 6px 0px;
-          color: ${COLOR};
-        `
-      )}
-    >
-      <ToolbarIcon>{'Y'}</ToolbarIcon>
-    </span>
+    <div>
+      <span
+        title={'Thought with "Yo be real" tag'}
+        className={cx(
+          css`
+            border: 1px solid;
+            padding: 8px 2px 0px;
+            color: ${COLOR};
+          `
+        )}
+      >
+        <ToolbarIcon>{'YBR'}</ToolbarIcon>
+      </span>
+    </div>
   );
 };
 

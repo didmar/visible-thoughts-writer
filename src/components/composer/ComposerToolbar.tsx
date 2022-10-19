@@ -1,6 +1,6 @@
 /* eslint-disable react/display-name */
 import { css, cx } from '@emotion/css';
-import { Button } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import React, { PropsWithChildren, Ref } from 'react';
 import ReactDOM from 'react-dom';
 import {
@@ -44,6 +44,7 @@ export const ToolbarButton = React.forwardRef(
         className,
         css`
           border: 1px solid;
+          padding: 8px 0px 0px;
           cursor: pointer;
           color: ${reversed
             ? active
@@ -71,29 +72,6 @@ export const ToolbarIcon = React.forwardRef(
           font-size: 18px;
           vertical-align: text-bottom;
           user-select: none;
-        `
-      )}
-    />
-  )
-);
-
-export const Menu = React.forwardRef(
-  (
-    { className, ...props }: PropsWithChildren<BaseProps>,
-    ref: Ref<HTMLDivElement> | undefined
-  ) => (
-    <div
-      {...props}
-      ref={ref}
-      className={cx(
-        className,
-        css`
-          & > * {
-            display: inline-block;
-          }
-          & > * + * {
-            margin-left: 15px;
-          }
         `
       )}
     />
@@ -128,49 +106,65 @@ const ComposerToolbar = React.forwardRef(
   ) => {
     if (props.mode === ComposerMode.VIEW) return <></>;
 
-    return (
-      <Menu
-        ref={ref}
-        className={cx(
-          className,
-          css`
-            position: relative;
-            padding: 1px 18px 17px;
-            margin: 0 -20px;
-            margin-top: 20px;
-          `
-        )}
+    const thoughtSectionButtons = (
+      <Box
+        sx={{
+          justifyContent: 'flex-start',
+          alignContent: 'space-between',
+          alignSelf: 'center',
+          flexShrink: 1,
+        }}
       >
-        {isThoughtSection(props.section) && (
-          <>
-            <ThoughtTypeButton thoughtType={ThoughtType.Watsonian} />
-            <ThoughtTypeButton thoughtType={ThoughtType.Doylist} />
-            <ThoughtTypeButton thoughtType={ThoughtType.Meta} />
-            <ThoughtTypeButton thoughtType={ThoughtType.Comment} />
-            <span> </span>
-            <LTButton />
-          </>
-        )}
-        {isYBRSection(props.section) && <YBRButton />}
+        <ThoughtTypeButton thoughtType={ThoughtType.Watsonian} />
+        <ThoughtTypeButton thoughtType={ThoughtType.Doylist} />
+        <ThoughtTypeButton thoughtType={ThoughtType.Meta} />
+        <ThoughtTypeButton thoughtType={ThoughtType.Comment} />
+        <Box component="span" sx={{ marginRight: 1 }} />
+        <LTButton />
+      </Box>
+    );
+
+    const spacer = (
+      <Box
+        sx={{
+          flexGrow: 1,
+        }}
+      />
+    );
+
+    const rightsideButtons = (
+      <Box
+        sx={{
+          justifyContent: 'flex-end',
+          alignContent: 'space-between',
+          alignItems: 'center',
+          flexShrink: 1,
+        }}
+      >
         {props.mode === ComposerMode.CREATE ? (
-          <Button
-            style={{ float: 'right' }}
-            disabled={!props.isSubmittable()}
-            onClick={props.onSubmit}
-          >
+          <Button disabled={!props.isSubmittable()} onClick={props.onSubmit}>
             Submit
           </Button>
         ) : (
-          <div style={{ float: 'right' }}>
+          <>
             {props.mode === ComposerMode.EDIT && (
               <Button onClick={props.onCanceled}>Cancel</Button>
             )}
             <Button disabled={!props.isSubmittable()} onClick={props.onSubmit}>
               Edit
             </Button>
-          </div>
+          </>
         )}
-      </Menu>
+      </Box>
+    );
+
+    return (
+      <Box ref={ref} sx={{ display: 'flex', flexDirection: 'row' }}>
+        {isThoughtSection(props.section) && thoughtSectionButtons}
+        {isYBRSection(props.section) && <YBRButton />}
+        {spacer}
+        {rightsideButtons}
+      </Box>
     );
   }
 );

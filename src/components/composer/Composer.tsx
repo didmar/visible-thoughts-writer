@@ -1,6 +1,7 @@
 import EditIcon from '@mui/icons-material/Edit';
-import { Grid, IconButton } from '@mui/material';
+import { Box, IconButton, Tooltip } from '@mui/material';
 import {
+  CSSProperties,
   useCallback,
   useEffect,
   // useMemo,
@@ -154,90 +155,102 @@ const Composer = ({
   }, []);
 
   const icon = sectionsData[section].icon;
+  const ybrTag = mode === ComposerMode.VIEW &&
+    isYBRSection(section) &&
+    isYBRActive(editor) && <YBRTag />;
+
+  const editableStyle: CSSProperties =
+    mode !== ComposerMode.VIEW
+      ? {
+          border: '1px solid gray',
+          borderRadius: '5px',
+          flexGrow: 1,
+          overflow: 'auto',
+        }
+      : {
+          flexGrow: 1,
+          overflow: 'auto',
+        };
+
+  const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (event) => {
+    if (mode === ComposerMode.VIEW) return;
+    // Submit hotkey pressed?
+    if (event.key === 'Enter' && event.ctrlKey) {
+      event.preventDefault();
+      submit();
+      return;
+    }
+    // Handle other hotkeys
+    if (isThoughtSection(section)) {
+      handleThoughtTypeHotkeys(editor, event);
+      handleLongTermHotkey(editor, event);
+    } else if (isYBRSection(section)) {
+      handleYBRHotkey(editor, event);
+    }
+  };
+
+  const editButton = mode === ComposerMode.VIEW && (editable ?? false) && (
+    <Box sx={{ alignSelf: 'start' }}>
+      <Tooltip title="Edit section">
+        <IconButton
+          aria-label="edit"
+          onClick={() => setMode(ComposerMode.EDIT)}
+        >
+          <EditIcon />
+        </IconButton>
+      </Tooltip>
+    </Box>
+  );
+
+  const toolbar = mode !== ComposerMode.VIEW && (
+    <ComposerToolbar
+      mode={mode}
+      section={section}
+      onSubmit={submit}
+      onCanceled={cancel}
+      isSubmittable={isSubmittable}
+    />
+  );
 
   return (
-    <>
-      <Grid container spacing={0}>
-        <Grid item xs={1} md={1} lg={1} sx={{ padding: 1 }}>
-          {icon}
-        </Grid>
-        <Grid item xs={11} md={11} lg={11}>
-          <Slate
-            editor={editor}
-            value={
-              initValue !== undefined ? initValue : getInitialValue(section)
-            }
-            onChange={(_) => {
-              // console.log('editor.children: ', JSON.stringify(editor.children));
-              setContent(parse(editor.children as CustomElement[]));
-              // console.log('content: ', JSON.stringify(content));
+    <Box sx={{ flexDirection: 'row', p: 1 }}>
+      <Slate
+        editor={editor}
+        value={initValue !== undefined ? initValue : getInitialValue(section)}
+        onChange={(_) => {
+          // console.log('editor.children: ', JSON.stringify(editor.children));
+          setContent(parse(editor.children as CustomElement[]));
+          // console.log('content: ', JSON.stringify(content));
+        }}
+      >
+        <Box display="flex">
+          <Box
+            sx={{
+              flexDirection: 'column',
+              flexShrink: 1,
+              mt: 1,
+              mr: 1,
             }}
           >
-            <Grid container spacing={0}>
-              <Grid item xs={11} md={11} lg={11}>
-                <Editable
-                  readOnly={mode === ComposerMode.VIEW}
-                  onDOMBeforeInput={
-                    mode !== ComposerMode.VIEW
-                      ? handleDOMBeforeInput
-                      : undefined
-                  }
-                  renderElement={renderElement}
-                  renderLeaf={renderLeaf}
-                  style={
-                    mode !== ComposerMode.VIEW
-                      ? {
-                          border: '1px solid gray',
-                          borderRadius: '5px',
-                          padding: 5,
-                          overflow: 'auto',
-                        }
-                      : {}
-                  }
-                  onKeyDown={(event) => {
-                    if (mode === ComposerMode.VIEW) return;
-                    if (event.key === 'Enter' && event.ctrlKey) {
-                      event.preventDefault();
-                      submit();
-                      return;
-                    }
-                    if (isThoughtSection(section)) {
-                      handleThoughtTypeHotkeys(editor, event);
-                      handleLongTermHotkey(editor, event);
-                    } else if (isYBRSection(section)) {
-                      handleYBRHotkey(editor, event);
-                    }
-                  }}
-                  autoFocus={mode !== ComposerMode.VIEW}
-                />
-              </Grid>
-              <Grid item xs={1} md={1} lg={1}>
-                {mode === ComposerMode.VIEW &&
-                  isYBRSection(section) &&
-                  isYBRActive(editor) && <YBRTag />}
-                {mode === ComposerMode.VIEW && (editable ?? false) && (
-                  <IconButton
-                    aria-label="edit"
-                    onClick={() => setMode(ComposerMode.EDIT)}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                )}
-              </Grid>
-            </Grid>
-            {mode !== ComposerMode.VIEW && (
-              <ComposerToolbar
-                mode={mode}
-                section={section}
-                onSubmit={submit}
-                onCanceled={cancel}
-                isSubmittable={isSubmittable}
-              />
-            )}
-          </Slate>
-        </Grid>
-      </Grid>
-    </>
+            {icon}
+            {ybrTag}
+          </Box>
+          <Editable
+            readOnly={mode === ComposerMode.VIEW}
+            onDOMBeforeInput={
+              mode !== ComposerMode.VIEW ? handleDOMBeforeInput : undefined
+            }
+            renderElement={renderElement}
+            renderLeaf={renderLeaf}
+            style={editableStyle}
+            onKeyDown={onKeyDown}
+            autoFocus={mode !== ComposerMode.VIEW}
+          />
+          {editButton}
+        </Box>
+        <Box sx={{ flexGrowth: 0 }}>{toolbar}</Box>
+      </Slate>
+    </Box>
   );
 };
 

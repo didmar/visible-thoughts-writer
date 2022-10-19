@@ -1,6 +1,5 @@
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Divider, Paper, Typography } from '@mui/material';
 import Stack from '@mui/material/Stack';
-import { styled } from '@mui/material/styles';
 import {
   isDM,
   Role,
@@ -14,15 +13,6 @@ import Composer from './composer/Composer';
 import { toCustomElement } from './composer/parsing';
 import RenderedLeaf from './composer/RenderedLeaf';
 import { ComposerMode, ThoughtText } from './composer/types';
-// import { enumKeys } from '../utils';
-
-const Item = styled(Paper)(({ theme }) => ({
-  // backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
-  ...theme.typography.body2,
-  // padding: theme.spacing(1),
-  // textAlign: 'center',
-  // color: theme.palette.text.secondary,
-}));
 
 interface StepElemProps {
   step: Step;
@@ -56,6 +46,10 @@ function renderThought(thought: Thought): JSX.Element {
   );
 }
 
+const itemProps = {
+  elevation: 4,
+};
+
 const StepElem: React.FunctionComponent<StepElemProps> = ({
   step,
   role,
@@ -63,15 +57,17 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
   title,
 }: StepElemProps) => {
   return (
-    <Box className="StepsPane" sx={{ mt: 1, mb: 1 }} key={42}>
+    <Box className="StepsPane" sx={{ mx: 0.5, mt: 0.5, mb: 0.5 }} key={42}>
       {title !== '' && (
-        <Typography variant="h6" key={0}>
-          {title ?? `Step #${step.n}`}
-        </Typography>
+        <Divider sx={{ mb: 0.5 }}>
+          <Typography variant="h6" key={0}>
+            {title ?? `${step.n}`}
+          </Typography>
+        </Divider>
       )}
       <Stack key={1} spacing={2}>
         {step?.initT !== undefined && isDM(role) && (
-          <Item key={0}>
+          <Paper key={0} {...itemProps}>
             <Composer
               initMode={ComposerMode.VIEW}
               initValue={toCustomElement(
@@ -86,10 +82,10 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               }
               onSubmitted={onSubmitted ?? noop}
             />
-          </Item>
+          </Paper>
         )}
         {step?.ppt !== undefined && (
-          <Item key={1}>
+          <Paper key={1} {...itemProps}>
             <Composer
               initMode={ComposerMode.VIEW}
               initValue={toCustomElement(
@@ -102,10 +98,10 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               }
               onSubmitted={onSubmitted ?? noop}
             />
-          </Item>
+          </Paper>
         )}
         {step?.ppptT !== undefined && isDM(role) && (
-          <Item key={2}>
+          <Paper key={2} {...itemProps}>
             <Composer
               initMode={ComposerMode.VIEW}
               initValue={toCustomElement(
@@ -120,10 +116,10 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               }
               onSubmitted={onSubmitted ?? noop}
             />
-          </Item>
+          </Paper>
         )}
         {step?.act !== undefined && (
-          <Item key={3}>
+          <Paper key={3} {...itemProps}>
             <Composer
               initMode={ComposerMode.VIEW}
               initValue={toCustomElement(
@@ -138,10 +134,10 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               }
               onSubmitted={onSubmitted ?? noop}
             />
-          </Item>
+          </Paper>
         )}
         {step?.pactT !== undefined && isDM(role) && (
-          <Item key={4}>
+          <Paper key={4} {...itemProps}>
             <Composer
               initMode={ComposerMode.VIEW}
               initValue={toCustomElement(
@@ -156,10 +152,10 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               }
               onSubmitted={onSubmitted ?? noop}
             />
-          </Item>
+          </Paper>
         )}
         {step?.out !== undefined && (
-          <Item key={5}>
+          <Paper key={5} {...itemProps}>
             <Composer
               initMode={ComposerMode.VIEW}
               initValue={toCustomElement(
@@ -172,7 +168,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               }
               onSubmitted={onSubmitted ?? noop}
             />
-          </Item>
+          </Paper>
         )}
       </Stack>
     </Box>
