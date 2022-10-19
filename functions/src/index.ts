@@ -1,4 +1,5 @@
 import { firestore, logger, config, https } from 'firebase-functions';
+import { FirebaseError } from 'firebase-admin/app';
 
 import admin = require('firebase-admin');
 admin.initializeApp(config().firebase);
@@ -242,7 +243,7 @@ exports.confirmInvite = https.onCall(async (data, context) => {
   // Check if the user has already a role in the run
   const userRunStateDocRef = db.doc(`users/${uid}/runs/${runId}`);
   const userRunStateDoc = await userRunStateDocRef.get();
-  let previousRole = undefined;
+  let previousRole;
   if (userRunStateDoc.exists) {
     const { role } = userRunStateDoc?.data() as { role: Role | undefined };
     if (previousRole !== undefined) previousRole = role;
@@ -264,10 +265,10 @@ exports.confirmInvite = https.onCall(async (data, context) => {
   });
   // Delete the invite
   batch.delete(inviteDocRef);
-  const results = await batch.commit().catch((err) => {
+  const results = await batch.commit().catch((err: FirebaseError) => {
     throw new https.HttpsError(
       'internal',
-      `Oops, something went wrong internally: ${err}`
+      `Oops, something went wrong internally: ${err.message}`
     );
   });
   logger.info('results: ', JSON.stringify(results));
