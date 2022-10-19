@@ -1,4 +1,11 @@
-import { Box, Container, Grid, Paper, Typography } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  Container,
+  Grid,
+  Paper,
+  Typography,
+} from '@mui/material';
 import { useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { useParams } from 'react-router-dom';
@@ -288,7 +295,7 @@ function RunPage(): JSX.Element {
 
   function renderComposer(): JSX.Element {
     if (role === undefined || steps === undefined || steps.length === 0) {
-      return <>Loading...</>;
+      return <CircularProgress />;
     }
     if (role === null) {
       return <>Only designated users can participate</>;
@@ -296,7 +303,7 @@ function RunPage(): JSX.Element {
 
     const section = getNextSection();
     if (section === undefined) {
-      return <>Wait...</>; // Waiting for the next step to be created
+      return <CircularProgress />; // Waiting for the next step to be created
     }
 
     // Is it our time to write?
@@ -335,7 +342,10 @@ function RunPage(): JSX.Element {
 
   const panePadding = 1;
 
-  return run !== undefined && run !== null ? (
+  if (run === undefined) return <CircularProgress />;
+  if (run === null) return <NotFoundPage />;
+
+  return (
     <Box
       component="main"
       sx={{
@@ -371,7 +381,7 @@ function RunPage(): JSX.Element {
                     ? steps[0].n > 1
                     : false
                 }
-                loader={<h4>Loading...</h4>}
+                loader={<CircularProgress />}
                 inverse={true}
                 style={{ display: 'flex', flexDirection: 'column-reverse' }}
                 scrollableTarget="scrollableDiv"
@@ -460,10 +470,6 @@ function RunPage(): JSX.Element {
         </Grid>
       </Container>
     </Box>
-  ) : run === undefined ? (
-    <>Loading...</>
-  ) : (
-    <NotFoundPage />
   );
 }
 

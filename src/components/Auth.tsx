@@ -2,6 +2,7 @@ import * as firebaseAuth from 'firebase/auth';
 import React, { ReactNode, useContext, useEffect, useState } from 'react';
 import 'firebaseui/dist/firebaseui.css';
 import { auth, getOrCreateUserProfile, UserProfile } from '../firebase-app';
+import { CircularProgress } from '@mui/material';
 
 // Combine the Firebase auth data with the user's profile data.
 export class User {
@@ -64,7 +65,7 @@ const AuthProvider = ({ children }: Props): JSX.Element => {
   }, []);
 
   if (loading) {
-    return <p>Loading...</p>;
+    return <CircularProgress />;
   }
   return (
     <AuthContext.Provider value={currentUser}>{children}</AuthContext.Provider>

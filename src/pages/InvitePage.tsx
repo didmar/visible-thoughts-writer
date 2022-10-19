@@ -1,4 +1,4 @@
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Typography } from '@mui/material';
 import { useLocation, Link, Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../components/Auth';
@@ -85,9 +85,11 @@ const InvitePage = (): JSX.Element => {
         <p>You will be added as player with this account, is that ok?</p>
       </Typography>
       {status === InviteStatus.Error ? (
-        <>Error!</>
+        <Typography>
+          <p>Error!</p>
+        </Typography>
       ) : status === InviteStatus.Pending ? (
-        <>Wait...</>
+        <CircularProgress />
       ) : (
         <Button variant="contained" onClick={confirm}>
           Confirm

@@ -1,4 +1,11 @@
-import { Box, Button, FormControl, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  FormControl,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import '../App.css';
@@ -79,7 +86,7 @@ function HomePage(): JSX.Element {
 
   const renderRunsList = (): JSX.Element => {
     if (runs === undefined) {
-      return <>Loading...</>;
+      return <CircularProgress />;
     }
 
     return (
