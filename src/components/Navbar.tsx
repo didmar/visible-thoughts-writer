@@ -3,10 +3,16 @@ import { AppBar, Box, IconButton, Toolbar, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../App.css';
-import HelpAndFeedback from './HelpModal';
 import UserMenu from '../components/UserMenu';
-import { getUserRoleInRun, isDM, Role, Run } from '../firebase-app';
+import {
+  getUserProfile,
+  getUserRoleInRun,
+  isDM,
+  Role,
+  Run,
+} from '../firebase-app';
 import { useAuth } from './Auth';
+import HelpAndFeedback from './HelpModal';
 import RunSettingsModal from './RunSettingsModal';
 
 interface Props {
@@ -15,6 +21,7 @@ interface Props {
 
 const Navbar = ({ run }: Props): JSX.Element => {
   const [role, setRole] = useState<Role | null | undefined>(undefined);
+  const [dmName, setDMName] = useState<string | undefined>(undefined);
 
   const currentUser = useAuth();
 
@@ -27,6 +34,7 @@ const Navbar = ({ run }: Props): JSX.Element => {
       if (run !== undefined && uid !== undefined) {
         const role = await getUserRoleInRun(uid, run.id);
         setRole(role);
+        setDMName((await getUserProfile(run.dm))?.name);
       } else {
         setRole(null); // Guest
       }
@@ -62,17 +70,15 @@ const Navbar = ({ run }: Props): JSX.Element => {
     </Link>
   );
 
-  const runPageTitle = (_run: Run): JSX.Element => {
-    const title = _run.title !== undefined ? _run.title : '';
-    return (
-      <>
-        {homeIcon}
-        {pageTitle(title)}
-      </>
-    );
-  };
+  const runPageTitle: JSX.Element = (
+    <>
+      {homeIcon}
+      {run !== undefined &&
+        pageTitle(`"${run.title}" by ${dmName ?? 'Anonymous'}`)}
+    </>
+  );
 
-  const titleElement = run === undefined ? homePageTitle : runPageTitle(run);
+  const titleElement = run === undefined ? homePageTitle : runPageTitle;
 
   const runSettings = run !== undefined && isDM(role) && (
     <RunSettingsModal run={run} />
