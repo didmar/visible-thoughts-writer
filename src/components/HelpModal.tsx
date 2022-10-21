@@ -7,7 +7,13 @@ const style = {
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  width: '75%',
+  width: {
+    xs: '100%',
+    sm: '75%',
+    md: 620,
+    lg: 620,
+    xl: 620,
+  },
   bgcolor: 'background.paper',
   border: '2px solid #000',
   boxShadow: 24,
@@ -45,13 +51,18 @@ const HelpModal = (): JSX.Element => {
                 </a>
                 .
               </p>{' '}
+              <p>To get started, have a look at the video tutorial below.</p>
+              <iframe
+                width="560"
+                height="315"
+                src="https://www.youtube.com/embed/SDv_tMeXDCY"
+                title="YouTube video player"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                style={{ alignContent: 'center' }}
+              ></iframe>
               <p>
-                To get started, have a look at the video tutorial below. TODO
-                add video.
-              </p>
-              <p>
-                For any question, bug or feedback, please contact `didier#4229`
-                on the{' '}
+                For any question, bug or feedback, please contact{' '}
+                <b>didier#4229</b> on the{' '}
                 <a href="https://discord.gg/Uv6QRKN5">
                   Visible Thoughts Discord server
                 </a>
