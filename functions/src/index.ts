@@ -275,3 +275,55 @@ exports.confirmInvite = https.onCall(async (data, context) => {
 
   return null;
 });
+
+exports.deleteRun = https.onCall(async (data, context) => {
+  // Check that the caller is authenticated
+  const uid = context.auth?.uid;
+  if (uid === undefined) {
+    throw new https.HttpsError(
+      'failed-precondition',
+      'The function must be called while authenticated.'
+    );
+  }
+
+  // Check that provided runId is valid
+  const runId = data as string;
+  const runDocRef = db.doc(`runs/${runId}`);
+  const run = await runDocRef.get();
+  if (!run.exists) {
+    throw new https.HttpsError('not-found', `Run ${runId} does not exist!`);
+  }
+
+  // Check that the caller is the run's DM
+  const { dm, players } = run?.data() as { dm: string; players: string[] };
+  if (dm !== uid) {
+    throw new https.HttpsError(
+      'permission-denied',
+      `Only the DM can delete the run!`
+    );
+  }
+
+  // Delete the run document
+  await runDocRef.delete().catch((err: FirebaseError) => {
+    throw new https.HttpsError(
+      'internal',
+      `Oops, something went wrong internally: ${err.message}`
+    );
+  });
+
+  // Delete user run states from this run
+  const batch = db.batch();
+  const userIds = [dm, ...players];
+  userIds.forEach((userId) => {
+    const userRunStateDocRef = db.doc(`users/${userId}/runs/${runId}`);
+    if (userRunStateDocRef !== undefined) batch.delete(userRunStateDocRef);
+  });
+  await batch.commit().catch((err: FirebaseError) => {
+    throw new https.HttpsError(
+      'internal',
+      `Oops, something went wrong internally: ${err.message}`
+    );
+  });
+
+  return null;
+});

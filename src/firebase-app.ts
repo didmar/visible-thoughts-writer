@@ -675,3 +675,4 @@ export async function updateUserRunState(
 // ===============
 
 export const confirmInvite = httpsCallable(functions, 'confirmInvite');
+export const deleteRun = httpsCallable(functions, 'deleteRun');

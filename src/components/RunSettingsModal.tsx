@@ -6,6 +6,7 @@ import {
   Avatar,
   Box,
   Button,
+  Divider,
   FormControl,
   IconButton,
   List,
@@ -18,9 +19,11 @@ import {
   Typography,
 } from '@mui/material';
 import { FormEvent, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import isEmail from 'validator/lib/isEmail';
 import {
   createInvite,
+  deleteRun,
   getInvites,
   getUserProfile,
   Invite,
@@ -49,6 +52,8 @@ function RunSettingsModal({ run }: Props): JSX.Element {
   const [open, setOpen] = useState(false);
   const handleOpen = (): void => setOpen(true);
   const handleClose = (): void => setOpen(false);
+
+  const navigate = useNavigate();
 
   const [players, setPlayers] = useState<UserProfile[]>([]);
 
@@ -92,37 +97,43 @@ function RunSettingsModal({ run }: Props): JSX.Element {
   }, []);
 
   const playersList = (
-    <List>
-      {players.length > 0 ? (
-        players.map((player, index) => (
-          <ListItem
-            key={index}
-            secondaryAction={
-              <IconButton
-                edge="start"
-                aria-label="remove"
-                onClick={() => handleRemovePlayer(player.id)}
-              >
-                <RemoveCircleIcon />
-              </IconButton>
-            }
-          >
-            <Tooltip title="Registered player">
-              <ListItemAvatar>
-                <Avatar>
-                  <AccountCircle />
-                </Avatar>
-              </ListItemAvatar>
-            </Tooltip>
-            <ListItemText primary={player.name} />
+    <>
+      <Typography sx={{ mt: 4 }} component="div" variant="h5">
+        Players:
+      </Typography>
+
+      <List>
+        {players.length > 0 ? (
+          players.map((player, index) => (
+            <ListItem
+              key={index}
+              secondaryAction={
+                <IconButton
+                  edge="start"
+                  aria-label="remove"
+                  onClick={() => handleRemovePlayer(player.id)}
+                >
+                  <RemoveCircleIcon />
+                </IconButton>
+              }
+            >
+              <Tooltip title="Registered player">
+                <ListItemAvatar>
+                  <Avatar>
+                    <AccountCircle />
+                  </Avatar>
+                </ListItemAvatar>
+              </Tooltip>
+              <ListItemText primary={player.name} />
+            </ListItem>
+          ))
+        ) : (
+          <ListItem key={0}>
+            <ListItemText primary={'No registered players'} />
           </ListItem>
-        ))
-      ) : (
-        <ListItem key={0}>
-          <ListItemText primary={'No registered players'} />
-        </ListItem>
-      )}
-    </List>
+        )}
+      </List>
+    </>
   );
 
   const pendingInvitationsList = (
@@ -190,6 +201,34 @@ function RunSettingsModal({ run }: Props): JSX.Element {
     </Box>
   );
 
+  const onDeleteRun = (): void => {
+    console.log('DELETE');
+    if (!confirm(`This will PERMANENTLY DELETE this run. Are you sure?`))
+      return;
+
+    void (async function () {
+      await deleteRun(run.id)
+        .then((_) => {
+          alert(
+            'Run successfully deleted! You will be redirected to the home page.'
+          );
+          navigate('/');
+        })
+        .catch((error: unknown) => {
+          console.error('Error deleting run: ', error);
+          alert(`Error deleting run, please report it as a bug.`);
+        });
+    })();
+  };
+
+  const deleteRunButton = (
+    <Box sx={{ mt: 2 }}>
+      <Button variant="contained" color="error" onClick={onDeleteRun}>
+        Delete run
+      </Button>
+    </Box>
+  );
+
   return run !== undefined && run !== null ? (
     <Box>
       <IconButton size="large" onClick={handleOpen} color="inherit">
@@ -206,12 +245,11 @@ function RunSettingsModal({ run }: Props): JSX.Element {
             Run settings
           </Typography>
           <Box>
-            <Typography sx={{ mt: 4 }} component="div" variant="h5">
-              Players:
-            </Typography>
             {playersList}
             {pendingInvitationsList}
             {invitePlayerForm}
+            <Divider sx={{ mt: 2 }} />
+            {deleteRunButton}
           </Box>
         </Box>
       </Modal>
