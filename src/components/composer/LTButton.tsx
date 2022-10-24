@@ -5,23 +5,25 @@ import { ToolbarButton, ToolbarIcon } from './ComposerToolbar';
 import { CustomEditor, ThoughtText } from './types';
 import { currentOrLastThoughtText } from './utils';
 import { isHotkey } from 'is-hotkey';
+import { Tooltip } from '@mui/material';
 
 const LT_HOTKEY = 'mod+5';
 
 const LTButton = (): JSX.Element => {
   const editor = useSlate();
   return (
-    <ToolbarButton
-      active={isLongTermActive(editor)}
-      onMouseDown={(event: MouseEvent) => {
-        event.preventDefault();
-        toggleLongTerm(editor);
-      }}
-      color="black"
-      title={`Toggle long-term thought (hotkey: ${LT_HOTKEY})`}
-    >
-      <ToolbarIcon>&nbsp;{'LT'}&nbsp;</ToolbarIcon>
-    </ToolbarButton>
+    <Tooltip title={`Toggle long-term thought (hotkey: ${LT_HOTKEY})`}>
+      <ToolbarButton
+        active={isLongTermActive(editor)}
+        onMouseDown={(event: MouseEvent) => {
+          event.preventDefault();
+          toggleLongTerm(editor);
+        }}
+        color="black"
+      >
+        <ToolbarIcon>&nbsp;{'LT'}&nbsp;</ToolbarIcon>
+      </ToolbarButton>
+    </Tooltip>
   );
 };
 

@@ -1,3 +1,14 @@
+export const swapKeyValue = <
+  S extends string | number | symbol,
+  T extends string | number | symbol
+>(
+  obj: Record<T, S>
+): Record<S, T> => {
+  return Object.fromEntries(
+    Object.entries(obj).map(([k, v]) => [v, k])
+  ) as Record<S, T>;
+};
+
 export function enumKeys<O extends object, K extends keyof O = keyof O>(
   obj: O
 ): K[] {

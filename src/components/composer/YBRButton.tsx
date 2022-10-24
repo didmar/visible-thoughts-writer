@@ -1,5 +1,5 @@
 import { css, cx } from '@emotion/css';
-import { Box } from '@mui/material';
+import { Box, Tooltip } from '@mui/material';
 import { isHotkey } from 'is-hotkey';
 import { KeyboardEvent } from 'react';
 import { Editor, Node, NodeEntry, Text as SlateText, Transforms } from 'slate';
@@ -27,17 +27,18 @@ const YBRButton = (): JSX.Element => {
         flexShrink: 1,
       }}
     >
-      <ToolbarButton
-        active={isYBRActive(editor)}
-        onMouseDown={(event: MouseEvent) => {
-          event.preventDefault();
-          toggleYBR(editor);
-        }}
-        color={COLOR}
-        title={TITLE}
-      >
-        <ToolbarIcon>&nbsp;{'YoBeReal'}&nbsp;</ToolbarIcon>
-      </ToolbarButton>
+      <Tooltip title={TITLE}>
+        <ToolbarButton
+          active={isYBRActive(editor)}
+          onMouseDown={(event: MouseEvent) => {
+            event.preventDefault();
+            toggleYBR(editor);
+          }}
+          color={COLOR}
+        >
+          <ToolbarIcon>&nbsp;{'YoBeReal'}&nbsp;</ToolbarIcon>
+        </ToolbarButton>
+      </Tooltip>
     </Box>
   );
 };
