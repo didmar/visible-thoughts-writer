@@ -390,6 +390,13 @@ export async function addSteps(runId: string, steps: Step[]): Promise<void> {
   await batch.commit().catch(handleFirebaseError());
 }
 
+export async function getSteps(runId: string): Promise<Step[]> {
+  const ref = collection(db, 'runs', runId, 'steps');
+  const docSnap = await getDocs(ref).catch(handleFirebaseError());
+  if (docSnap.empty) return [];
+  return docSnap.docs.map((doc) => Step.fromDocData(doc.data()));
+}
+
 export async function getStepN(
   runId: string,
   n: number

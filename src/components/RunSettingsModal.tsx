@@ -21,16 +21,19 @@ import {
 import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import isEmail from 'validator/lib/isEmail';
+import { exportRun } from '../export';
 import {
   createInvite,
   deleteRun,
   getInvites,
+  getSteps,
   getUserProfile,
   Invite,
   removePlayerFromRun,
   Run,
   UserProfile,
 } from '../firebase-app';
+import { downloadToJSON } from '../utils';
 
 const style = {
   position: 'absolute',
@@ -202,7 +205,6 @@ function RunSettingsModal({ run }: Props): JSX.Element {
   );
 
   const onDeleteRun = (): void => {
-    console.log('DELETE');
     if (!confirm(`This will PERMANENTLY DELETE this run. Are you sure?`))
       return;
 
@@ -221,8 +223,23 @@ function RunSettingsModal({ run }: Props): JSX.Element {
     })();
   };
 
+  const exportRunButton = (
+    <Button
+      variant="contained"
+      onClick={() => {
+        void (async function () {
+          const steps = await getSteps(run.id);
+          const exportedRun = exportRun(run, steps);
+          downloadToJSON(exportedRun);
+        })();
+      }}
+    >
+      Export run
+    </Button>
+  );
+
   const deleteRunButton = (
-    <Box sx={{ mt: 2 }}>
+    <Box sx={{ ml: 2 }}>
       <Button variant="contained" color="error" onClick={onDeleteRun}>
         Delete run
       </Button>
@@ -249,7 +266,10 @@ function RunSettingsModal({ run }: Props): JSX.Element {
             {pendingInvitationsList}
             {invitePlayerForm}
             <Divider sx={{ mt: 2 }} />
-            {deleteRunButton}
+            <Box sx={{ mt: 2, display: 'flex' }}>
+              {exportRunButton}
+              {deleteRunButton}
+            </Box>
           </Box>
         </Box>
       </Modal>

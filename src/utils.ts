@@ -83,3 +83,20 @@ export function* intersperse<T, U>(
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 export function noop(): void {}
+
+// Based on https://stackoverflow.com/a/51215842/2320087
+export function downloadToJSON(objectData: unknown): void {
+  const filename = 'export.json';
+  const contentType = 'application/json;charset=utf-8;';
+  const a = document.createElement('a');
+  a.download = filename;
+  a.href =
+    'data:' +
+    contentType +
+    ',' +
+    encodeURIComponent(JSON.stringify(objectData, null, 2));
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
