@@ -189,7 +189,7 @@ exports.processInvite = firestore
       message: {
         subject: '[Visible Thoughts Writer] Invitation to play!',
         html:
-          `<p>You have been invited to play on a run, <a href="${baseURL}/runs/${runId}">"${title}"</a>.</p></br>` +
+          `<p>You have been invited to play a run named "${title}".</p></br>` +
           `<p>Ready? Click <a href="${baseURL}/invite?token=${token}">HERE</a> to accept the invitation!</p>`,
       },
     });
