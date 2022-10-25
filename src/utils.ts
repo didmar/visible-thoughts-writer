@@ -9,12 +9,6 @@ export const swapKeyValue = <
   ) as Record<S, T>;
 };
 
-export function enumKeys<O extends object, K extends keyof O = keyof O>(
-  obj: O
-): K[] {
-  return Object.keys(obj).filter((k) => Number.isNaN(+k)) as K[];
-}
-
 export function withoutUndefinedValues(
   obj: Record<string, unknown>
 ): Record<string, unknown> {
@@ -23,10 +17,6 @@ export function withoutUndefinedValues(
       value !== undefined ? { ...acc, [key]: value } : acc,
     {}
   );
-}
-
-export function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
 export enum WindowStatus {
@@ -67,18 +57,6 @@ export function arraysContainsArray<T>(arrs: T[][], arr: T[]): boolean {
         elem.every((value, index) => value === arr[index])
     ) !== undefined
   );
-}
-
-export function* intersperse<T, U>(
-  a: T[],
-  delim: U
-): Generator<T | U, void, unknown> {
-  let first = true;
-  for (const x of a) {
-    if (!first) yield delim;
-    first = false;
-    yield x;
-  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
