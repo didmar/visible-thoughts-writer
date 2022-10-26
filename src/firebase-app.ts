@@ -210,6 +210,13 @@ export function onRunsCreated(callback: (newRuns: Run[]) => void): void {
   );
 }
 
+export async function getRunUserProfiles(run: Run): Promise<UserProfile[]> {
+  const profiles = await Promise.all(
+    [run.dm, ...run.players].map(async (uid) => await getUserProfile(uid))
+  );
+  return profiles.filter((p) => p !== undefined) as UserProfile[];
+}
+
 export enum Role {
   Player = 'player',
   DM = 'dm',

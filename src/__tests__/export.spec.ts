@@ -1,4 +1,5 @@
 import {
+  exportAuthors,
   exportRun,
   exportStep,
   importRun,
@@ -161,8 +162,27 @@ describe('exportStep', () => {
   });
 });
 
+describe('exportAuthors', () => {
+  it('exports ids if no profile is provided', () => {
+    expect(exportAuthors(run, [])).toEqual(['abc', 'def', 'ghi']);
+  });
+  it('exports screen name and id when profile is provided', () => {
+    expect(
+      exportAuthors(run, [
+        {
+          id: 'abc',
+          name: 'abcName',
+          canDM: true,
+          soundNotif: false,
+          emailNotif: false,
+        },
+      ])
+    ).toEqual(['abcName (abc)', 'def', 'ghi']);
+  });
+});
+
 test('exportRun', () => {
-  expect(exportRun(run, [step, step2])).toEqual(exportedRun);
+  expect(exportRun(run, [], [step, step2])).toEqual(exportedRun);
 });
 
 test('importThoughtSection', () => {
@@ -350,7 +370,7 @@ describe('importRun', () => {
     });
   });
   it('rejects a run with no title', () => {
-    expect(importRun({ ...exportedRun, title: '' })).toThrowError(
+    expect(() => importRun({ ...exportedRun, title: '' })).toThrowError(
       'Title must not be empty'
     );
   });

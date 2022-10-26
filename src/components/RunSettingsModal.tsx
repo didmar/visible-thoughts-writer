@@ -26,6 +26,7 @@ import {
   createInvite,
   deleteRun,
   getInvites,
+  getRunUserProfiles,
   getSteps,
   getUserProfile,
   Invite,
@@ -223,17 +224,17 @@ function RunSettingsModal({ run }: Props): JSX.Element {
     })();
   };
 
+  const onExportRun = (): void => {
+    void (async function () {
+      const steps = await getSteps(run.id);
+      const userProfiles = await getRunUserProfiles(run);
+      const exportedRun = exportRun(run, userProfiles, steps);
+      downloadToJSON(exportedRun);
+    })();
+  };
+
   const exportRunButton = (
-    <Button
-      variant="contained"
-      onClick={() => {
-        void (async function () {
-          const steps = await getSteps(run.id);
-          const exportedRun = exportRun(run, steps);
-          downloadToJSON(exportedRun);
-        })();
-      }}
-    >
+    <Button variant="contained" onClick={onExportRun}>
       Export run
     </Button>
   );

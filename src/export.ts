@@ -7,6 +7,7 @@ import {
   Step,
   TextYBR,
   ThoughtType,
+  UserProfile,
 } from './firebase-app';
 import { isEmpty, swapKeyValue } from './utils';
 
@@ -114,7 +115,24 @@ export const exportStep = (step: Step): ExportedStep => {
   return exportedStep;
 };
 
-export const exportRun = (run: Run, sortedSteps: Step[]): ExportedRun => {
+export const exportAuthors = (
+  run: Run,
+  userProfiles: UserProfile[]
+): string[] => {
+  return [run.dm, ...run.players].map((uid) => {
+    const userProfile = userProfiles.find((u) => u.id === uid);
+    if (userProfile === undefined) {
+      return uid;
+    }
+    return `${userProfile.name} (${uid})`;
+  });
+};
+
+export const exportRun = (
+  run: Run,
+  userProfiles: UserProfile[],
+  sortedSteps: Step[]
+): ExportedRun => {
   const exportedSteps = sortedSteps.map(exportStep);
 
   // Remove the last step if it's empty
@@ -127,7 +145,7 @@ export const exportRun = (run: Run, sortedSteps: Step[]): ExportedRun => {
 
   return {
     title: run.title,
-    authors: [run.dm, ...run.players],
+    authors: exportAuthors(run, userProfiles),
     steps: exportedSteps,
   };
 };
