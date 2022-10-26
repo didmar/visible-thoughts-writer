@@ -11,7 +11,13 @@ import { Link, Navigate } from 'react-router-dom';
 import '../App.css';
 import { useAuth } from '../components/Auth';
 import Navbar from '../components/Navbar';
-import { createRun, onRunsCreated, Run } from '../firebase-app';
+import { ExportedRun, importRun } from '../export';
+import {
+  createRun,
+  createRunFromImport,
+  onRunsCreated,
+  Run,
+} from '../firebase-app';
 
 function HomePage(): JSX.Element {
   const [runs, setRuns] = useState<Run[] | undefined>(undefined);
@@ -50,36 +56,89 @@ function HomePage(): JSX.Element {
 
   const createRunForm =
     currentUser?.canDM() ?? false ? (
-      <Box sx={{ mb: 2 }}>
-        <form onSubmit={onCreateRun}>
-          <FormControl>
-            <TextField
-              id="name-input"
-              // label="Run name"
-              name="name-input"
-              variant="outlined"
-              size={'small'}
-              value={newTitle}
-              onChange={(event) => {
-                setNewTitle(event.target.value);
-              }}
-              inputProps={{ maxLength: 256 }}
-            />
-          </FormControl>
+      <form onSubmit={onCreateRun}>
+        <FormControl>
+          <TextField
+            id="name-input"
+            // label="Run name"
+            name="name-input"
+            variant="outlined"
+            size={'small'}
+            value={newTitle}
+            onChange={(event) => {
+              setNewTitle(event.target.value);
+            }}
+            inputProps={{ maxLength: 256 }}
+          />
+        </FormControl>
 
-          <Button
-            sx={{ ml: 2 }}
-            type="submit"
-            variant="contained"
-            disabled={newTitle === ''}
-          >
-            Create run
-            {newRunId !== undefined && (
-              <Navigate replace to={`/runs/${newRunId}`} />
-            )}
-          </Button>
-        </form>
-      </Box>
+        <Button
+          sx={{ ml: 2 }}
+          type="submit"
+          variant="contained"
+          disabled={newTitle === ''}
+        >
+          Create run
+        </Button>
+      </form>
+    ) : (
+      <></>
+    );
+
+  const selectFile = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    if (currentUser === null || currentUser === undefined) {
+      alert('You must be logged in to import a run.');
+      return;
+    }
+    if (!currentUser.canDM()) {
+      alert("You don't have the permission to be DM.");
+      return;
+    }
+    if (event.target.files === null || event.target.files.length === 0) return;
+    if (event.target.files.length !== 1) {
+      alert('Please select only ONE file!');
+      return;
+    }
+    const file = event.target.files[0];
+    if (file.type !== 'application/json') {
+      alert('Please select a JSON file!');
+      return;
+    }
+    console.log('file: ', file);
+
+    const reader = new FileReader();
+    void (async function () {
+      reader.onload = async (e) => {
+        if (e.target === null) return;
+        const content: ExportedRun = JSON.parse(e.target.result as string);
+        const { title, steps } = importRun(content);
+        const userId = currentUser.uid();
+        const runId = await createRunFromImport(title, userId, steps);
+        setNewRunId(runId);
+      };
+      reader.readAsText(file);
+    })();
+  };
+
+  const importJSONButton =
+    currentUser?.canDM() ?? false ? (
+      <label htmlFor="btn-upload">
+        <input
+          id="btn-upload"
+          name="btn-upload"
+          style={{ display: 'none' }}
+          type="file"
+          onChange={selectFile}
+        />
+        <Button
+          className="btn-import"
+          sx={{ ml: 2 }}
+          variant="outlined"
+          component="span"
+        >
+          Import
+        </Button>
+      </label>
     ) : (
       <></>
     );
@@ -108,7 +167,13 @@ function HomePage(): JSX.Element {
       <>
         <Navbar />
         <Box className="HomePage" sx={{ ml: 2, mt: 2 }}>
-          {createRunForm}
+          <Box sx={{ display: 'flex', mb: 2 }}>
+            {createRunForm}
+            {importJSONButton}
+            {newRunId !== undefined && (
+              <Navigate replace to={`/runs/${newRunId}`} />
+            )}
+          </Box>
           {renderRunsList()}
         </Box>
       </>

@@ -78,3 +78,7 @@ export function downloadToJSON(objectData: unknown): void {
   a.click();
   document.body.removeChild(a);
 }
+
+export function isEmpty(obj: object): boolean {
+  return Object.keys(obj).length === 0;
+}

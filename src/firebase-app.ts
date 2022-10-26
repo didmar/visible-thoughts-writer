@@ -131,6 +131,50 @@ export async function createRun(title: string, dm: string): Promise<string> {
   return runId;
 }
 
+export async function createRunFromImport(
+  title: string,
+  dm: string,
+  steps: Step[]
+): Promise<string> {
+  if (steps.length === 0) {
+    throw new Error('Cannot import run with no steps!');
+  }
+
+  const ltts: Record<string, Thought[]> = {};
+  steps.forEach((step) => {
+    const stepLtts = collectLongTermThoughts(step);
+    if (stepLtts.length > 0) {
+      ltts[step.n.toString()] = stepLtts;
+    }
+  });
+
+  const runDoc = await addDoc(runsCol, {
+    title,
+    dm,
+    players: [],
+    ltts,
+  }).catch(handleFirebaseError());
+  const runId = runDoc.id;
+
+  // Firestore batches are limited to 500 documents, so we need to split up
+  const promises = [];
+  const nbBatches = Math.ceil(steps.length / 500);
+  for (let index = 0; index < nbBatches; index++) {
+    const splicedSteps = steps.splice(0, 499);
+    const batch = writeBatch(db);
+    splicedSteps.forEach((step) => {
+      batch.set(doc(db, 'runs', runId, 'steps', step.n.toString()), step);
+    });
+    promises.push(batch.commit().catch(handleFirebaseError()));
+  }
+  await Promise.all(promises);
+
+  // Create a UserRunState for this run in the DM's profile
+  await createUserRunState(dm, runId, Role.DM);
+
+  return runId;
+}
+
 export function onRunsCreated(callback: (newRuns: Run[]) => void): void {
   onSnapshot(
     query(runsCol),
@@ -271,6 +315,20 @@ export function getNextSectionForStep(step?: Step): Section | undefined {
   return undefined; // no next section for this step, go to the next
 }
 
+export function checkStepSectionsConsistency(step?: Step): void {
+  if (step === undefined) return;
+  if (step.initT === undefined && step.ppt !== undefined)
+    throw new Error('ppt without initT');
+  if (step.ppt === undefined && step.ppptT !== undefined)
+    throw new Error('ppptT without ppt');
+  if (step.ppptT === undefined && step.act !== undefined)
+    throw new Error('act without ppptT');
+  if (step.act === undefined && step.pactT !== undefined)
+    throw new Error('pactT without act');
+  if (step.pactT === undefined && step.out !== undefined)
+    throw new Error('out without pactT');
+}
+
 export const skipInitT = (prevStep: Step | undefined): boolean =>
   // Skip initT if the last step had a YBR flag on outcome, or the outcome was skipped
   // subsequently to a YBR flag on action
@@ -394,7 +452,9 @@ export async function getSteps(runId: string): Promise<Step[]> {
   const ref = collection(db, 'runs', runId, 'steps');
   const docSnap = await getDocs(ref).catch(handleFirebaseError());
   if (docSnap.empty) return [];
-  return docSnap.docs.map((doc) => Step.fromDocData(doc.data()));
+  const steps = docSnap.docs.map((doc) => Step.fromDocData(doc.data()));
+  steps.sort((a, b) => a.n - b.n);
+  return steps;
 }
 
 export async function getStepN(
@@ -494,7 +554,7 @@ export function mergeStepsWithUpdates(
   };
 }
 
-function collectLongTermThoughts(step: Step): Thought[] {
+export function collectLongTermThoughts(step: Step): Thought[] {
   return [step.initT, step.ppptT, step.pactT].flatMap(collectSectionLtts);
 }
 
