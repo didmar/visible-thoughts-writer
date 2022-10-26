@@ -12,7 +12,7 @@ service cloud.firestore {
       allow read: if true;
       // Only DMs can write
       allow write: if hasDMRole();
-      // Nobody can delete a run directly, use deleteRun cloud function
+      // Nobody can delete a run (use deleteRun cloud function for a soft delete)
       allow delete: if false;
       
       function isRunDM() {

@@ -303,8 +303,8 @@ exports.deleteRun = https.onCall(async (data, context) => {
     );
   }
 
-  // Delete the run document
-  await runDocRef.delete().catch((err: FirebaseError) => {
+  // Mark the run document as deleted
+  await runDocRef.update({ deleted: true }).catch((err: FirebaseError) => {
     throw new https.HttpsError(
       'internal',
       `Oops, something went wrong internally: ${err.message}`

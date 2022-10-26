@@ -70,6 +70,7 @@ export class Run {
   dm: string;
   players: string[];
   imported?: Timestamp;
+  deleted?: boolean;
 
   constructor(
     id: string,
@@ -77,7 +78,8 @@ export class Run {
     ltts: Record<string, Thought[]>,
     dm: string,
     players: string[],
-    imported?: Timestamp
+    imported?: Timestamp,
+    deleted?: boolean
   ) {
     this.id = id;
     this.title = title;
@@ -85,6 +87,7 @@ export class Run {
     this.dm = dm;
     this.players = players;
     this.imported = imported;
+    this.deleted = deleted;
   }
 
   sortedLtts(): Thought[] {
@@ -96,6 +99,18 @@ export class Run {
     arr.sort(([na], [nb]) => na - nb);
     return arr.flatMap(([, thoughts]) => thoughts);
   }
+
+  static fromDocData(id: string, doc: DocumentData): Run {
+    return new Run(
+      id,
+      doc.title,
+      doc.ltts,
+      doc.dm,
+      doc.players,
+      doc.imported,
+      doc.deleted
+    );
+  }
 }
 
 const runsCol = collection(db, 'runs');
@@ -104,7 +119,7 @@ export async function getRuns(): Promise<Run[]> {
   const runsSnapshot = await getDocs(runsCol).catch(handleFirebaseError());
   return runsSnapshot.docs.map((doc) => {
     const data = doc.data();
-    return new Run(doc.id, data.title, data.ltts, data.dm, data.players);
+    return Run.fromDocData(doc.id, data);
   });
 }
 
@@ -112,11 +127,7 @@ export async function getRun(runId: string): Promise<Run | undefined> {
   const runRef = doc(db, 'runs', runId);
   const runSnapshot = await getDoc(runRef).catch(handleFirebaseError());
   const data = runSnapshot.data();
-  if (data !== undefined) {
-    return new Run(runId, data.title, data.ltts, data.dm, data.players);
-  } else {
-    return undefined;
-  }
+  return data !== undefined ? Run.fromDocData(runId, data) : undefined;
 }
 
 export async function createRun(title: string, dm: string): Promise<string> {
@@ -196,9 +207,7 @@ export function onRunsCreated(callback: (newRuns: Run[]) => void): void {
       snapshot.docChanges().forEach((change) => {
         if (change.type === 'added') {
           const data = change.doc.data();
-          newRuns.push(
-            new Run(change.doc.id, data.title, data.ltts, data.dm, data.players)
-          );
+          newRuns.push(Run.fromDocData(change.doc.id, data));
         }
       });
 

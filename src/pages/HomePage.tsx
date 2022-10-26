@@ -38,7 +38,12 @@ function HomePage(): JSX.Element {
   useEffect(() => {
     console.log('HomePage > useEffect [newRuns]: ', newRuns);
     if (newRuns !== undefined) {
-      const updateRuns = runs === undefined ? newRuns : [...runs, ...newRuns];
+      // Exclude deleted runs, they should not show up for anyone
+      const newRunsNotDeleted = newRuns.filter((run) => run.deleted !== true);
+      const updateRuns =
+        runs === undefined
+          ? newRunsNotDeleted
+          : [...runs, ...newRunsNotDeleted];
       setRuns(updateRuns);
     }
   }, [newRuns]);
@@ -161,11 +166,13 @@ function HomePage(): JSX.Element {
       <Box>
         <Typography variant="h5">Runs</Typography>
         <ul>
-          {runs?.map((run) => (
-            <li key={run.id}>
-              <Link to={`/runs/${run.id}`}>{run.title}</Link>
-            </li>
-          ))}
+          {runs
+            ?.filter((run) => run.deleted !== true)
+            .map((run) => (
+              <li key={run.id}>
+                <Link to={`/runs/${run.id}`}>{run.title}</Link>
+              </li>
+            ))}
         </ul>
       </Box>
     );
