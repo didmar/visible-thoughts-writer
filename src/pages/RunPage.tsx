@@ -12,6 +12,7 @@ import { useParams } from 'react-router-dom';
 import { useAuth } from '../components/Auth';
 import Composer from '../components/composer/Composer';
 import { ComposerMode } from '../components/composer/types';
+import { SectionContent } from '../components/composer/utils';
 import Navbar from '../components/Navbar';
 import StepElem, { renderLongTermThoughts } from '../components/StepElem';
 import { useWindowActivity } from '../components/WindowContextProvider';
@@ -33,7 +34,6 @@ import {
   Role,
   Run,
   Section,
-  SectionContent,
   Step,
   TextYBR,
   Thought,
@@ -43,7 +43,7 @@ import {
   updateUserRunState,
   UserProfile,
 } from '../firebase-app';
-import { playDing, setWindowStatus, WindowStatus } from '../utils';
+import { playDing, setWindowStatus, WindowStatus, zipWithPrev } from '../utils';
 import NotFoundPage from './NotFoundPage';
 
 // How many steps ago to give a hint of
@@ -209,8 +209,8 @@ function RunPage(): JSX.Element {
 
   const onSubmitted = (
     n: number,
-    section: Section,
-    content: SectionContent
+    content: SectionContent,
+    section: Section
   ): void => {
     if (runId === undefined) {
       throw new Error('onSubmitted called before runId was initialized!');
@@ -345,6 +345,18 @@ function RunPage(): JSX.Element {
   if (run === undefined) return <CircularProgress />;
   if (run === null) return <NotFoundPage />;
 
+  const stepElems = zipWithPrev(steps ?? [])
+    .reverse()
+    .map(([step, prevStep]) => (
+      <StepElem
+        key={step.n}
+        step={step}
+        role={role}
+        onSubmitted={onSubmitted}
+        prevStep={prevStep}
+      />
+    ));
+
   return (
     <Box
       component="main"
@@ -386,17 +398,7 @@ function RunPage(): JSX.Element {
                 style={{ display: 'flex', flexDirection: 'column-reverse' }}
                 scrollableTarget="scrollableDiv"
               >
-                {steps
-                  ?.slice()
-                  .reverse()
-                  .map((step) => (
-                    <StepElem
-                      key={step.n}
-                      step={step}
-                      role={role}
-                      onSubmitted={onSubmitted}
-                    />
-                  ))}
+                {stepElems}
               </InfiniteScroll>
             </Paper>
           </Grid>

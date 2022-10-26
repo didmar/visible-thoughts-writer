@@ -6,13 +6,62 @@ import {
   Text as SlateText,
   Transforms,
 } from 'slate';
-import { Section, ThoughtType } from '../../firebase-app';
+import { Bullet, Section, TextYBR, ThoughtType } from '../../firebase-app';
+import { toCustomElement } from './parsing';
 import { CustomEditor, CustomElement, CustomText, ThoughtText } from './types';
+
+// Wraps all the possible section values with a field that indicates the kind of
+// section content. This is a helper to go back and forth between the
+// database format and the CustomElement type used by SlateJS.
+export type SectionContent =
+  | { kind: 'bullets'; value: Bullet[] }
+  | { kind: 'ybrtext'; value: TextYBR }
+  | { kind: 'text'; value: string }
+  | null;
+
+export function getDefaultSectionContent(section: Section): SectionContent {
+  switch (section) {
+    case Section.InitT:
+    case Section.PpptT:
+    case Section.PactT:
+      return {
+        kind: 'bullets',
+        value: [
+          {
+            T: [
+              {
+                type: ThoughtType.Watsonian,
+                txt: '',
+                lt: false,
+              },
+            ],
+          },
+        ],
+      };
+    case Section.Ppt:
+      return { kind: 'text', value: '' };
+    case Section.Act:
+    case Section.Out:
+      return { kind: 'ybrtext', value: { txt: '', ybr: false } };
+  }
+}
+
+export function isEmptySectionContent(content: SectionContent): boolean {
+  if (content === null) return true;
+  switch (content.kind) {
+    case 'bullets':
+      return content.value.length === 0;
+    case 'ybrtext':
+      return content.value.txt === '';
+    case 'text':
+      return content.value === '';
+  }
+}
 
 export function resetEditor(
   editor: Editor,
   section: Section,
-  initValue?: CustomElement[]
+  content?: SectionContent
 ): void {
   Transforms.delete(editor, {
     at: {
@@ -20,12 +69,15 @@ export function resetEditor(
       focus: Editor.end(editor, []),
     },
   });
-  editor.children = initValue ?? getInitialValue(section);
+  editor.children =
+    content !== undefined
+      ? toCustomElement(content, section)
+      : getDefaultSlateValue(section);
   // TODO also reset the history
   editor.marks = null;
 }
 
-export function getInitialValue(section: Section): Descendant[] {
+export function getDefaultSlateValue(section: Section): CustomElement[] {
   switch (section) {
     case Section.InitT:
       return structuredClone(initialBulletElements);
@@ -41,6 +93,24 @@ export function getInitialValue(section: Section): Descendant[] {
       return structuredClone(initialYBRTextElements);
     default:
       throw new Error(`Unknown section: ${Section[section]}`);
+  }
+}
+
+export function toSectionContent(
+  value: Bullet[] | TextYBR | string | null,
+  section: Section
+): SectionContent {
+  if (value === null) return null;
+  switch (section) {
+    case Section.InitT:
+    case Section.PpptT:
+    case Section.PactT:
+      return { kind: 'bullets', value: value as Bullet[] };
+    case Section.Ppt:
+      return { kind: 'text', value: value as string };
+    case Section.Act:
+    case Section.Out:
+      return { kind: 'ybrtext', value: value as TextYBR };
   }
 }
 

@@ -161,7 +161,9 @@ const ComposerToolbar = React.forwardRef(
     return (
       <Box ref={ref} sx={{ display: 'flex', flexDirection: 'row' }}>
         {isThoughtSection(props.section) && thoughtSectionButtons}
-        {isYBRSection(props.section) && <YBRButton />}
+        {isYBRSection(props.section) && (
+          <YBRButton editable={props.mode === ComposerMode.CREATE} /> // Can only toggle YBR on create, not when editing
+        )}
         {spacer}
         {rightsideButtons}
       </Box>

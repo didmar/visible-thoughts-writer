@@ -26,15 +26,7 @@ export interface YBRTextElement {
   ybr: boolean;
   children: SimpleText[];
 }
-export interface SkippedElement {
-  type: 'skipped';
-  children: SimpleText[];
-}
-export type CustomElement =
-  | BulletElement
-  | TextElement
-  | YBRTextElement
-  | SkippedElement;
+export type CustomElement = BulletElement | TextElement | YBRTextElement;
 
 export interface ThoughtText {
   type: 'thought';

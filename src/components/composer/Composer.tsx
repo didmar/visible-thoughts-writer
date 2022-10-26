@@ -1,5 +1,5 @@
 import EditIcon from '@mui/icons-material/Edit';
-import { Box, IconButton, Tooltip } from '@mui/material';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import {
   CSSProperties,
   useCallback,
@@ -18,16 +18,17 @@ import {
   withReact,
 } from 'slate-react';
 import {
+  Bullet,
   isThoughtSection,
   isYBRSection,
   Section,
-  SectionContent,
+  TextYBR,
   ThoughtType,
 } from '../../firebase-app';
 import { sectionsData } from '../../Section';
 import ComposerToolbar from './ComposerToolbar';
 import { handleLongTermHotkey, isLongTermActive } from './LTButton';
-import { parse } from './parsing';
+import { parse, toCustomElement } from './parsing';
 import RenderedElement from './RenderedElement';
 import RenderedLeaf from './RenderedLeaf';
 import {
@@ -43,9 +44,12 @@ import {
 } from './types';
 import {
   beginningOfBullet,
-  getInitialValue,
+  getDefaultSectionContent,
+  isEmptySectionContent,
   isLastBulletElementEmpty,
   resetEditor,
+  SectionContent,
+  toSectionContent,
 } from './utils';
 import {
   handleYBRHotkey,
@@ -58,8 +62,8 @@ interface ComposerProps {
   initMode: ComposerMode;
   n: number;
   section: Section;
-  onSubmitted?: (n: number, section: Section, content: SectionContent) => void;
-  initValue?: CustomElement[];
+  onSubmitted?: (n: number, content: SectionContent, section: Section) => void;
+  initValue?: Bullet[] | TextYBR | string | null;
   editable?: boolean;
 }
 
@@ -71,11 +75,25 @@ const Composer = ({
   initValue,
   editable,
 }: ComposerProps): JSX.Element => {
-  const [mode, setMode] = useState<ComposerMode>(initMode);
+  const initContent =
+    initValue !== undefined
+      ? toSectionContent(initValue, section)
+      : getDefaultSectionContent(section);
 
+  // const editor = useMemo(() => withCustomization(withReact(withHistory(createEditor()))), []);
+  const [editor] = useState<CustomEditor>(() =>
+    withCustomization(withReact(withHistory(createEditor())))
+  );
+  const [mode, setMode] = useState<ComposerMode>(initMode);
+  // Section content based on the current state of the editor (gets updated on every change)
+  const [content, setContent] = useState<SectionContent>(initContent);
+  // Section content from last successful submit (to revert if cancelling)
+  const [previousContent, setPreviousContent] =
+    useState<SectionContent>(initContent);
+
+  // When section changes, reset the editor with the proper content
   useEffect(() => {
-    console.log('=== useEffect ===');
-    setMode(initMode);
+    console.log('Composer > useEffect [section]');
     if (mode === ComposerMode.CREATE) resetEditor(editor, section);
   }, [section]);
 
@@ -92,28 +110,51 @@ const Composer = ({
     []
   );
 
-  // const editor = useMemo(() => withCustomization(withReact(withHistory(createEditor()))), []);
-  const [editor] = useState<CustomEditor>(() =>
-    withCustomization(withReact(withHistory(createEditor())))
-  );
-
-  const [content, setContent] = useState<SectionContent>(null);
-
   const isSubmittable = (): boolean => {
-    return !(content === null && mode === ComposerMode.EDIT);
+    if (content === undefined) return false;
+    // Can't submit if we are only viewing the section
+    if (mode === ComposerMode.VIEW) return false;
+
+    // Action can never be edited after submission,
+    // nor can it be skipped or left empty
+    if (
+      section === Section.Act &&
+      (mode === ComposerMode.EDIT || isEmptySectionContent(content))
+    )
+      return false;
+
+    // Can't edit a section with YBR flag into
+    // a skipped section
+    if (
+      mode === ComposerMode.EDIT &&
+      isYBRSection(section) &&
+      isEmptySectionContent(content)
+    )
+      return false;
+
+    // Anything else is OK
+    return true;
   };
 
   const submit = (): void => {
-    // const content = parse(editor.children as CustomElement[]);
+    if (!isSubmittable()) return;
 
-    onSubmitted?.(n, section, content);
+    // Call callback function to update in the database
+    onSubmitted?.(n, content, section);
+
+    // Update last successful submit with current content
+    setPreviousContent(content);
 
     // After editing, go back to view mode
-    if (mode === ComposerMode.EDIT) setMode(ComposerMode.VIEW);
+    if (mode === ComposerMode.EDIT) {
+      setMode(ComposerMode.VIEW);
+    }
   };
 
   const cancel = (): void => {
-    resetEditor(editor, section, initValue);
+    // Reset editor to last successful submit
+    resetEditor(editor, section, previousContent);
+    // Go back to view mode
     setMode(ComposerMode.VIEW);
   };
 
@@ -155,6 +196,8 @@ const Composer = ({
   }, []);
 
   const icon = sectionsData[section].icon;
+
+  // Yo be real mark displayed below thought type icon, when in view mode
   const ybrTag = mode === ComposerMode.VIEW &&
     isYBRSection(section) &&
     isYBRActive(editor) && <YBRTag />;
@@ -212,11 +255,19 @@ const Composer = ({
     />
   );
 
+  const skipped = (
+    <Box sx={editableStyle}>
+      <ul>
+        <Typography sx={{ color: 'gray' }}>(skipped)</Typography>
+      </ul>
+    </Box>
+  );
+
   return (
     <Box sx={{ flexDirection: 'row', p: 1 }}>
       <Slate
         editor={editor}
-        value={initValue !== undefined ? initValue : getInitialValue(section)}
+        value={toCustomElement(initContent, section)}
         onChange={(_) => {
           // console.log('editor.children: ', JSON.stringify(editor.children));
           setContent(parse(editor.children as CustomElement[]));
@@ -235,17 +286,21 @@ const Composer = ({
             {icon}
             {ybrTag}
           </Box>
-          <Editable
-            readOnly={mode === ComposerMode.VIEW}
-            onDOMBeforeInput={
-              mode !== ComposerMode.VIEW ? handleDOMBeforeInput : undefined
-            }
-            renderElement={renderElement}
-            renderLeaf={renderLeaf}
-            style={editableStyle}
-            onKeyDown={onKeyDown}
-            autoFocus={mode !== ComposerMode.VIEW}
-          />
+          {mode === ComposerMode.VIEW && content === null ? (
+            skipped
+          ) : (
+            <Editable
+              readOnly={mode === ComposerMode.VIEW}
+              onDOMBeforeInput={
+                mode !== ComposerMode.VIEW ? handleDOMBeforeInput : undefined
+              }
+              renderElement={renderElement}
+              renderLeaf={renderLeaf}
+              style={editableStyle}
+              onKeyDown={onKeyDown}
+              autoFocus={mode !== ComposerMode.VIEW}
+            />
+          )}
           {editButton}
         </Box>
         <Box sx={{ flexGrowth: 0 }}>{toolbar}</Box>

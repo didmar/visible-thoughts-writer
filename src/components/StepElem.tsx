@@ -1,24 +1,18 @@
 import { Box, Divider, Paper, Typography } from '@mui/material';
 import Stack from '@mui/material/Stack';
-import {
-  isDM,
-  Role,
-  Section,
-  SectionContent,
-  Step,
-  Thought,
-} from '../firebase-app';
+import { isDM, Role, Section, Step, Thought } from '../firebase-app';
 import { noop } from '../utils';
 import Composer from './composer/Composer';
-import { toCustomElement } from './composer/parsing';
 import RenderedLeaf from './composer/RenderedLeaf';
 import { ComposerMode, ThoughtText } from './composer/types';
+import { SectionContent } from './composer/utils';
 
 interface StepElemProps {
   step: Step;
   role: Role | null | undefined;
-  onSubmitted?: (n: number, section: Section, content: SectionContent) => void;
+  onSubmitted?: (n: number, content: SectionContent, section: Section) => void;
   title?: string;
+  prevStep?: Step;
 }
 
 export function renderLongTermThoughts(ltts: Thought[]): JSX.Element {
@@ -55,7 +49,10 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
   role,
   onSubmitted,
   title,
+  prevStep,
 }: StepElemProps) => {
+  const previousOutcomeYBR = prevStep?.out?.ybr ?? false;
+
   return (
     <Box className="StepsPane" sx={{ mx: 0.5, mt: 0.5, mb: 0.5 }} key={42}>
       {title !== '' && (
@@ -70,15 +67,11 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
           <Paper key={0} {...itemProps}>
             <Composer
               initMode={ComposerMode.VIEW}
-              initValue={toCustomElement(
-                step.initT !== null
-                  ? { kind: 'bullets', value: step.initT }
-                  : null
-              )}
+              initValue={step.initT}
               section={Section.InitT}
               n={step.n}
               editable={
-                onSubmitted !== undefined && isDM(role) && step.initT !== null
+                onSubmitted !== undefined && isDM(role) && !previousOutcomeYBR
               }
               onSubmitted={onSubmitted ?? noop}
             />
@@ -88,13 +81,11 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
           <Paper key={1} {...itemProps}>
             <Composer
               initMode={ComposerMode.VIEW}
-              initValue={toCustomElement(
-                step.ppt !== null ? { kind: 'text', value: step.ppt } : null
-              )}
+              initValue={step.ppt}
               section={Section.Ppt}
               n={step.n}
               editable={
-                onSubmitted !== undefined && isDM(role) && step.ppt !== null
+                onSubmitted !== undefined && isDM(role) && !previousOutcomeYBR
               }
               onSubmitted={onSubmitted ?? noop}
             />
@@ -104,15 +95,11 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
           <Paper key={2} {...itemProps}>
             <Composer
               initMode={ComposerMode.VIEW}
-              initValue={toCustomElement(
-                step.ppptT !== null
-                  ? { kind: 'bullets', value: step.ppptT }
-                  : null
-              )}
+              initValue={step.ppptT}
               section={Section.PpptT}
               n={step.n}
               editable={
-                onSubmitted !== undefined && isDM(role) && step.ppptT !== null
+                onSubmitted !== undefined && isDM(role) && !previousOutcomeYBR
               }
               onSubmitted={onSubmitted ?? noop}
             />
@@ -122,9 +109,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
           <Paper key={3} {...itemProps}>
             <Composer
               initMode={ComposerMode.VIEW}
-              initValue={toCustomElement(
-                step.act !== null ? { kind: 'ybrtext', value: step.act } : null
-              )}
+              initValue={step.act}
               n={step.n}
               section={Section.Act}
               editable={
@@ -140,16 +125,10 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
           <Paper key={4} {...itemProps}>
             <Composer
               initMode={ComposerMode.VIEW}
-              initValue={toCustomElement(
-                step.pactT !== null
-                  ? { kind: 'bullets', value: step.pactT }
-                  : null
-              )}
+              initValue={step.pactT}
               section={Section.PactT}
               n={step.n}
-              editable={
-                onSubmitted !== undefined && isDM(role) && step.pactT !== null
-              }
+              editable={onSubmitted !== undefined && isDM(role)}
               onSubmitted={onSubmitted ?? noop}
             />
           </Paper>
@@ -158,14 +137,10 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
           <Paper key={5} {...itemProps}>
             <Composer
               initMode={ComposerMode.VIEW}
-              initValue={toCustomElement(
-                step.out !== null ? { kind: 'ybrtext', value: step.out } : null
-              )}
+              initValue={step.out}
               section={Section.Out}
               n={step.n}
-              editable={
-                onSubmitted !== undefined && isDM(role) && step.out !== null
-              }
+              editable={onSubmitted !== undefined && isDM(role)}
               onSubmitted={onSubmitted ?? noop}
             />
           </Paper>

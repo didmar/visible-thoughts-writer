@@ -1,4 +1,4 @@
-import { Bullet, SectionContent, Thought } from '../../firebase-app';
+import { Bullet, Section, Thought } from '../../firebase-app';
 import {
   BulletElement,
   CustomElement,
@@ -7,14 +7,13 @@ import {
   ThoughtText,
   YBRTextElement,
 } from './types';
+import { getDefaultSlateValue, SectionContent } from './utils';
 
 export function toCustomElement(
-  sectionContent: SectionContent
+  sectionContent: SectionContent,
+  section: Section
 ): CustomElement[] {
-  if (sectionContent === null)
-    return [
-      { type: 'skipped', children: [{ type: 'text', text: '(skipped)' }] },
-    ];
+  if (sectionContent === null) return getDefaultSlateValue(section);
   switch (sectionContent.kind) {
     case 'bullets': {
       return sectionContent.value.map((bullet: Bullet) => {
@@ -61,8 +60,6 @@ export function parse(children: CustomElement[]): SectionContent {
       return parseToTextYBR(children as YBRTextElement[]);
     case 'text':
       return parseToString(children as TextElement[]);
-    case 'skipped':
-      return null;
   }
 }
 

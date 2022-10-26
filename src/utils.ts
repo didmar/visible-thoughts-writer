@@ -82,3 +82,7 @@ export function downloadToJSON(objectData: unknown): void {
 export function isEmpty(obj: object): boolean {
   return Object.keys(obj).length === 0;
 }
+
+export function zipWithPrev<T>(arr: T[]): Array<[T, T | undefined]> {
+  return arr.map((v, i, a) => [v, a[i - 1]]);
+}

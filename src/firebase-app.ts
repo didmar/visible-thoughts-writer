@@ -327,12 +327,6 @@ export function isYBRSection(section: Section): boolean {
   return section === Section.Act || section === Section.Out;
 }
 
-export type SectionContent =
-  | { kind: 'bullets'; value: Bullet[] }
-  | { kind: 'ybrtext'; value: TextYBR }
-  | { kind: 'text'; value: string }
-  | null;
-
 export function getNextSectionForStep(step?: Step): Section | undefined {
   if (step === undefined) return undefined; // no step yet, must create
   if (step.initT === undefined) return Section.InitT;

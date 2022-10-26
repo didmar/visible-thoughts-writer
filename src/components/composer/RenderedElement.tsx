@@ -18,12 +18,6 @@ const RenderedElement = ({
     case 'text':
     case 'ybrtext':
       return <p {...attributes}>{children}</p>;
-    case 'skipped':
-      return (
-        <p {...attributes} style={{ color: 'gray' }}>
-          {children}
-        </p>
-      );
     default:
       throw new Error('Unknown element type');
   }
