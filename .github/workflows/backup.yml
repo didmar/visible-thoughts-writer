@@ -5,8 +5,8 @@ on:
     - cron:  '0 0 * * *'
 
 env:
-  PROJECT_ID: YOUR-PROJECT
-  BUCKET: gs://YOUR-BUCKET
+  PROJECT_ID: visible-thoughts-writer
+  BUCKET: gs://visible-thoughts-writer-firestore-backup
   
 jobs:
   backup:
