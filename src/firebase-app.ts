@@ -19,6 +19,7 @@ import {
   updateDoc,
   where,
   writeBatch,
+  Timestamp,
 } from '@firebase/firestore';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import {
@@ -68,19 +69,22 @@ export class Run {
   ltts: Record<string, Thought[]>;
   dm: string;
   players: string[];
+  imported?: Timestamp;
 
   constructor(
     id: string,
     title: string,
     ltts: Record<string, Thought[]>,
     dm: string,
-    players: string[]
+    players: string[],
+    imported?: Timestamp
   ) {
     this.id = id;
     this.title = title;
     this.ltts = ltts;
     this.dm = dm;
     this.players = players;
+    this.imported = imported;
   }
 
   sortedLtts(): Thought[] {
@@ -153,21 +157,30 @@ export async function createRunFromImport(
     dm,
     players: [],
     ltts,
+    imported: Timestamp.now(),
   }).catch(handleFirebaseError());
   const runId = runDoc.id;
 
-  // Firestore batches are limited to 500 documents, so we need to split up
-  const promises = [];
-  const nbBatches = Math.ceil(steps.length / 500);
-  for (let index = 0; index < nbBatches; index++) {
-    const splicedSteps = steps.splice(0, 499);
-    const batch = writeBatch(db);
-    splicedSteps.forEach((step) => {
-      batch.set(doc(db, 'runs', runId, 'steps', step.n.toString()), step);
-    });
-    promises.push(batch.commit().catch(handleFirebaseError()));
+  try {
+    // Firestore batches are limited to 500 documents, so we need to split up
+    const batches = [];
+    const nbBatches = Math.ceil(steps.length / 500);
+    for (let index = 0; index < nbBatches; index++) {
+      const splicedSteps = steps.splice(0, 499);
+      const batch = writeBatch(db);
+      splicedSteps.forEach((step) => {
+        batch.set(doc(db, 'runs', runId, 'steps', step.n.toString()), step);
+      });
+      batches.push(batch);
+    }
+    const promises = batches.map(async (batch) => await batch.commit());
+    await Promise.all(promises);
+  } catch (error) {
+    // Rollback the run creation
+    console.log('ROLL BACK RUN CREATION BECAUSE OF ERROR: ', error);
+    deleteDoc(doc(db, 'runs', runId)).catch(handleFirebaseError());
+    throw error;
   }
-  await Promise.all(promises);
 
   // Create a UserRunState for this run in the DM's profile
   await createUserRunState(dm, runId, Role.DM);

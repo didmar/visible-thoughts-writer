@@ -6,6 +6,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { FirebaseError } from 'firebase/app';
 import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import '../App.css';
@@ -113,8 +114,16 @@ function HomePage(): JSX.Element {
         const content: ExportedRun = JSON.parse(e.target.result as string);
         const { title, steps } = importRun(content);
         const userId = currentUser.uid();
-        const runId = await createRunFromImport(title, userId, steps);
-        setNewRunId(runId);
+        createRunFromImport(title, userId, steps)
+          .then((runId) => {
+            setNewRunId(runId);
+          })
+          .catch((err: FirebaseError) => {
+            console.error('Error importing run:', err);
+            alert(
+              `Error importing run, format might be invalid:\n: ${err.message}`
+            );
+          });
       };
       reader.readAsText(file);
     })();
