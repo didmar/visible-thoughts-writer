@@ -21,7 +21,7 @@ import {
 } from '../firebase-app';
 
 function HomePage(): JSX.Element {
-  const [runs, setRuns] = useState<Run[] | undefined>(undefined);
+  const [runs, setRuns] = useState<Run[]>([]);
   const [newRuns, setNewRuns] = useState<Run[] | undefined>(undefined);
   const [newTitle, setNewTitle] = useState<string>('');
   const [newRunId, setNewRunId] = useState<string | undefined>(undefined);
@@ -40,10 +40,7 @@ function HomePage(): JSX.Element {
     if (newRuns !== undefined) {
       // Exclude deleted runs, they should not show up for anyone
       const newRunsNotDeleted = newRuns.filter((run) => run.deleted !== true);
-      const updateRuns =
-        runs === undefined
-          ? newRunsNotDeleted
-          : [...runs, ...newRunsNotDeleted];
+      const updateRuns = [...runs, ...newRunsNotDeleted];
       setRuns(updateRuns);
     }
   }, [newRuns]);
@@ -157,23 +154,48 @@ function HomePage(): JSX.Element {
       <></>
     );
 
-  const renderRunsList = (): JSX.Element => {
+  const renderRunsList = (runs: Run[]): JSX.Element =>
+    runs.length > 0 ? (
+      <ul>
+        {runs.map((run) => (
+          <li key={run.id}>
+            <Link to={`/runs/${run.id}`}>{run.title}</Link>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <ul>No runs</ul>
+    );
+
+  const renderRunsLists = (): JSX.Element => {
     if (runs === undefined) {
       return <CircularProgress />;
     }
+    const uid = currentUser?.uid();
+    const yourRuns =
+      uid !== undefined
+        ? runs.filter((run) => run.dm === uid || run.players.includes(uid))
+        : [];
+    const otherRuns = runs.filter(
+      (run) =>
+        uid === undefined || (run.dm !== uid && !run.players.includes(uid))
+    );
 
     return (
       <Box>
-        <Typography variant="h5">Runs</Typography>
-        <ul>
-          {runs
-            ?.filter((run) => run.deleted !== true)
-            .map((run) => (
-              <li key={run.id}>
-                <Link to={`/runs/${run.id}`}>{run.title}</Link>
-              </li>
-            ))}
-        </ul>
+        {yourRuns.length > 0 ? (
+          <>
+            <Typography variant="h5">Your runs</Typography>
+            {renderRunsList(yourRuns)}
+            <Typography variant="h5">Other runs</Typography>
+            {renderRunsList(otherRuns)}
+          </>
+        ) : (
+          <>
+            <Typography variant="h5">Runs</Typography>
+            {renderRunsList(runs)}
+          </>
+        )}
       </Box>
     );
   };
@@ -190,7 +212,7 @@ function HomePage(): JSX.Element {
               <Navigate replace to={`/runs/${newRunId}`} />
             )}
           </Box>
-          {renderRunsList()}
+          {renderRunsLists()}
         </Box>
       </>
     </div>
