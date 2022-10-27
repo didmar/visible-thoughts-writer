@@ -341,15 +341,15 @@ export function getNextSectionForStep(step?: Step): Section | undefined {
 export function checkStepSectionsConsistency(step?: Step): void {
   if (step === undefined) return;
   if (step.initT === undefined && step.ppt !== undefined)
-    throw new Error('ppt without initT');
+    throw new Error(`ppt without initT: ${JSON.stringify(step)}`);
   if (step.ppt === undefined && step.ppptT !== undefined)
-    throw new Error('ppptT without ppt');
+    throw new Error(`ppptT without ppt: ${JSON.stringify(step)}`);
   if (step.ppptT === undefined && step.act !== undefined)
-    throw new Error('act without ppptT');
+    throw new Error(`act without ppptT: ${JSON.stringify(step)}`);
   if (step.act === undefined && step.pactT !== undefined)
-    throw new Error('pactT without act');
+    throw new Error(`pactT without act: ${JSON.stringify(step)}`);
   if (step.pactT === undefined && step.out !== undefined)
-    throw new Error('out without pactT');
+    throw new Error(`out without pactT: ${JSON.stringify(step)}`);
 }
 
 export const skipInitT = (prevStep: Step | undefined): boolean =>
@@ -421,6 +421,11 @@ export class Step {
     );
   }
 }
+
+export const defaultThoughts = [
+  { T: [{ lt: false, txt: '', type: ThoughtType.Watsonian }] },
+];
+export const defaultTextYBR = { txt: '', ybr: false };
 
 async function getLastNSteps(runId: string, _limit: number): Promise<Step[]> {
   const stepsCol = collection(db, 'runs', runId, 'steps');

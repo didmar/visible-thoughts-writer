@@ -8,7 +8,13 @@ import {
   importTextYBR,
   importThoughtSection,
 } from '../export';
-import { Run, Step, ThoughtType } from '../firebase-app';
+import {
+  defaultTextYBR,
+  defaultThoughts,
+  Run,
+  Step,
+  ThoughtType,
+} from '../firebase-app';
 
 const step: Step = {
   n: 1,
@@ -220,6 +226,51 @@ describe('exportStep', () => {
   it('exports another step', () => {
     expect(exportStep(step2)).toEqual(exportedStep2);
   });
+  it('empty texts should be removed', () => {
+    expect(
+      exportStep({
+        n: 1,
+        initT: null,
+        ppt: '',
+        ppptT: thoughts,
+        act: {
+          txt: '', // TODO this should trigger an error instead, as action must never be empty
+          ybr: false,
+        },
+        pactT: thoughts,
+        out: {
+          txt: '',
+          ybr: false,
+        },
+      })
+    ).toEqual({
+      prompt: {
+        thoughts: exportedThoughts,
+      },
+      action: {
+        thoughts: exportedThoughts,
+      },
+    });
+  });
+  it('do not create prompt or action objects if everything inside is skipped or empty', () => {
+    expect(
+      exportStep({
+        n: 1,
+        initT: null,
+        ppt: '',
+        ppptT: defaultThoughts,
+        act: {
+          txt: '', // TODO this should trigger an error instead, as action must never be empty
+          ybr: false,
+        },
+        pactT: defaultThoughts,
+        out: {
+          txt: '',
+          ybr: false,
+        },
+      })
+    ).toEqual({});
+  });
 });
 
 describe('exportAuthors', () => {
@@ -268,12 +319,6 @@ describe('importStep', () => {
   it('imports all sections as undefined for an empty step with no previous step', () => {
     expect(importStep({}, 1, undefined, false)).toEqual({
       n: 1,
-      initT: undefined,
-      ppt: undefined,
-      ppptT: undefined,
-      act: undefined,
-      pactT: undefined,
-      out: undefined,
     });
   });
 
@@ -283,23 +328,32 @@ describe('importStep', () => {
       initT: null,
       ppt: null,
       ppptT: null,
-      act: undefined,
-      pactT: undefined,
-      out: undefined,
     });
   });
 
-  it('deals with case 1 of yo be real, with no previous step', () => {
+  it('deals with case 1 of yo be real, with no previous step and not last step', () => {
     expect(
       importStep({ action: { text: 'action' } }, 1, undefined, false)
     ).toEqual({
       n: 1,
-      initT: null,
-      ppt: null,
-      ppptT: null,
+      initT: defaultThoughts,
+      ppt: '',
+      ppptT: defaultThoughts,
       act: { txt: 'action', ybr: false },
-      pactT: undefined,
-      out: undefined,
+      // Since this is not the last step, assume they were left empty
+      pactT: defaultThoughts,
+      out: defaultTextYBR,
+    });
+  });
+  it('deals with case 1 of yo be real as a last step', () => {
+    expect(
+      importStep({ action: { text: 'action' } }, 1, undefined, true)
+    ).toEqual({
+      n: 1,
+      initT: defaultThoughts,
+      ppt: '',
+      ppptT: defaultThoughts,
+      act: { txt: 'action', ybr: false },
     });
   });
 
@@ -321,34 +375,25 @@ describe('importStep', () => {
     ppptT: thoughts,
     act: { txt: 'action', ybr: true },
     pactT: thoughts,
-    // out may be null or undefined
+    // outcome may be empty or undefined, see test cases
   };
 
-  it('deals with case 2A of yo be real, when it is the last step', () => {
-    // If this is the last step, assume the outcome is not written yet
-    expect(importStep(exportedStepCase2, 1, undefined, true)).toEqual({
-      ...stepCase2,
-      out: undefined,
-    });
-  });
-
-  it('deals with case 2A of yo be real, when it is NOT the last step', () => {
-    // Otherwise, consider that the outcome is skipped
+  it('deals with case 2A of yo be real by making outcome empty is not last step', () => {
     expect(importStep(exportedStepCase2, 1, undefined, false)).toEqual({
       ...stepCase2,
-      out: null,
+      out: defaultTextYBR,
     });
+  });
+  it('deals with case 2A of yo be real by making outcome empty undefined if last step', () => {
+    expect(importStep(exportedStepCase2, 1, undefined, true)).toEqual(
+      stepCase2
+    );
   });
 
   it('deals with case 2A of yo be real in the previous step and the current step being empty', () => {
     expect(importStep({}, 2, stepCase2, false)).toEqual({
       n: 2,
       initT: null,
-      ppt: undefined,
-      ppptT: undefined,
-      act: undefined,
-      pactT: undefined,
-      out: undefined,
     });
   });
 
@@ -373,8 +418,11 @@ describe('importStep', () => {
       ppt: 'Prompt',
       ppptT: thoughts,
       act: { txt: 'action', ybr: true },
-      pactT: null, // assume it was skipped, since it is not the last step
-      out: null, // same as above
+      // assume pactT and out were left empty, since it is not the last step.
+      // There is an ambiguity for outcome which could have been skipped,
+      // but we want to keep it editable.
+      pactT: defaultThoughts,
+      out: defaultTextYBR,
     });
   });
 
@@ -399,13 +447,16 @@ describe('importStep', () => {
       ppt: 'Prompt',
       ppptT: thoughts,
       act: { txt: 'action', ybr: true },
-      pactT: undefined,
-      out: undefined,
     });
   });
 
   it('deals with step that has everything filled in', () => {
-    expect(importStep(exportedStep1, 1, undefined, false)).toEqual(step);
+    expect(importStep(exportedStep1, 1, undefined, false)).toEqual({
+      ...step,
+      // was originally skipped, but the information was lost
+      // when we exported it
+      ppptT: defaultThoughts,
+    });
   });
 });
 
@@ -413,7 +464,19 @@ describe('importRun', () => {
   it('imports a run', () => {
     expect(importRun(exportedRun)).toEqual({
       title: run.title,
-      steps: [step, step2],
+      steps: [
+        {
+          ...step,
+          // was originally skipped, but the information was lost
+          // when we exported it
+          ppptT: defaultThoughts,
+        },
+        {
+          ...step2,
+          // same here
+          pactT: defaultThoughts,
+        },
+      ],
     });
   });
   it('rejects a run with no title', () => {

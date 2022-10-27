@@ -1,6 +1,8 @@
 import {
   Bullet,
   checkStepSectionsConsistency,
+  defaultTextYBR,
+  defaultThoughts,
   Run,
   skipInitT,
   skipPptAndPpptT,
@@ -9,7 +11,7 @@ import {
   ThoughtType,
   UserProfile,
 } from './firebase-app';
-import { isEmpty, swapKeyValue } from './utils';
+import { isEmpty, swapKeyValue, withoutUndefinedValues } from './utils';
 
 interface ExportedThought {
   type: string;
@@ -74,32 +76,33 @@ export const exportThoughtSection = (
 
 export const exportStep = (step: Step): ExportedStep => {
   const exportedStep: ExportedStep = {};
-  exportedStep.thoughts = exportThoughtSection(step.initT);
 
-  if (step.ppt !== undefined && step.ppt !== null) {
-    exportedStep.prompt = {
-      text: step.ppt,
-    };
-    exportedStep.prompt.thoughts = exportThoughtSection(step.ppptT);
-  }
+  const thoughts = exportThoughtSection(step.initT);
+  if (thoughts !== undefined) exportedStep.thoughts = thoughts;
 
-  if (step.act !== undefined && step.act !== null) {
-    exportedStep.action = {
-      text: `${step.act.ybr ? YBR_MARK : ''}${step.act.txt}`,
-    };
-  }
+  const prompt: ExportedPrompt = {};
+  if (step.ppt !== undefined && step.ppt !== null && step.ppt !== '')
+    prompt.text = step.ppt;
+  const exportedPptT = exportThoughtSection(step.ppptT);
+  if (exportedPptT !== undefined) prompt.thoughts = exportedPptT;
+  if (!isEmpty(prompt)) exportedStep.prompt = prompt;
 
-  exportedStep.action = {
-    ...exportedStep.action,
-    thoughts: exportThoughtSection(step.pactT),
-  };
-
-  if (step.out !== undefined && step.out !== null) {
-    exportedStep.action = {
-      ...exportedStep.action,
-      outcome: `${step.out.ybr ? YBR_MARK : ''}${step.out.txt}`,
-    };
-  }
+  const action: ExportedAction = {};
+  if (
+    step.act !== undefined &&
+    step.act !== null &&
+    (step.act.txt !== '' || step.act.ybr)
+  )
+    action.text = `${step.act.ybr ? YBR_MARK : ''}${step.act.txt}`;
+  const exportedPactT = exportThoughtSection(step.pactT);
+  if (exportedPactT !== undefined) action.thoughts = exportedPactT;
+  if (
+    step.out !== undefined &&
+    step.out !== null &&
+    (step.out.txt !== '' || step.out.ybr)
+  )
+    action.outcome = `${step.out.ybr ? YBR_MARK : ''}${step.out.txt}`;
+  if (!isEmpty(action)) exportedStep.action = action;
 
   return exportedStep;
 };
@@ -183,8 +186,7 @@ export const importStep = (
   // might or might not mean that it was skipped.
 
   // Start with everything as undefined
-  const step: Step = {
-    n,
+  const step: Partial<Step> = {
     initT: undefined,
     ppt: undefined,
     ppptT: undefined,
@@ -200,19 +202,21 @@ export const importStep = (
 
     if (exportedStep.action.outcome !== undefined) {
       step.out = importTextYBR(exportedStep.action.outcome);
-    } else if (step.act?.ybr === true && !isLastStep) {
-      // YBR Case 2B
-      step.out = null;
+    } else {
+      // YBR Case 2:
+      // When importing a step, there is no way to tell if the outcome
+      // was left empty (2A) or skipped (2B).
+      // To leave it editable by the DM, we set it to an empty string,
+      // unless this is the last step, in which case we set it to undefined.
+      if (!isLastStep) {
+        step.out = defaultTextYBR;
+      }
     }
 
     if (exportedStep.action.thoughts !== undefined) {
       step.pactT = importThoughtSection(exportedStep.action.thoughts);
-    } else if (
-      (step.act?.ybr === true && !isLastStep) ||
-      exportedStep.action.outcome !== undefined
-    ) {
-      // YBR Case 2B
-      step.pactT = null;
+    } else if (step.out !== undefined) {
+      step.pactT = defaultThoughts;
     }
   }
 
@@ -223,17 +227,19 @@ export const importStep = (
         'Expected ppt and pppT to be skipped based on previous step, but found prompt in the exported step.'
       );
     }
-    step.ppt = exportedStep.prompt.text ?? null;
+    step.ppt = exportedStep.prompt.text ?? '';
     if (exportedStep.prompt.thoughts !== undefined) {
       step.ppptT = importThoughtSection(exportedStep.prompt.thoughts);
     } else if (exportedStep.action !== undefined) {
-      step.ppptT = null;
+      step.ppptT = defaultThoughts; // Assume it was left empty
     }
-  } else {
-    if (shouldSkipPptAndPpptT || exportedStep.action !== undefined) {
-      step.ppt = null;
-      step.ppptT = null;
-    }
+  } else if (shouldSkipPptAndPpptT) {
+    step.ppt = null;
+    step.ppptT = null;
+  } else if (exportedStep.action !== undefined) {
+    // Assume they were left empty
+    step.ppt = '';
+    step.ppptT = defaultThoughts;
   }
 
   const shouldSkipInitT = skipInitT(prevStep);
@@ -245,19 +251,19 @@ export const importStep = (
       );
     }
     step.initT = importThoughtSection(exportedStep.thoughts);
-  } else {
-    if (
-      shouldSkipInitT ||
-      exportedStep.prompt !== undefined ||
-      exportedStep.action !== undefined
-    )
-      // YBR Case 1
-      step.initT = null;
+  } else if (shouldSkipInitT) {
+    // YBR Case 1
+    step.initT = null;
+  } else if (
+    exportedStep.prompt !== undefined ||
+    exportedStep.action !== undefined
+  ) {
+    step.initT = defaultThoughts; // Assume it was left empty
   }
 
-  checkStepSectionsConsistency(step);
-
-  return step;
+  const _step = { n, ...withoutUndefinedValues(step) };
+  checkStepSectionsConsistency(_step);
+  return _step;
 };
 
 export const importRun = (exportedRun: ExportedRun): ImportedRun => {
