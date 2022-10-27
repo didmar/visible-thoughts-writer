@@ -7,7 +7,11 @@ import {
   ThoughtText,
   YBRTextElement,
 } from './types';
-import { getDefaultSlateValue, SectionContent } from './utils';
+import {
+  getDefaultSectionContent,
+  getDefaultSlateValue,
+  SectionContent,
+} from './utils';
 
 export function toCustomElement(
   sectionContent: SectionContent,
@@ -64,6 +68,9 @@ export function parse(children: CustomElement[]): SectionContent {
 }
 
 function parseToBullets(bulletElems: BulletElement[]): SectionContent {
+  if (bulletElems.length === 0)
+    throw new Error('BulletElement list must never be empty!');
+
   const bullets = bulletElems.flatMap((bulletElem: BulletElement) => {
     const thoughts: Thought[] = [];
     bulletElem.children.forEach((t: ThoughtText | EndOfThoughtText) => {
@@ -74,6 +81,7 @@ function parseToBullets(bulletElems: BulletElement[]): SectionContent {
         }
       } else {
         const txt = t.text.trim();
+        // Exclude thoughts with an empty text
         if (txt !== '')
           thoughts.push({
             txt,
@@ -82,24 +90,30 @@ function parseToBullets(bulletElems: BulletElement[]): SectionContent {
           });
       }
     });
+    // Exclude bullets that only had empty thoughts
     if (thoughts.length === 0) return [];
     return [{ T: thoughts }];
   });
-  if (bullets.length === 0) return null; // Indicates a skip!
+
+  // If all bullets were empty, return a bullet with an empty text
+  if (bullets.length === 0) return getDefaultSectionContent(Section.InitT);
+
   return { kind: 'bullets', value: bullets };
 }
 
 function parseToTextYBR(ybrTextElems: YBRTextElement[]): SectionContent {
-  if (ybrTextElems.length === 0) return null;
+  if (ybrTextElems.length === 0)
+    throw new Error('YBRTextElement list must never be empty!');
   if (ybrTextElems.length > 1)
-    throw new Error("Can't have more than one YBRTextElement!");
+    throw new Error('Must not have more than one YBRTextElement!');
+
   const [ybrTextElem] = ybrTextElems;
   const txt = ybrTextElem.children
     .map((t) => {
       return t.text.trim();
     })
     .join('\n');
-  if (txt === '') return null;
+
   return {
     kind: 'ybrtext',
     value: {
@@ -110,7 +124,9 @@ function parseToTextYBR(ybrTextElems: YBRTextElement[]): SectionContent {
 }
 
 function parseToString(textElems: TextElement[]): SectionContent {
-  if (textElems.length === 0) return null;
+  if (textElems.length === 0)
+    throw new Error('TextElement list must never be empty!');
+
   const txt = textElems
     .flatMap((textElem) =>
       textElem.children.map((t) => {
@@ -118,6 +134,6 @@ function parseToString(textElems: TextElement[]): SectionContent {
       })
     )
     .join('\n');
-  if (txt === '') return null;
+
   return { kind: 'text', value: txt };
 }

@@ -47,10 +47,18 @@ export function getDefaultSectionContent(section: Section): SectionContent {
 }
 
 export function isEmptySectionContent(content: SectionContent): boolean {
-  if (content === null) return true;
+  // null means "skipped", which if NOT the same as "empty"!
+  // (it's a bit confusing because in both case the field will not be exported)
+  if (content === null) return false;
+
   switch (content.kind) {
     case 'bullets':
-      return content.value.length === 0;
+      if (content.value.length === 0) return true;
+      return (
+        content.value.length === 1 &&
+        content.value[0].T.length === 1 &&
+        content.value[0].T[0].txt === ''
+      );
     case 'ybrtext':
       return content.value.txt === '';
     case 'text':
@@ -61,7 +69,7 @@ export function isEmptySectionContent(content: SectionContent): boolean {
 export function resetEditor(
   editor: Editor,
   section: Section,
-  content?: SectionContent
+  content: SectionContent
 ): void {
   Transforms.delete(editor, {
     at: {
@@ -69,10 +77,7 @@ export function resetEditor(
       focus: Editor.end(editor, []),
     },
   });
-  editor.children =
-    content !== undefined
-      ? toCustomElement(content, section)
-      : getDefaultSlateValue(section);
+  editor.children = toCustomElement(content, section);
   // TODO also reset the history
   editor.marks = null;
 }

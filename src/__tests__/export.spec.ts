@@ -2,6 +2,7 @@ import {
   exportAuthors,
   exportRun,
   exportStep,
+  exportThoughtSection,
   importRun,
   importStep,
   importTextYBR,
@@ -153,6 +154,65 @@ const exportedRun = {
   steps: [exportedStep1, exportedStep2],
 };
 
+const exportedThoughts = [
+  [
+    {
+      type: 'watsonian',
+      longterm: false,
+      text: 'Watsonian',
+    },
+  ],
+];
+const thoughts = [
+  { T: [{ lt: false, txt: 'Watsonian', type: ThoughtType.Watsonian }] },
+];
+
+describe('exportThoughtSection', () => {
+  it('exports some thoughts', () => {
+    expect(exportThoughtSection(thoughts)).toEqual(exportedThoughts);
+  });
+  it('exports without any empty thoughts or any empty bullets', () => {
+    expect(
+      exportThoughtSection([
+        { T: [] },
+        {
+          T: [
+            {
+              lt: false,
+              txt: '',
+              type: ThoughtType.Watsonian,
+            },
+            {
+              lt: true,
+              txt: 'Meta and long-term',
+              type: ThoughtType.Meta,
+            },
+          ],
+        },
+      ])
+    ).toEqual([[{ longterm: true, text: 'Meta and long-term', type: 'meta' }]]);
+  });
+  it('exporting an empty list of bullets should return undefined', () => {
+    expect(exportThoughtSection([])).toEqual(undefined);
+  });
+  it('exporting a bullet with empty list of thoughts should return undefined', () => {
+    expect(exportThoughtSection([{ T: [] }])).toEqual(undefined);
+  });
+  it('exporting a bullet with a single thought but no text should return undefined', () => {
+    expect(
+      exportThoughtSection([
+        { T: [{ lt: false, txt: '', type: ThoughtType.Watsonian }] },
+      ])
+    ).toEqual(undefined);
+  });
+  it('exporting undefined returns undefined', () => {
+    expect(exportThoughtSection(undefined)).toEqual(undefined);
+  });
+  it('exporting null returns undefined', () => {
+    expect(exportThoughtSection(null)).toEqual(undefined);
+  });
+});
+
 describe('exportStep', () => {
   it('exports a step', () => {
     expect(exportStep(step)).toEqual(exportedStep1);
@@ -242,19 +302,6 @@ describe('importStep', () => {
       out: undefined,
     });
   });
-
-  const exportedThoughts = [
-    [
-      {
-        type: 'watsonian',
-        longterm: false,
-        text: 'Watsonian',
-      },
-    ],
-  ];
-  const thoughts = [
-    { T: [{ lt: false, txt: 'Watsonian', type: ThoughtType.Watsonian }] },
-  ];
 
   const exportedStepCase2 = {
     thoughts: exportedThoughts,

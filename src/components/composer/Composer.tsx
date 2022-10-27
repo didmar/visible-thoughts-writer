@@ -91,10 +91,16 @@ const Composer = ({
   const [previousContent, setPreviousContent] =
     useState<SectionContent>(initContent);
 
-  // When section changes, reset the editor with the proper content
+  // When section changes for the composer pane used to create sections,
+  // reset the editor accordingly (e.g., start from a empty bullet or text)
   useEffect(() => {
-    console.log('Composer > useEffect [section]');
-    if (mode === ComposerMode.CREATE) resetEditor(editor, section);
+    if (mode === ComposerMode.CREATE) {
+      console.log('Composer (CREATE) > useEffect [section]: ', section);
+      const newContent = getDefaultSectionContent(section);
+      setContent(newContent);
+      setPreviousContent(newContent);
+      resetEditor(editor, section, newContent);
+    }
   }, [section]);
 
   const renderElement = useCallback(
@@ -112,6 +118,7 @@ const Composer = ({
 
   const isSubmittable = (): boolean => {
     if (content === undefined) return false;
+
     // Can't submit if we are only viewing the section
     if (mode === ComposerMode.VIEW) return false;
 
@@ -119,16 +126,9 @@ const Composer = ({
     // nor can it be skipped or left empty
     if (
       section === Section.Act &&
-      (mode === ComposerMode.EDIT || isEmptySectionContent(content))
-    )
-      return false;
-
-    // Can't edit a section with YBR flag into
-    // a skipped section
-    if (
-      mode === ComposerMode.EDIT &&
-      isYBRSection(section) &&
-      isEmptySectionContent(content)
+      (mode === ComposerMode.EDIT ||
+        content === null ||
+        isEmptySectionContent(content))
     )
       return false;
 
@@ -263,11 +263,33 @@ const Composer = ({
     </Box>
   );
 
+  const empty = (
+    <Box sx={editableStyle}>
+      <ul>
+        <Typography sx={{ color: 'gray' }}>(empty)</Typography>
+      </ul>
+    </Box>
+  );
+
+  const editableElem = (
+    <Editable
+      readOnly={mode === ComposerMode.VIEW}
+      onDOMBeforeInput={
+        mode !== ComposerMode.VIEW ? handleDOMBeforeInput : undefined
+      }
+      renderElement={renderElement}
+      renderLeaf={renderLeaf}
+      style={editableStyle}
+      onKeyDown={onKeyDown}
+      autoFocus={mode !== ComposerMode.VIEW}
+    />
+  );
+
   return (
     <Box sx={{ flexDirection: 'row', p: 1 }}>
       <Slate
         editor={editor}
-        value={toCustomElement(initContent, section)}
+        value={toCustomElement(content, section)}
         onChange={(_) => {
           // console.log('editor.children: ', JSON.stringify(editor.children));
           setContent(parse(editor.children as CustomElement[]));
@@ -286,21 +308,11 @@ const Composer = ({
             {icon}
             {ybrTag}
           </Box>
-          {mode === ComposerMode.VIEW && content === null ? (
-            skipped
-          ) : (
-            <Editable
-              readOnly={mode === ComposerMode.VIEW}
-              onDOMBeforeInput={
-                mode !== ComposerMode.VIEW ? handleDOMBeforeInput : undefined
-              }
-              renderElement={renderElement}
-              renderLeaf={renderLeaf}
-              style={editableStyle}
-              onKeyDown={onKeyDown}
-              autoFocus={mode !== ComposerMode.VIEW}
-            />
-          )}
+          {mode === ComposerMode.VIEW && content === null
+            ? skipped
+            : mode === ComposerMode.VIEW && isEmptySectionContent(content)
+            ? empty
+            : editableElem}
           {editButton}
         </Box>
         <Box sx={{ flexGrowth: 0 }}>{toolbar}</Box>

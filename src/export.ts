@@ -54,38 +54,33 @@ const THOUGHT_TYPE_TO_EXPORTED_NAME: Record<ThoughtType, string> = swapKeyValue(
 const YBR_MARK = '<yo be real> ';
 
 export const exportThoughtSection = (
-  bullets: Bullet[]
-): ExportedThought[][] => {
-  return bullets.map((bullet) =>
-    bullet.T.map((t) => ({
-      type: THOUGHT_TYPE_TO_EXPORTED_NAME[t.type],
-      longterm: t.lt,
-      text: t.txt,
-    }))
-  );
+  bullets: Bullet[] | null | undefined
+): ExportedThought[][] | undefined => {
+  if (bullets === undefined || bullets === null) return undefined;
+
+  const exportThoughts = bullets
+    .map((bullet) =>
+      bullet.T.map((t) => ({
+        type: THOUGHT_TYPE_TO_EXPORTED_NAME[t.type],
+        longterm: t.lt,
+        text: t.txt,
+      })).filter((t) => t.text !== '')
+    )
+    .filter((t) => t.length > 0);
+
+  if (exportThoughts.length === 0) return undefined;
+  return exportThoughts;
 };
 
 export const exportStep = (step: Step): ExportedStep => {
   const exportedStep: ExportedStep = {};
-  if (
-    step.initT !== undefined &&
-    step.initT !== null &&
-    step.initT.length > 0
-  ) {
-    exportedStep.thoughts = exportThoughtSection(step.initT);
-  }
+  exportedStep.thoughts = exportThoughtSection(step.initT);
 
   if (step.ppt !== undefined && step.ppt !== null) {
     exportedStep.prompt = {
       text: step.ppt,
     };
-    if (
-      step.ppptT !== undefined &&
-      step.ppptT !== null &&
-      step.ppptT.length > 0
-    ) {
-      exportedStep.prompt.thoughts = exportThoughtSection(step.ppptT);
-    }
+    exportedStep.prompt.thoughts = exportThoughtSection(step.ppptT);
   }
 
   if (step.act !== undefined && step.act !== null) {
@@ -94,16 +89,10 @@ export const exportStep = (step: Step): ExportedStep => {
     };
   }
 
-  if (
-    step.pactT !== undefined &&
-    step.pactT !== null &&
-    step.pactT.length > 0
-  ) {
-    exportedStep.action = {
-      ...exportedStep.action,
-      thoughts: exportThoughtSection(step.pactT),
-    };
-  }
+  exportedStep.action = {
+    ...exportedStep.action,
+    thoughts: exportThoughtSection(step.pactT),
+  };
 
   if (step.out !== undefined && step.out !== null) {
     exportedStep.action = {
