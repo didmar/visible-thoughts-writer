@@ -122,15 +122,17 @@ const Composer = ({
     // Can't submit if we are only viewing the section
     if (mode === ComposerMode.VIEW) return false;
 
-    // Action can never be edited after submission,
-    // nor can it be skipped or left empty
+    // Initial thoughts, prompt and action can't be empty
     if (
-      section === Section.Act &&
-      (mode === ComposerMode.EDIT ||
-        content === null ||
-        isEmptySectionContent(content))
+      (section === Section.InitT ||
+        section === Section.Ppt ||
+        section === Section.Act) &&
+      isEmptySectionContent(content)
     )
       return false;
+
+    // Skipped sections can't be edited
+    if (mode === ComposerMode.EDIT && content === null) return false;
 
     // Anything else is OK
     return true;
@@ -291,7 +293,7 @@ const Composer = ({
         editor={editor}
         value={toCustomElement(content, section)}
         onChange={(_) => {
-          // console.log('editor.children: ', JSON.stringify(editor.children));
+          console.log('editor.children: ', JSON.stringify(editor.children));
           setContent(parse(editor.children as CustomElement[]));
           // console.log('content: ', JSON.stringify(content));
         }}
@@ -324,7 +326,25 @@ const Composer = ({
 // Customized editor methods
 
 const withCustomization = (editor: CustomEditor): CustomEditor => {
-  const { insertText, insertBreak } = editor;
+  const { insertText, insertBreak, normalizeNode, insertNode } = editor;
+
+  // editor.normalizeNode = (entry) => {
+  //   const [node, path] = entry;
+  //   console.log(`normalizeNode path=[${path.toString()}]:`, node);
+
+  //   if (Editor.isBlock(editor, node) && node.type === 'bullet') {
+  //     mergeAdjacentThoughts(editor, path);
+  //   } else if (
+  //     path.length === 0 &&
+  //     (editor.children[0] as CustomElement).type !== 'ybrtext'
+  //   ) {
+  //     // When copy/pasting, multiple ybr elements may be created,
+  //     // so merge them into one.
+  //     mergeYBRElements(editor);
+  //   }
+
+  //   normalizeNode(entry);
+  // };
 
   editor.insertBreak = () => {
     if ((editor.children[0] as CustomElement).type !== 'bullet') {
@@ -346,6 +366,7 @@ const withCustomization = (editor: CustomEditor): CustomEditor => {
   };
 
   editor.insertText = (text) => {
+    // console.log('insertText: ', text);
     if ((editor.children[0] as CustomElement).type === 'bullet') {
       if (text === '.' || text === '!' || text === '?') {
         // Check that we are not starting a new bullet

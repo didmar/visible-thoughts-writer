@@ -227,7 +227,7 @@ export const importStep = (
         'Expected ppt and pppT to be skipped based on previous step, but found prompt in the exported step.'
       );
     }
-    step.ppt = exportedStep.prompt.text ?? '';
+    step.ppt = exportedStep.prompt.text;
     if (exportedStep.prompt.thoughts !== undefined) {
       step.ppptT = importThoughtSection(exportedStep.prompt.thoughts);
     } else if (exportedStep.action !== undefined) {
@@ -237,9 +237,9 @@ export const importStep = (
     step.ppt = null;
     step.ppptT = null;
   } else if (exportedStep.action !== undefined) {
-    // Assume they were left empty
-    step.ppt = '';
-    step.ppptT = defaultThoughts;
+    throw new Error(
+      'An action with no prompt before can only happen if previous outcome has the <yo be real> case, which was not the case.'
+    );
   }
 
   const shouldSkipInitT = skipInitT(prevStep);

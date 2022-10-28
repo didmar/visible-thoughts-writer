@@ -16,10 +16,10 @@ import {
   orderBy,
   query,
   setDoc,
+  Timestamp,
   updateDoc,
   where,
   writeBatch,
-  Timestamp,
 } from '@firebase/firestore';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import {
@@ -338,6 +338,15 @@ export function getNextSectionForStep(step?: Step): Section | undefined {
   return undefined; // no next section for this step, go to the next
 }
 
+export function isEmptyBullets(bullets: Bullet[]): boolean {
+  if (bullets.length === 0) return true;
+  return (
+    bullets.length === 1 &&
+    bullets[0].T.length === 1 &&
+    bullets[0].T[0].txt === ''
+  );
+}
+
 export function checkStepSectionsConsistency(step?: Step): void {
   if (step === undefined) return;
   if (step.initT === undefined && step.ppt !== undefined)
@@ -350,6 +359,17 @@ export function checkStepSectionsConsistency(step?: Step): void {
     throw new Error(`pactT without act: ${JSON.stringify(step)}`);
   if (step.pactT === undefined && step.out !== undefined)
     throw new Error(`out without pactT: ${JSON.stringify(step)}`);
+
+  if (
+    step.initT !== undefined &&
+    step.initT !== null &&
+    isEmptyBullets(step.initT)
+  )
+    throw new Error(`initT must not be empty: ${JSON.stringify(step)}`);
+  if (step.ppt !== undefined && step.ppt !== null && step.ppt.length === 0)
+    throw new Error(`ppt must not be empty: ${JSON.stringify(step)}`);
+  if (step.act !== undefined && step.act !== null && step.act.txt.length === 0)
+    throw new Error(`act must not be empty: ${JSON.stringify(step)}`);
 }
 
 export const skipInitT = (prevStep: Step | undefined): boolean =>

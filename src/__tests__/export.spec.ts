@@ -316,44 +316,102 @@ describe('importTextYBR', () => {
 });
 
 describe('importStep', () => {
-  it('imports all sections as undefined for an empty step with no previous step', () => {
+  it('imports only the step number for an empty step with no previous step', () => {
     expect(importStep({}, 1, undefined, false)).toEqual({
       n: 1,
     });
   });
 
   it('deals with case 1 of yo be real, with a previous step that has a yo be real outcome', () => {
-    expect(importStep({}, 1, step, false)).toEqual({
-      n: 1,
+    expect(importStep({}, 2, step, false)).toEqual({
+      n: 2,
       initT: null,
       ppt: null,
       ppptT: null,
     });
   });
 
-  it('deals with case 1 of yo be real, with no previous step and not last step', () => {
-    expect(
-      importStep({ action: { text: 'action' } }, 1, undefined, false)
-    ).toEqual({
-      n: 1,
-      initT: defaultThoughts,
-      ppt: '',
-      ppptT: defaultThoughts,
-      act: { txt: 'action', ybr: false },
-      // Since this is not the last step, assume they were left empty
-      pactT: defaultThoughts,
-      out: defaultTextYBR,
-    });
+  it('throws an error if the first step has an action but no initial thoughts', () => {
+    expect(() =>
+      importStep(
+        {
+          prompt: { text: 'prompt', thoughts: exportedThoughts },
+          action: { text: 'action' },
+        },
+        1,
+        undefined,
+        false
+      )
+    ).toThrowError(
+      'initT must not be empty: {"n":1,"initT":[{"T":[{"lt":false,"txt":"","type":0}]}],"ppt":"prompt",' +
+        '"ppptT":[{"T":[{"type":0,"lt":false,"txt":"Watsonian"}]}],"act":{"ybr":false,"txt":"action"},' +
+        '"pactT":[{"T":[{"lt":false,"txt":"","type":0}]}],"out":{"txt":"","ybr":false}}'
+    );
   });
-  it('deals with case 1 of yo be real as a last step', () => {
+
+  it('throws an error if the first step has an action but no prompt', () => {
+    expect(() =>
+      importStep(
+        { thoughts: exportedThoughts, action: { text: 'action' } },
+        1,
+        undefined,
+        false
+      )
+    ).toThrowError(
+      'An action with no prompt before can only happen if previous outcome has the <yo be real> case, which was not the case.'
+    );
+  });
+
+  it("throws an error if previous step's outcome has yo be real tag, but prompt is defined", () => {
+    expect(() =>
+      importStep(
+        { thoughts: exportedThoughts, action: { text: 'action' } },
+        2,
+        step,
+        false
+      )
+    ).toThrowError(
+      'Expected initT to be skipped based on previous step, but found thoughts in the exported step.'
+    );
+  });
+
+  it("throws an error if previous step's outcome has yo be real tag, but initial thoughts are defined", () => {
+    expect(() =>
+      importStep(
+        {
+          prompt: { text: 'prompt', thoughts: exportedThoughts },
+          action: { text: 'action' },
+        },
+        2,
+        step,
+        false
+      )
+    ).toThrowError(
+      'Expected ppt and pppT to be skipped based on previous step, but found prompt in the exported step.'
+    );
+  });
+
+  it('defines post-action sections as empty if they are not provided but this is not the last step', () => {
     expect(
-      importStep({ action: { text: 'action' } }, 1, undefined, true)
+      importStep(
+        {
+          thoughts: exportedThoughts,
+          prompt: { text: 'prompt', thoughts: exportedThoughts },
+          action: { text: 'action' },
+        },
+        1,
+        undefined,
+        false
+      )
     ).toEqual({
       n: 1,
-      initT: defaultThoughts,
-      ppt: '',
-      ppptT: defaultThoughts,
+      initT: thoughts,
+      ppt: 'prompt',
+      ppptT: thoughts,
       act: { txt: 'action', ybr: false },
+      // Assume it was left empty, since this is not the last step
+      pactT: defaultThoughts,
+      out: { txt: '', ybr: false },
     });
   });
 
