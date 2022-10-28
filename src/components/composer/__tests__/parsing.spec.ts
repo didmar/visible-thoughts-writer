@@ -15,7 +15,7 @@ it('parses text', () => {
     },
   ];
   const textYBR = parse(children);
-  expect(textYBR).toEqual('Hey!\n This is a test.');
+  expect(textYBR).toEqual({ kind: 'text', value: 'Hey!\n This is a test.' });
 });
 
 it('parses YBR text', () => {
@@ -31,8 +31,11 @@ it('parses YBR text', () => {
   ];
   const textYBR = parse(children);
   expect(textYBR).toEqual({
-    txt: 'Hey!\nThis is a test.',
-    ybr: true,
+    kind: 'ybrtext',
+    value: {
+      txt: 'Hey!\nThis is a test.',
+      ybr: true,
+    },
   });
 });
 
@@ -114,49 +117,24 @@ it('should parse to bullets', () => {
     },
   ];
   const bullets = parse(children);
-  expect(bullets).toEqual([
-    {
-      T: [
-        {
-          lt: false,
-          txt: 'Watsonian.',
-          type: ThoughtType.Watsonian,
-        },
-        {
-          lt: false,
-          txt: 'Doylist!!',
-          type: ThoughtType.Doylist,
-        },
-        {
-          lt: false,
-          txt: 'Meta?',
-          type: ThoughtType.Meta,
-        },
-        {
-          lt: false,
-          txt: 'Comment.',
-          type: ThoughtType.Comment,
-        },
-        {
-          lt: true,
-          txt: 'Meta and long-term!?',
-          type: ThoughtType.Meta,
-        },
-      ],
-    },
-    {
-      T: [
-        {
-          lt: false,
-          txt: 'Thought from another bullet',
-          type: ThoughtType.Watsonian,
-        },
-      ],
-    },
-  ]);
+  expect(bullets).toEqual({
+    kind: 'bullets',
+    value: [
+      {
+        T: [
+          { lt: false, txt: 'Watsonian.', type: 0 },
+          { lt: false, txt: 'Doylist!!', type: 1 },
+          { lt: false, txt: 'Meta?', type: 2 },
+          { lt: false, txt: 'Comment.', type: 3 },
+          { lt: true, txt: 'Meta and long-term!?', type: 2 },
+        ],
+      },
+      { T: [{ lt: false, txt: 'Thought from another bullet', type: 0 }] },
+    ],
+  });
 });
 
-it('should parse empty text to null', () => {
+it('parses empty text', () => {
   const children: TextElement[] = [
     {
       type: 'text',
@@ -169,10 +147,10 @@ it('should parse empty text to null', () => {
     },
   ];
   const text = parse(children);
-  expect(text).toEqual(null);
+  expect(text).toEqual({ kind: 'text', value: '' });
 });
 
-it('should parse empty bullet to null', () => {
+it('parses empty bullet', () => {
   const children: BulletElement[] = [
     {
       type: 'bullet',
@@ -187,5 +165,8 @@ it('should parse empty bullet to null', () => {
     },
   ];
   const text = parse(children);
-  expect(text).toEqual(null);
+  expect(text).toEqual({
+    kind: 'bullets',
+    value: [{ T: [{ lt: false, txt: '', type: 0 }] }],
+  });
 });
