@@ -370,6 +370,8 @@ export function checkStepSectionsConsistency(step?: Step): void {
     throw new Error(`ppt must not be empty: ${JSON.stringify(step)}`);
   if (step.act !== undefined && step.act !== null && step.act.txt.length === 0)
     throw new Error(`act must not be empty: ${JSON.stringify(step)}`);
+  if (step.out !== undefined && step.out !== null && step.out.txt.length === 0)
+    throw new Error(`out must not be empty: ${JSON.stringify(step)}`);
 }
 
 export const skipInitT = (prevStep: Step | undefined): boolean =>

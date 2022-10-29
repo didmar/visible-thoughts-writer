@@ -142,6 +142,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               n={step.n}
               editable={onSubmitted !== undefined && isDM(role)}
               onSubmitted={onSubmitted ?? noop}
+              actionHasYBRTag={step.act?.ybr ?? false}
             />
           </Paper>
         )}

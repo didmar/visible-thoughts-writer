@@ -65,6 +65,7 @@ interface ComposerProps {
   onSubmitted?: (n: number, content: SectionContent, section: Section) => void;
   initValue?: Bullet[] | TextYBR | string | null;
   editable?: boolean;
+  actionHasYBRTag?: boolean;
 }
 
 const Composer = ({
@@ -74,6 +75,7 @@ const Composer = ({
   onSubmitted,
   initValue,
   editable,
+  actionHasYBRTag,
 }: ComposerProps): JSX.Element => {
   const initContent =
     initValue !== undefined
@@ -131,8 +133,17 @@ const Composer = ({
     )
       return false;
 
-    // Skipped sections can't be edited
-    if (mode === ComposerMode.EDIT && content === null) return false;
+    // Outcomes can't be empty, unless the action has a <yo be real> tag
+    if (
+      section === Section.Out &&
+      isEmptySectionContent(content) &&
+      actionHasYBRTag !== true
+    )
+      return false;
+
+    if (mode === ComposerMode.EDIT && content === null)
+      // Skipped sections can't be edited
+      return false;
 
     // Anything else is OK
     return true;
@@ -156,6 +167,7 @@ const Composer = ({
   const cancel = (): void => {
     // Reset editor to last successful submit
     resetEditor(editor, section, previousContent);
+    setContent(previousContent);
     // Go back to view mode
     setMode(ComposerMode.VIEW);
   };

@@ -1,7 +1,6 @@
 import {
   Bullet,
   checkStepSectionsConsistency,
-  defaultTextYBR,
   defaultThoughts,
   Run,
   skipInitT,
@@ -203,13 +202,15 @@ export const importStep = (
     if (exportedStep.action.outcome !== undefined) {
       step.out = importTextYBR(exportedStep.action.outcome);
     } else {
-      // YBR Case 2:
-      // When importing a step, there is no way to tell if the outcome
-      // was left empty (2A) or skipped (2B).
-      // To leave it editable by the DM, we set it to an empty string,
-      // unless this is the last step, in which case we set it to undefined.
-      if (!isLastStep) {
-        step.out = defaultTextYBR;
+      // YBR Case 2B ?
+      if (step.act?.ybr ?? false) {
+        if (!isLastStep) {
+          step.out = null;
+        }
+      } else if (!isLastStep) {
+        throw new Error(
+          'Outcome not defined, but action does not have <yo be real> and this is not the last step'
+        );
       }
     }
 

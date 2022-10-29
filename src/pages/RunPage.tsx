@@ -265,7 +265,18 @@ function RunPage(): JSX.Element {
         break;
       }
       case Section.Out: {
-        const out = content !== null ? (content.value as TextYBR) : null;
+        let out = content !== null ? (content.value as TextYBR) : null;
+        // Outcome may be left empty if the action had the <yo be real> tag,
+        // in which case it should be considered skipped.
+        if (out !== null && out.txt.length === 0) {
+          if (step.act?.ybr ?? false) {
+            out = null;
+          } else {
+            throw new Error(
+              'Outcome is empty, but action does not have the <yo be real> tag!'
+            );
+          }
+        }
         update = { out };
         break;
       }
@@ -315,12 +326,14 @@ function RunPage(): JSX.Element {
       return <>Wait for the DM to write their part...</>;
     }
 
+    const step = steps[steps.length - 1];
     return (
       <Composer
         initMode={ComposerMode.CREATE}
-        n={steps[steps.length - 1].n}
+        n={step.n}
         section={section}
         onSubmitted={onSubmitted}
+        actionHasYBRTag={step.act?.ybr ?? false}
       />
     );
   }

@@ -8,13 +8,7 @@ import {
   importTextYBR,
   importThoughtSection,
 } from '../export';
-import {
-  defaultTextYBR,
-  defaultThoughts,
-  Run,
-  Step,
-  ThoughtType,
-} from '../firebase-app';
+import { defaultThoughts, Run, Step, ThoughtType } from '../firebase-app';
 
 const step: Step = {
   n: 1,
@@ -45,7 +39,7 @@ const step: Step = {
     },
   ],
   ppt: 'Prompt',
-  ppptT: null, // skipped
+  ppptT: defaultThoughts, // left empty
   act: {
     txt: 'Action',
     ybr: false,
@@ -331,7 +325,7 @@ describe('importStep', () => {
     });
   });
 
-  it('throws an error if the first step has an action but no initial thoughts', () => {
+  it('throws an error if the first and final step has an action but no initial thoughts', () => {
     expect(() =>
       importStep(
         {
@@ -340,22 +334,21 @@ describe('importStep', () => {
         },
         1,
         undefined,
-        false
+        true
       )
     ).toThrowError(
       'initT must not be empty: {"n":1,"initT":[{"T":[{"lt":false,"txt":"","type":0}]}],"ppt":"prompt",' +
-        '"ppptT":[{"T":[{"type":0,"lt":false,"txt":"Watsonian"}]}],"act":{"ybr":false,"txt":"action"},' +
-        '"pactT":[{"T":[{"lt":false,"txt":"","type":0}]}],"out":{"txt":"","ybr":false}}'
+        '"ppptT":[{"T":[{"type":0,"lt":false,"txt":"Watsonian"}]}],"act":{"ybr":false,"txt":"action"}}'
     );
   });
 
-  it('throws an error if the first step has an action but no prompt', () => {
+  it('throws an error if the first and final step has an action but no prompt', () => {
     expect(() =>
       importStep(
         { thoughts: exportedThoughts, action: { text: 'action' } },
         1,
         undefined,
-        false
+        true
       )
     ).toThrowError(
       'An action with no prompt before can only happen if previous outcome has the <yo be real> case, which was not the case.'
@@ -368,7 +361,7 @@ describe('importStep', () => {
         { thoughts: exportedThoughts, action: { text: 'action' } },
         2,
         step,
-        false
+        true
       )
     ).toThrowError(
       'Expected initT to be skipped based on previous step, but found thoughts in the exported step.'
@@ -384,35 +377,28 @@ describe('importStep', () => {
         },
         2,
         step,
-        false
+        true
       )
     ).toThrowError(
       'Expected ppt and pppT to be skipped based on previous step, but found prompt in the exported step.'
     );
   });
 
-  it('defines post-action sections as empty if they are not provided but this is not the last step', () => {
-    expect(
+  it('throws if outcome is not provided but action does not have <yo be real> tag and it is not the last step', () => {
+    expect(() =>
       importStep(
         {
           thoughts: exportedThoughts,
           prompt: { text: 'prompt', thoughts: exportedThoughts },
-          action: { text: 'action' },
+          action: { text: 'action', thoughts: exportedThoughts },
         },
         1,
         undefined,
         false
       )
-    ).toEqual({
-      n: 1,
-      initT: thoughts,
-      ppt: 'prompt',
-      ppptT: thoughts,
-      act: { txt: 'action', ybr: false },
-      // Assume it was left empty, since this is not the last step
-      pactT: defaultThoughts,
-      out: { txt: '', ybr: false },
-    });
+    ).toThrowError(
+      'Outcome not defined, but action does not have <yo be real> and this is not the last step'
+    );
   });
 
   const exportedStepCase2 = {
@@ -436,12 +422,6 @@ describe('importStep', () => {
     // outcome may be empty or undefined, see test cases
   };
 
-  it('deals with case 2A of yo be real by making outcome empty is not last step', () => {
-    expect(importStep(exportedStepCase2, 1, undefined, false)).toEqual({
-      ...stepCase2,
-      out: defaultTextYBR,
-    });
-  });
   it('deals with case 2A of yo be real by making outcome empty undefined if last step', () => {
     expect(importStep(exportedStepCase2, 1, undefined, true)).toEqual(
       stepCase2
@@ -476,11 +456,9 @@ describe('importStep', () => {
       ppt: 'Prompt',
       ppptT: thoughts,
       act: { txt: 'action', ybr: true },
-      // assume pactT and out were left empty, since it is not the last step.
-      // There is an ambiguity for outcome which could have been skipped,
-      // but we want to keep it editable.
+      // Assume pactT was left empty and out was skipped.
       pactT: defaultThoughts,
-      out: defaultTextYBR,
+      out: null,
     });
   });
 
