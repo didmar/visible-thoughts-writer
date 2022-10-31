@@ -1,11 +1,10 @@
+import { Tooltip } from '@mui/material';
+import { isHotkey } from 'is-hotkey';
 import { KeyboardEvent } from 'react';
-import { Editor, Node, Text as SlateText, Transforms } from 'slate';
 import { useSlate } from 'slate-react';
 import { ToolbarButton, ToolbarIcon } from './ComposerToolbar';
-import { CustomEditor, ThoughtText } from './types';
-import { currentOrLastThoughtText } from './utils';
-import { isHotkey } from 'is-hotkey';
-import { Tooltip } from '@mui/material';
+import { CustomEditor } from './types';
+import { isLongTermActive, toggleLongTerm } from './utils';
 
 const LT_HOTKEY = 'mod+5';
 
@@ -35,23 +34,6 @@ export const handleLongTermHotkey = (
     event.preventDefault();
     toggleLongTerm(editor);
   }
-};
-
-const toggleLongTerm = (editor: CustomEditor): void => {
-  const match = (n: Node): boolean =>
-    !Editor.isEditor(n) && SlateText.isText(n) && n.type === 'thought';
-  Transforms.unwrapNodes(editor, {
-    match,
-  });
-  const newProperties: Partial<ThoughtText> = {
-    lt: !(isLongTermActive(editor) ?? true),
-  };
-  Transforms.setNodes<ThoughtText>(editor, newProperties, { match });
-};
-
-export const isLongTermActive = (editor: CustomEditor): boolean | undefined => {
-  const thoughtText = currentOrLastThoughtText(editor);
-  return thoughtText?.lt;
 };
 
 export default LTButton;

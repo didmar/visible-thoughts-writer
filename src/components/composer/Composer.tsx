@@ -7,7 +7,7 @@ import {
   // useMemo,
   useState,
 } from 'react';
-import { createEditor, Editor, Transforms } from 'slate';
+import { createEditor, Editor } from 'slate';
 import { withHistory } from 'slate-history';
 import {
   Editable,
@@ -23,40 +23,25 @@ import {
   isYBRSection,
   Section,
   TextYBR,
-  ThoughtType,
 } from '../../firebase-app';
 import { sectionsData } from '../../Section';
 import ComposerToolbar from './ComposerToolbar';
-import { handleLongTermHotkey, isLongTermActive } from './LTButton';
+import { handleLongTermHotkey } from './LTButton';
 import { parse, toCustomElement } from './parsing';
 import RenderedElement from './RenderedElement';
 import RenderedLeaf from './RenderedLeaf';
+import { handleThoughtTypeHotkeys } from './ThoughtTypeButton';
+import { ComposerMode, CustomEditor, CustomElement } from './types';
 import {
-  currentOrLastThoughtType,
-  handleThoughtTypeHotkeys,
-} from './ThoughtTypeButton';
-import {
-  ComposerMode,
-  CustomEditor,
-  CustomElement,
-  EndOfThoughtText,
-  ThoughtText,
-} from './types';
-import {
-  beginningOfBullet,
   getDefaultSectionContent,
   isEmptySectionContent,
-  isLastBulletElementEmpty,
+  isYBRActive,
   resetEditor,
   SectionContent,
   toSectionContent,
+  withCustomization,
 } from './utils';
-import {
-  handleYBRHotkey,
-  handleYBRTag,
-  isYBRActive,
-  YBRTag,
-} from './YBRButton';
+import { handleYBRHotkey, YBRTag } from './YBRButton';
 
 interface ComposerProps {
   initMode: ComposerMode;
@@ -333,81 +318,6 @@ const Composer = ({
       </Slate>
     </Box>
   );
-};
-
-// Customized editor methods
-
-const withCustomization = (editor: CustomEditor): CustomEditor => {
-  const { insertText, insertBreak, normalizeNode, insertNode } = editor;
-
-  // editor.normalizeNode = (entry) => {
-  //   const [node, path] = entry;
-  //   console.log(`normalizeNode path=[${path.toString()}]:`, node);
-
-  //   if (Editor.isBlock(editor, node) && node.type === 'bullet') {
-  //     mergeAdjacentThoughts(editor, path);
-  //   } else if (
-  //     path.length === 0 &&
-  //     (editor.children[0] as CustomElement).type !== 'ybrtext'
-  //   ) {
-  //     // When copy/pasting, multiple ybr elements may be created,
-  //     // so merge them into one.
-  //     mergeYBRElements(editor);
-  //   }
-
-  //   normalizeNode(entry);
-  // };
-
-  editor.insertBreak = () => {
-    if ((editor.children[0] as CustomElement).type !== 'bullet') {
-      // For TextElement and YBRTextElement,
-      // a new line does not create a new element
-      // but is put into the SimpleText child
-      Transforms.insertText(editor, '\n');
-    } else {
-      // If BulletElement, new line will create a new BulletElement,
-      // unless the current BulletElement is empty
-      if (!isLastBulletElementEmpty(editor)) {
-        insertBreak();
-      }
-    }
-  };
-
-  editor.insertSoftBreak = () => {
-    Transforms.insertText(editor, '\n');
-  };
-
-  editor.insertText = (text) => {
-    // console.log('insertText: ', text);
-    if ((editor.children[0] as CustomElement).type === 'bullet') {
-      if (text === '.' || text === '!' || text === '?') {
-        // Check that we are not starting a new bullet
-        if (!beginningOfBullet(editor)) {
-          const eott: EndOfThoughtText = {
-            type: 'eot',
-            text,
-          };
-          Transforms.insertNodes(editor, eott);
-        }
-      } else {
-        const newThought: ThoughtText = {
-          type: 'thought',
-          text,
-          lt: isLongTermActive(editor) ?? false,
-          thoughtType:
-            currentOrLastThoughtType(editor) ?? ThoughtType.Watsonian,
-        };
-        Transforms.insertNodes(editor, newThought);
-      }
-    } else {
-      // If not a thought section, use the standard behavior
-      insertText(text);
-      // Check if a "<yo be real>" was typed and apply it if so
-      handleYBRTag(editor);
-    }
-  };
-
-  return editor;
 };
 
 export default Composer;

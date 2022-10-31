@@ -9,8 +9,8 @@ import { ToolbarButton, ToolbarIcon } from './ComposerToolbar';
 import { THOUGHT_TYPE_COLORS } from './RenderedLeaf';
 import { CustomEditor, ThoughtText } from './types';
 import {
-  currentOrLastThoughtText,
   currentOrLastThoughtTextEntries,
+  currentOrLastThoughtType,
 } from './utils';
 
 const HOTKEY_TO_THOUGHT_TYPE: Record<string, ThoughtType> = {
@@ -92,13 +92,6 @@ const isThoughtTypeActive = (
   thoughtType: ThoughtType
 ): boolean => {
   return currentOrLastThoughtType(editor) === thoughtType;
-};
-
-export const currentOrLastThoughtType = (
-  editor: CustomEditor
-): ThoughtType | undefined => {
-  const thoughtText = currentOrLastThoughtText(editor);
-  return thoughtText?.thoughtType;
 };
 
 export default ThoughtTypeButton;
