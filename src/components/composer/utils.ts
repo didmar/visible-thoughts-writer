@@ -313,7 +313,7 @@ export const mergeAdjacentThoughts = (
         node.type === 'thought' &&
         (prev[0].thoughtType !== node.thoughtType || prev[0].lt !== node.lt)
       ) {
-        console.log(
+        console.debug(
           `> Merge "${prev[0].text}" with "${
             node.text
           }" (path ${path.toString()})`
@@ -327,18 +327,12 @@ export const mergeAdjacentThoughts = (
   return merged;
 };
 
-export const mergeYBRElements = (editor: CustomEditor): void => {
-  const elements = editor.children as YBRTextElement[];
-  const ybr: boolean = elements[0].ybr;
-  const texts: SimpleText[] = elements.flatMap(
-    (element: YBRTextElement) => element.children
-  );
-  const node = {
-    type: 'ybrtext',
-    ybr,
-    children: texts,
-  };
-  Transforms.setNodes(editor, node, { at: [] });
+export const mergeTextElements = (editor: CustomEditor): void => {
+  console.debug('> merge text elements');
+  Editor.withoutNormalizing(editor, () => {
+    Transforms.insertText(editor, '\n', { at: Editor.end(editor, [0]) });
+    Transforms.mergeNodes(editor, { at: [1] });
+  });
 };
 
 const eotSeparator = /[.!?]+/g;
@@ -508,14 +502,17 @@ export const withCustomization = (editor: CustomEditor): CustomEditor => {
         // with the rest of the normalization.
         if (merged) return;
       }
-    } else if (
-      path.length === 0 &&
-      (editor.children[0] as CustomElement).type !== 'ybrtext'
-    ) {
-      // When copy/pasting, multiple ybr elements may be created,
-      // so merge them into one.
-      // mergeYBRElements(editor);
-      // return;
+    } else if (path.length === 0) {
+      // When copy/pasting, multiple text elements may be created,
+      // so merge them into one if so.
+      const children = (node as CustomEditor).children;
+      if (
+        (children[0].type === 'ybrtext' || children[0].type === 'text') &&
+        children.length > 1
+      ) {
+        mergeTextElements(editor);
+        return;
+      }
     }
 
     console.debug('> standard normalizeNode');
