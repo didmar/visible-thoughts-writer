@@ -528,7 +528,7 @@ export interface UpdatedSteps {
 export async function onStepsChanged(
   runId: string,
   callback: (updatedSteps: UpdatedSteps) => void
-): Promise<void> {
+): Promise<number> {
   // Get the last 3 steps to start with
   const _steps = await getLastNSteps(runId, 3);
   const lastN = _steps.length > 0 ? _steps[_steps.length - 1].n : 1;
@@ -568,6 +568,8 @@ export async function onStepsChanged(
     },
     handleFirebaseError()
   );
+
+  return lastN;
 }
 
 export function mergeStepsWithUpdates(

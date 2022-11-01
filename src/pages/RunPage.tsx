@@ -21,6 +21,7 @@ import {
   Bullet,
   collectSectionLtts,
   createNextStep,
+  defaultThoughts,
   getNextSectionForStep,
   getRun,
   getStepN,
@@ -61,6 +62,9 @@ function RunPage(): JSX.Element {
   const [updatedSteps, setUpdatedSteps] = useState<UpdatedSteps | undefined>(
     undefined
   );
+  // const [monitorFromStepN, setMonitorFromStepN] = useState<number | undefined>(
+  //   undefined
+  // );
 
   const [xStepAgo, setXStepAgo] = useState<Step | undefined>(undefined);
   const [ltts, setLtts] = useState<Thought[]>([]);
@@ -99,6 +103,11 @@ function RunPage(): JSX.Element {
 
       // Create listener for new steps and updates
       await onStepsChanged(runId, setUpdatedSteps);
+
+      // // The listener will not fire for the first N - 1 steps, so we need to
+      // // fetch them manually if they get edited!
+      // setMonitorFromStepN(n);
+
       // Create listener for user profile change (for sound notifs)
       await onUserProfileChanged(runId, setUserProfile);
     })();
@@ -139,6 +148,7 @@ function RunPage(): JSX.Element {
       steps,
       updatedSteps
     );
+    console.log('!!!! MERGE !!!!');
 
     // Is there some changes that could mean it is user's turn to write?
     if (lastStepModified && currentUser !== undefined && currentUser !== null) {
@@ -227,7 +237,9 @@ function RunPage(): JSX.Element {
       );
     }
 
-    let update;
+    let update: Partial<Step> = {};
+    let nextStep: Step | undefined;
+    let updateNext: Partial<Step> = {};
     let lttsUpdate: Thought[] = [];
     switch (section) {
       case Section.InitT: {
@@ -254,6 +266,26 @@ function RunPage(): JSX.Element {
       case Section.Act: {
         const act = content !== null ? (content.value as TextYBR) : null;
         update = { act };
+        // If the user has just removed the YBR tag,
+        // this will have an impact on the outcome and the next initial thoughts!
+        if (step.act?.ybr === true && act?.ybr === false) {
+          if (step.out === null) {
+            update = { ...update, out: { txt: 'EDIT ME!', ybr: false } };
+            console.log('update: ', update);
+          }
+          // Get the next step from the local state, or load it from Firestore
+          nextStep = steps.find((s) => s.n === n + 1);
+          if (nextStep === undefined) {
+            void (async function () {
+              nextStep = await getStepN(runId, n + 1);
+            })();
+          }
+          if (nextStep?.initT !== undefined) {
+            // Prepare the update
+            updateNext = { initT: defaultThoughts };
+            (updateNext.initT as Bullet[])[0].T[0].txt = 'EDIT ME!';
+          }
+        }
         break;
       }
       case Section.PactT: {
@@ -277,7 +309,36 @@ function RunPage(): JSX.Element {
             );
           }
         }
+
         update = { out };
+
+        // If the user has just added the YBR tag, or removed it,
+        // this will have an impact on the next step's initial thoughts, prompt and post-prompt thoughts!
+        const ybrAdded = step.out?.ybr === false && out?.ybr === true;
+        const ybrRemoved = step.out?.ybr === true && out?.ybr === false;
+        if (ybrAdded || ybrRemoved) {
+          // Get the next step from the local state, or load it from Firestore
+          nextStep = steps.find((s) => s.n === n + 1);
+          if (nextStep === undefined) {
+            void (async function () {
+              nextStep = await getStepN(runId, n + 1);
+            })();
+          }
+          if (nextStep !== undefined) {
+            // Prepare the update
+            if (ybrAdded) {
+              updateNext = { initT: null, ppt: null, ppptT: null };
+            } else {
+              updateNext = {
+                initT: defaultThoughts,
+                ppt: 'EDIT ME!',
+                ppptT: defaultThoughts,
+              };
+              (updateNext.initT as Bullet[])[0].T[0].txt = 'EDIT ME!';
+              (updateNext.ppptT as Bullet[])[0].T[0].txt = 'EDIT ME!';
+            }
+          }
+        }
         break;
       }
       default:
@@ -295,8 +356,43 @@ function RunPage(): JSX.Element {
       }
 
       await updateStep(runId, n, update);
+
+      // const newUpdatedSteps: UpdatedSteps = { added: [], modified: [] };
+      // If the listener won't get the updated step for us
+      // if (monitorFromStepN !== undefined && n < monitorFromStepN) {
+      //   console.log('!!! Update local state');
+      //   const updatedStep = { ...step, ...update };
+      //   newUpdatedSteps.modified.push(updatedStep);
+      // }
+
+      if (nextStep !== undefined && Object.keys(updateNext).length !== 0) {
+        // Update the next step
+        await updateStep(runId, n + 1, updateNext);
+        // If the listener won't get the updated step for us
+        // if (monitorFromStepN !== undefined && n + 1 < monitorFromStepN) {
+        //   // Then add it the local state ourselves to trigger a re-render
+        //   const updatedNextStep: Step = { ...nextStep, ...updateNext };
+        //   console.log('!!! Update local state (next step)');
+        //   newUpdatedSteps.modified.push(updatedNextStep);
+        // }
+      }
+
+      // if (newUpdatedSteps.modified.length > 0) {
+      //   setUpdatedSteps(newUpdatedSteps);
+      // }
     })();
   };
+
+  // function updateSteps(updatedStep: Step): void {
+  //   // Insert or update step in the local state steps
+  //   if (steps === undefined) {
+  //     setSteps([updatedStep]);
+  //     return;
+  //   }
+  //   const idx = steps.findIndex((s) => s.n === updatedStep.n);
+  //   steps[idx] = updatedStep;
+  //   setSteps(steps);
+  // }
 
   function getNextSection(): Section | undefined {
     if (steps === undefined || steps.length === 0) return undefined;

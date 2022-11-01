@@ -11,11 +11,7 @@ const YBR_HOTKEY = 'mod+1';
 const COLOR = 'black';
 const TITLE = `Toggle the "yo be real" tag (hotkey: ${YBR_HOTKEY})`;
 
-interface Props {
-  editable: boolean;
-}
-
-const YBRButton = ({ editable }: Props): JSX.Element => {
+const YBRButton = (): JSX.Element => {
   const editor = useSlate();
   return (
     <Box
@@ -31,9 +27,7 @@ const YBRButton = ({ editable }: Props): JSX.Element => {
           active={isYBRActive(editor)}
           onMouseDown={(event: MouseEvent) => {
             event.preventDefault();
-            if (editable) {
-              toggleYBR(editor);
-            }
+            toggleYBR(editor);
           }}
           color={COLOR}
         >
