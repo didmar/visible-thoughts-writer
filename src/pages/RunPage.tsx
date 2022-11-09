@@ -501,6 +501,7 @@ function RunPage(): JSX.Element {
               id="scrollableDiv"
             >
               <InfiniteScroll
+                scrollThreshold={400} // Load more when less than 400px from the top
                 dataLength={steps !== undefined ? steps.length : 0}
                 next={() => {
                   void (async function () {
