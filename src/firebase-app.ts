@@ -22,6 +22,7 @@ import {
   writeBatch,
 } from '@firebase/firestore';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
+import { enableIndexedDbPersistence } from 'firebase/firestore';
 import {
   connectFunctionsEmulator,
   getFunctions,
@@ -49,6 +50,21 @@ if (conf?.useEmulators) {
   connectAuthEmulator(auth, 'http://localhost:9099');
   console.log('Connecting to functions emulator');
   connectFunctionsEmulator(functions, 'localhost', 5001);
+} else {
+  // Persistence can only be enabled if not using emulators
+  void (async () => {
+    await enableIndexedDbPersistence(db).catch((err) => {
+      if (err.code === 'failed-precondition') {
+        console.warn(
+          'Firestore persistence: Multiple tabs open, can only be enabled in one tab at a a time.'
+        );
+      } else if (err.code === 'unimplemented') {
+        console.warn(
+          'Firestore persistence: The current browser does not support all of the features required to enable it'
+        );
+      }
+    });
+  })();
 }
 
 const handleFirebaseError =
