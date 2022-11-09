@@ -529,8 +529,8 @@ export async function onStepsChanged(
   runId: string,
   callback: (updatedSteps: UpdatedSteps) => void
 ): Promise<number> {
-  // Get the last 3 steps to start with
-  const _steps = await getLastNSteps(runId, 3);
+  // Get the last conf.nbStepsToLoad steps to start with
+  const _steps = await getLastNSteps(runId, conf.nbStepsToLoad);
   const lastN = _steps.length > 0 ? _steps[_steps.length - 1].n : 1;
   if (lastN > 1) {
     const updatedSteps: UpdatedSteps = { added: _steps, modified: [] };

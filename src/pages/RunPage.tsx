@@ -16,6 +16,7 @@ import { SectionContent } from '../components/composer/utils';
 import Navbar from '../components/Navbar';
 import StepElem, { renderLongTermThoughts } from '../components/StepElem';
 import { useWindowActivity } from '../components/WindowContextProvider';
+import conf from '../conf.json';
 import {
   addStep,
   Bullet,
@@ -437,16 +438,25 @@ function RunPage(): JSX.Element {
   async function loadMoreSteps(): Promise<void> {
     if (runId === undefined || steps === undefined || steps.length === 0)
       return;
-    console.log('Loading more...');
-    // Get the previous step
-    const firstStepAlreadyLoaded = steps[0];
-    const previousN = firstStepAlreadyLoaded.n - 1;
-    if (previousN === 0) return; // No previous step to load
-    const previousStep = await getStepN(runId, previousN);
-    if (previousStep === undefined) {
-      throw new Error('Could not load previous step');
+
+    console.debug('Loading more...');
+
+    // Get the conf.nbStepsToLoad previous steps
+    const previousSteps: Step[] = [];
+    for (
+      let n = steps[0].n - 1;
+      n >= steps[0].n - conf.nbStepsToLoad && n > 0;
+      n--
+    ) {
+      const step = await getStepN(runId, n);
+      if (step === undefined) {
+        throw new Error('Could not load previous step');
+      }
+      previousSteps.push(step);
     }
-    setSteps([previousStep, ...steps]);
+    previousSteps.reverse();
+
+    setSteps([...previousSteps, ...steps]);
   }
 
   const panePadding = 1;

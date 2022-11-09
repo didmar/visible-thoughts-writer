@@ -1,3 +1,4 @@
 {
-  "useEmulators": false
+  "useEmulators": false,
+  "nbStepsToLoad": 5
 }
