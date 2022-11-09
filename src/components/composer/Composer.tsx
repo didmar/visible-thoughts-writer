@@ -285,7 +285,13 @@ const Composer = ({
   );
 
   return (
-    <Box sx={{ flexDirection: 'row', p: 1 }}>
+    <Box
+      sx={{ flexDirection: 'row', p: 1 }}
+      onClick={(e) => {
+        // Edit section on double-click
+        if (e.detail === 2 && editable === true) setMode(ComposerMode.EDIT);
+      }}
+    >
       <Slate
         editor={editor}
         value={toCustomElement(content, section)}
