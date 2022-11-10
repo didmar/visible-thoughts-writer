@@ -10,6 +10,7 @@ import {
 import {
   getDefaultSectionContent,
   getDefaultSlateValue,
+  parseThought,
   SectionContent,
 } from './utils';
 
@@ -21,17 +22,9 @@ export function toCustomElement(
   switch (sectionContent.kind) {
     case 'bullets': {
       return sectionContent.value.map((bullet: Bullet) => {
-        const thoughts: ThoughtText[] = bullet.T.map((thought: Thought) => {
-          return {
-            type: 'thought',
-            text: thought.txt,
-            thoughtType: thought.type,
-            lt: thought.lt,
-          };
-        });
         return {
           type: 'bullet',
-          children: thoughts,
+          children: thoughtsToCustomTexts(bullet.T),
         };
       });
     }
@@ -53,6 +46,14 @@ export function toCustomElement(
         },
       ];
   }
+}
+
+function thoughtsToCustomTexts(
+  thoughts: Thought[]
+): Array<ThoughtText | EndOfThoughtText> {
+  return thoughts.flatMap((thought: Thought) =>
+    parseThought(thought.txt, thought.lt, thought.type)
+  );
 }
 
 export function parse(children: CustomElement[]): SectionContent {
@@ -77,7 +78,7 @@ function parseToBullets(bulletElems: BulletElement[]): SectionContent {
       if (t.type === 'eot') {
         if (thoughts.length > 0) {
           thoughts[thoughts.length - 1].txt =
-            thoughts[thoughts.length - 1].txt + t.text;
+            thoughts[thoughts.length - 1].txt + t.text.trim();
         }
       } else {
         const txt = t.text.trim();

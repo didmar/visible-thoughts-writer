@@ -21,6 +21,7 @@ import {
   CustomEditor,
   CustomElement,
   CustomText,
+  EndOfThoughtText,
   SimpleText,
   ThoughtText,
   YBRTextElement,
@@ -337,13 +338,13 @@ export const mergeTextElements = (editor: CustomEditor): void => {
 
 const eotSeparator = /[.!?]+/g;
 
-export const parseThoughts = (
+export const parseThought = (
   text: string,
   lt: boolean,
   thoughtType: ThoughtType
-): CustomText[] => {
+): Array<ThoughtText | EndOfThoughtText> => {
   const matches = [...text.matchAll(eotSeparator)];
-  const customTexts: CustomText[] = [];
+  const customTexts: Array<ThoughtText | EndOfThoughtText> = [];
   let i = 0;
   matches.forEach((match) => {
     if (match.index === undefined)
@@ -361,7 +362,7 @@ export const parseThoughts = (
     }
     customTexts.push({
       type: 'eot',
-      text: match[0],
+      text: match[0] + ' ', // Add a space for esthetic purpose
     });
     i += match[0].length;
   });
@@ -553,7 +554,7 @@ export const withCustomization = (editor: CustomEditor): CustomEditor => {
       const lt = isLongTermActive(editor) ?? false;
       const thoughtType =
         currentOrLastThoughtType(editor) ?? ThoughtType.Watsonian;
-      const elements = parseThoughts(text, lt, thoughtType);
+      const elements = parseThought(text, lt, thoughtType);
       Transforms.insertNodes(editor, elements);
     } else {
       // If not a thought section, use the standard behavior

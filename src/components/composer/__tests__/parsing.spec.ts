@@ -1,6 +1,6 @@
-import { parse } from '../parsing';
+import { parse, toCustomElement } from '../parsing';
 import { BulletElement, TextElement, YBRTextElement } from '../types';
-import { ThoughtType } from '../../../firebase-app';
+import { Section, ThoughtType } from '../../../firebase-app';
 
 it('parses text', () => {
   const children: TextElement[] = [
@@ -52,7 +52,7 @@ it('should parse to bullets', () => {
         },
         {
           type: 'eot',
-          text: '.',
+          text: '. ',
         },
         {
           type: 'thought',
@@ -168,5 +168,48 @@ it('parses empty bullet', () => {
   expect(text).toEqual({
     kind: 'bullets',
     value: [{ T: [{ lt: false, txt: '', type: 0 }] }],
+  });
+});
+
+describe('toCustomElement', () => {
+  it('should parse to custom element', () => {
+    expect(
+      toCustomElement(
+        {
+          kind: 'bullets',
+          value: [
+            {
+              T: [
+                { lt: false, txt: 'Watsonian.', type: ThoughtType.Watsonian },
+                { lt: false, txt: 'Doylist', type: ThoughtType.Doylist },
+              ],
+            },
+          ],
+        },
+        Section.InitT
+      )
+    ).toEqual([
+      {
+        type: 'bullet',
+        children: [
+          {
+            type: 'thought',
+            text: 'Watsonian',
+            thoughtType: ThoughtType.Watsonian,
+            lt: false,
+          },
+          {
+            type: 'eot',
+            text: '. ',
+          },
+          {
+            type: 'thought',
+            text: 'Doylist',
+            thoughtType: ThoughtType.Doylist,
+            lt: false,
+          },
+        ],
+      },
+    ]);
   });
 });
