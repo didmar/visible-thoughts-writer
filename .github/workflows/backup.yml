@@ -1,8 +1,6 @@
 name: Backup Firestore
 
-on:
-  schedule:
-    - cron: '0 0 * * *'
+on: workflow_dispatch
 
 env:
   PROJECT_ID: visible-thoughts-writer
@@ -12,11 +10,11 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/setup-gcloud@main
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v1'
         with:
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-          export_default_credentials: true
-          version: '2.298.2'
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+      - uses: google-github-actions/setup-gcloud@v1
       - run: gcloud info
       - run: gcloud config set project $PROJECT_ID
       - run: gcloud firestore export $BUCKET
