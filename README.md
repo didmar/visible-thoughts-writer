@@ -31,7 +31,8 @@ Optional: to have Cloud functions working, you need to set up the `GOOGLE_APPLIC
 Run the following command to start the emulators:
 
 ```bash
-firebase emulators:start
+# Will use the export/ folder to persist data
+firebase emulators:start --export-on-exit export --import export
 ```
 
 and edit `src/conf.json` to set `useEmulators` to `true`, for the React app to use them.
