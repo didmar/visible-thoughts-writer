@@ -149,7 +149,6 @@ function RunPage(): JSX.Element {
       steps,
       updatedSteps
     );
-    console.log('!!!! MERGE !!!!');
 
     // Is there some changes that could mean it is user's turn to write?
     if (lastStepModified && currentUser !== undefined && currentUser !== null) {
@@ -272,7 +271,6 @@ function RunPage(): JSX.Element {
         if (step.act?.ybr === true && act?.ybr === false) {
           if (step.out === null) {
             update = { ...update, out: { txt: 'EDIT ME!', ybr: false } };
-            console.log('update: ', update);
           }
           // Get the next step from the local state, or load it from Firestore
           nextStep = steps.find((s) => s.n === n + 1);
