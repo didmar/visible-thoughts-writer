@@ -67,5 +67,15 @@
     "ts-jest": "^29.0.2",
     "ts-node": "^10.9.1",
     "tsx": "^3.9.0"
+  },
+  "author": "Didier Marin - marin.didier@gmail.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/didmar/visible-thoughts-writer/issues"
+  },
+  "homepage": "https://github.com/didmar/visible-thoughts-writer",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/didmar/visible-thoughts-writer.git"
   }
 }
