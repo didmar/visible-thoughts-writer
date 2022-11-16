@@ -22,7 +22,11 @@ import {
   writeBatch,
 } from '@firebase/firestore';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
-import { enableIndexedDbPersistence } from 'firebase/firestore';
+import {
+  enableIndexedDbPersistence,
+  QueryConstraint,
+  Unsubscribe,
+} from 'firebase/firestore';
 import {
   connectFunctionsEmulator,
   getFunctions,
@@ -465,9 +469,16 @@ export const defaultThoughts = [
 ];
 export const defaultTextYBR = { txt: '', ybr: false };
 
-async function getLastNSteps(runId: string, _limit: number): Promise<Step[]> {
+export async function getLastNSteps(
+  runId: string,
+  from: number | null,
+  _limit: number
+): Promise<Step[]> {
   const stepsCol = collection(db, 'runs', runId, 'steps');
-  const q = query(stepsCol, orderBy('n', 'desc'), limit(_limit));
+  let constraints: QueryConstraint[] = [orderBy('n', 'desc'), limit(_limit)];
+  if (from !== null) constraints = [where('n', '<=', from), ...constraints];
+  const q = query(stepsCol, ...constraints);
+
   const stepsSnapshot = await getDocs(q).catch(handleFirebaseError());
   return stepsSnapshot.docs.reverse().map((doc) => {
     return Step.fromDocData(doc.data());
@@ -541,27 +552,38 @@ export interface UpdatedSteps {
   modified: Step[];
 }
 
+/**
+ * Initialize a listener for the steps of a run, to get notified whenever a step is modified,
+ * or a new step is added.
+ * @param runId Id of the run for which we want to listen to
+ * @param callback Function to feed the updates to
+ * @returns A function to stop listening to the updates
+ */
 export async function onStepsChanged(
   runId: string,
   callback: (updatedSteps: UpdatedSteps) => void
-): Promise<number> {
-  // Get the last conf.nbStepsToLoad steps to start with
-  const _steps = await getLastNSteps(runId, conf.nbStepsToLoad);
-  const lastN = _steps.length > 0 ? _steps[_steps.length - 1].n : 1;
-  if (lastN > 1) {
+): Promise<Unsubscribe> {
+  // Get the last conf.nbStepsToLoad steps before the last one,
+  // because they won't be automatically provided by the listener
+  const _steps = await getLastNSteps(runId, null, conf.nbStepsToLoad);
+  if (_steps.length > 0) {
     const updatedSteps: UpdatedSteps = { added: _steps, modified: [] };
+    // Use the same callback function for initial load as well as updates
     callback(updatedSteps);
   }
 
   // For listening to added or modified steps, query starting from last step
   // in order to not fetch all the steps from the beginning!
-  // (They will be loaded on demand if user scrolls up)
+  // This is because the listener will always initially fetch everything
+  // that matches the query, then only the updates.
+  // Previous steps will be loaded on demand if user scrolls up.
+  const lastN = _steps.length > 0 ? _steps[_steps.length - 1].n : 1;
   const q = query(
     collection(db, 'runs', runId, 'steps'),
     where('n', '>=', lastN)
   );
 
-  onSnapshot(
+  return onSnapshot(
     q,
     (snapshot) => {
       const added: Step[] = [];
@@ -584,8 +606,6 @@ export async function onStepsChanged(
     },
     handleFirebaseError()
   );
-
-  return lastN;
 }
 
 export function mergeStepsWithUpdates(

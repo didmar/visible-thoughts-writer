@@ -1,11 +1,13 @@
 import { Box, Divider, Paper, Typography } from '@mui/material';
 import Stack from '@mui/material/Stack';
+import { useLocation } from 'react-router-dom';
 import { isDM, Role, Section, Step, Thought } from '../firebase-app';
 import { noop } from '../utils';
 import Composer from './composer/Composer';
 import RenderedLeaf from './composer/RenderedLeaf';
 import { ComposerMode, ThoughtText } from './composer/types';
 import { SectionContent } from './composer/utils';
+import CopyToClipboard from './CopyToClipboard';
 
 interface StepElemProps {
   step: Step;
@@ -51,17 +53,41 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
   title,
   prevStep,
 }: StepElemProps) => {
+  const location = useLocation();
+
   const previousOutcomeYBR = prevStep?.out?.ybr ?? false;
+
+  const titleElem =
+    title !== '' ? (
+      <Box display="flex">
+        <Box
+          sx={{
+            flexGrow: 1,
+          }}
+        >
+          <Divider sx={{ mb: 0.5 }}>
+            <Typography variant="h6" key={0}>
+              {title ?? `${step.n}`}
+            </Typography>
+          </Divider>
+        </Box>
+        <Box
+          sx={{
+            flexShrink: 1,
+          }}
+        >
+          <CopyToClipboard
+            content={`${window.location.origin}${location.pathname}?n=${step.n}`}
+          />
+        </Box>
+      </Box>
+    ) : (
+      <></>
+    );
 
   return (
     <Box className="StepsPane" sx={{ mx: 0.5, mt: 0.5, mb: 0.5 }} key={42}>
-      {title !== '' && (
-        <Divider sx={{ mb: 0.5 }}>
-          <Typography variant="h6" key={0}>
-            {title ?? `${step.n}`}
-          </Typography>
-        </Divider>
-      )}
+      {titleElem}
       <Stack key={1} spacing={2}>
         {step?.initT !== undefined && isDM(role) && (
           <Paper key={0} {...itemProps}>

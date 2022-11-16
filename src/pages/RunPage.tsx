@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import { useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../components/Auth';
 import Composer from '../components/composer/Composer';
 import { ComposerMode } from '../components/composer/types';
@@ -23,6 +23,7 @@ import {
   collectSectionLtts,
   createNextStep,
   defaultThoughts,
+  getLastNSteps,
   getNextSectionForStep,
   getRun,
   getStepN,
@@ -45,7 +46,13 @@ import {
   updateUserRunState,
   UserProfile,
 } from '../firebase-app';
-import { playDing, setWindowStatus, WindowStatus, zipWithPrev } from '../utils';
+import {
+  noop,
+  playDing,
+  setWindowStatus,
+  WindowStatus,
+  zipWithPrev,
+} from '../utils';
 import NotFoundPage from './NotFoundPage';
 
 // How many steps ago to give a hint of
@@ -59,10 +66,22 @@ function RunPage(): JSX.Element {
   // the ltts via a separate ltts state.
   const [run, setRun] = useState<Run | null | undefined>(undefined);
 
+  const location = useLocation();
+  const getQueryN = (): number | null => {
+    const _nStr = new URLSearchParams(location.search).get('n');
+    if (_nStr === null) return null;
+    const _n = parseInt(_nStr, 10);
+    if (isNaN(_n) || _n <= 0) return null;
+    return _n;
+  };
+  const queryN = getQueryN();
+
   const [steps, setSteps] = useState<Step[] | undefined>(undefined);
   const [updatedSteps, setUpdatedSteps] = useState<UpdatedSteps | undefined>(
     undefined
   );
+  // Ref to the unsubscribe function, to stop listening for steps changes
+  let stepsChangedUnsub = noop;
   // const [monitorFromStepN, setMonitorFromStepN] = useState<number | undefined>(
   //   undefined
   // );
@@ -102,8 +121,8 @@ function RunPage(): JSX.Element {
         setLtts(run.sortedLtts());
       }
 
-      // Create listener for new steps and updates
-      await onStepsChanged(runId, setUpdatedSteps);
+      // Update listener for new steps and updates
+      await updateStepsListener(runId);
 
       // // The listener will not fire for the first N - 1 steps, so we need to
       // // fetch them manually if they get edited!
@@ -113,6 +132,42 @@ function RunPage(): JSX.Element {
       await onUserProfileChanged(runId, setUserProfile);
     })();
   }, []);
+
+  // React to change in step query param (?n=)
+  useEffect(() => {
+    console.log('RunPage > useEffect [queryN]: ', queryN);
+
+    // If run is not defined yet, the main useEffect will take
+    // care of subscribing to step changes for us.
+    if (run === null || run === undefined) {
+      return;
+    }
+
+    // Update listener for new steps and updates
+    void (async function () {
+      await updateStepsListener(run.id);
+    })();
+  }, [queryN]);
+
+  const updateStepsListener = async (runId: string): Promise<void> => {
+    // First unsubscribe from any previous listener
+    stepsChangedUnsub();
+    // If queryN is not defined, we want to load the last few steps
+    // and listen to changes steps from that point
+    if (queryN === null) {
+      setSteps([]);
+      stepsChangedUnsub = await onStepsChanged(runId, setUpdatedSteps);
+    } else {
+      // But if a specific step queryN is defined, we want to load
+      // a few steps before that point, and not listen to any changes.
+      const _steps = await getLastNSteps(runId, queryN, conf.nbStepsToLoad);
+      if (_steps.length > 0) {
+        // Reinitialize the steps state with these steps
+        setSteps(_steps);
+      }
+      stepsChangedUnsub = noop;
+    }
+  };
 
   // When user change, initialize the role
   useEffect(() => {
@@ -486,42 +541,69 @@ function RunPage(): JSX.Element {
       <Navbar run={run} />
       <Container maxWidth="lg" sx={{ mt: 2, mb: 2 }}>
         <Grid container spacing={3}>
-          {/* Steps */}
+          {/* Left-hand side */}
           <Grid item xs={12} md={isDM(role) ? 8 : 12} lg={isDM(role) ? 9 : 12}>
-            <Paper
-              sx={{
-                p: panePadding,
-                display: 'flex',
-                flexDirection: 'column-reverse',
-                height: '60vh',
-                overflow: 'auto',
-              }}
-              id="scrollableDiv"
-            >
-              <InfiniteScroll
-                scrollThreshold={400} // Load more when less than 400px from the top
-                dataLength={steps !== undefined ? steps.length : 0}
-                next={() => {
-                  void (async function () {
-                    await loadMoreSteps();
-                  })();
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {/* Steps */}
+              <Paper
+                sx={{
+                  p: panePadding,
+                  display: 'flex',
+                  flexDirection: 'column-reverse',
+                  height: queryN === null ? '60vh' : '83vh',
+                  overflow: 'auto',
                 }}
-                hasMore={
-                  steps !== undefined && steps.length !== 0
-                    ? steps[0].n > 1
-                    : false
-                }
-                loader={<CircularProgress />}
-                inverse={true}
-                style={{ display: 'flex', flexDirection: 'column-reverse' }}
-                scrollableTarget="scrollableDiv"
+                id="scrollableDiv"
               >
-                {stepElems}
-              </InfiniteScroll>
-            </Paper>
+                <InfiniteScroll
+                  scrollThreshold={400} // Load more when less than 400px from the top
+                  dataLength={steps !== undefined ? steps.length : 0}
+                  next={() => {
+                    void (async function () {
+                      await loadMoreSteps();
+                    })();
+                  }}
+                  hasMore={
+                    steps !== undefined && steps.length !== 0
+                      ? steps[0].n > 1
+                      : false
+                  }
+                  loader={<CircularProgress />}
+                  inverse={true}
+                  style={{ display: 'flex', flexDirection: 'column-reverse' }}
+                  scrollableTarget="scrollableDiv"
+                >
+                  {stepElems}
+                </InfiniteScroll>
+              </Paper>
+              {queryN !== null && (
+                <Link to={{ search: `` }}>
+                  <Typography
+                    variant="body1"
+                    sx={{ position: 'relative', bottom: 0, float: 'right' }}
+                  >
+                    Jump to last step
+                  </Typography>
+                </Link>
+              )}
+              {/* Compose */}
+              {queryN === null && (
+                <Paper
+                  sx={{
+                    p: panePadding,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '25vh',
+                    overflow: 'auto',
+                  }}
+                >
+                  {renderComposer()}
+                </Paper>
+              )}
+            </Box>
           </Grid>
 
-          {/* Long-term thoughts */}
+          {/* Right-hand side (for DM only) */}
           {isDM(role) && (
             <Grid
               item
@@ -530,61 +612,38 @@ function RunPage(): JSX.Element {
               lg={3}
               display={{ xs: 'none', md: 'block', lg: 'block' }}
             >
-              <Paper
-                sx={{
-                  p: panePadding,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  height: '60vh',
-                }}
-              >
-                <Typography variant="h6">Long-term thoughts</Typography>
-                <Box sx={{ overflow: 'auto' }}>
-                  {renderLongTermThoughts(ltts)}
-                </Box>
-              </Paper>
-            </Grid>
-          )}
-
-          {/* Compose */}
-          <Grid item xs={12} md={isDM(role) ? 8 : 12} lg={isDM(role) ? 9 : 12}>
-            <Paper
-              sx={{
-                p: panePadding,
-                display: 'flex',
-                flexDirection: 'column',
-                height: '25vh',
-                overflow: 'auto',
-              }}
-            >
-              {renderComposer()}
-            </Paper>
-          </Grid>
-
-          {/* X steps ago */}
-          {isDM(role) && (
-            <Grid
-              item
-              xs={0}
-              md={4}
-              lg={3}
-              display={{ xs: 'none', md: 'block', lg: 'block' }}
-            >
-              <Paper
-                sx={{
-                  p: panePadding,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  height: '25vh',
-                }}
-              >
-                <Typography variant="h6">{`${X} steps ago...`}</Typography>
-                <Box sx={{ overflow: 'auto' }}>
-                  {xStepAgo !== undefined && (
-                    <StepElem step={xStepAgo} role={role} title={''} />
-                  )}
-                </Box>
-              </Paper>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {/* Long-term thoughts */}
+                <Paper
+                  sx={{
+                    p: panePadding,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '60vh',
+                  }}
+                >
+                  <Typography variant="h6">Long-term thoughts</Typography>
+                  <Box sx={{ overflow: 'auto' }}>
+                    {renderLongTermThoughts(ltts)}
+                  </Box>
+                </Paper>
+                {/* X steps ago */}
+                <Paper
+                  sx={{
+                    p: panePadding,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '25vh',
+                  }}
+                >
+                  <Typography variant="h6">{`${X} steps ago...`}</Typography>
+                  <Box sx={{ overflow: 'auto' }}>
+                    {xStepAgo !== undefined && (
+                      <StepElem step={xStepAgo} role={role} title={''} />
+                    )}
+                  </Box>
+                </Paper>
+              </Box>
             </Grid>
           )}
         </Grid>
