@@ -25,6 +25,7 @@ import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import {
   enableIndexedDbPersistence,
   QueryConstraint,
+  runTransaction,
   Unsubscribe,
 } from 'firebase/firestore';
 import {
@@ -497,7 +498,16 @@ export async function updateStep(
 export async function addStep(runId: string, step: Step): Promise<void> {
   const docRef = doc(db, 'runs', runId, 'steps', step.n.toString());
   const obj = withoutUndefinedValues({ ...step });
-  await setDoc(docRef, obj).catch(handleFirebaseError());
+
+  // Check first that the step does not exist
+  await runTransaction(db, async (transaction) => {
+    const existingDoc = await transaction.get(docRef);
+    if (existingDoc.exists()) {
+      throw new Error('Document already exists!');
+    } else {
+      transaction.set(docRef, obj);
+    }
+  }).catch(handleFirebaseError());
 }
 
 // Only used for populating the database

@@ -152,18 +152,20 @@ function RunPage(): JSX.Element {
   const updateStepsListener = async (runId: string): Promise<void> => {
     // First unsubscribe from any previous listener
     stepsChangedUnsub();
+    // Clear any previous steps
+    setSteps(undefined);
+
     // If queryN is not defined, we want to load the last few steps
     // and listen to changes steps from that point
     if (queryN === null) {
-      setSteps([]);
       stepsChangedUnsub = await onStepsChanged(runId, setUpdatedSteps);
     } else {
       // But if a specific step queryN is defined, we want to load
       // a few steps before that point, and not listen to any changes.
       const _steps = await getLastNSteps(runId, queryN, conf.nbStepsToLoad);
       if (_steps.length > 0) {
-        // Reinitialize the steps state with these steps
-        setSteps(_steps);
+        // Manually set updateSteps (which is normally done by the listener)
+        setUpdatedSteps({ added: _steps, modified: [] });
       }
       stepsChangedUnsub = noop;
     }
@@ -241,7 +243,8 @@ function RunPage(): JSX.Element {
       const section = getNextSection();
       // Did we reach the end of the step?
       // Create the next step if we are the DM
-      if (section === undefined && isDM(role)) {
+      // and we are not querying a specific step
+      if (section === undefined && isDM(role) && queryN === null) {
         const currentStep =
           steps.length !== 0 ? steps[steps.length - 1] : undefined;
         const newStep = createNextStep(currentStep);
@@ -251,12 +254,14 @@ function RunPage(): JSX.Element {
         // If we add a new step, we will came back here anyways!
 
         // Init step from x steps ago, if needed
-        const lastN = steps[steps.length - 1].n;
-        const nMinusX = Math.max(lastN - X, 1);
-        if (xStepAgo === undefined || xStepAgo.n !== nMinusX) {
-          const _xStepAgo = await getStepN(runId, nMinusX);
-          if (_xStepAgo !== undefined) {
-            setXStepAgo(_xStepAgo);
+        if (steps.length > 0) {
+          const lastN = steps[steps.length - 1].n;
+          const nMinusX = Math.max(lastN - X, 1);
+          if (xStepAgo === undefined || xStepAgo.n !== nMinusX) {
+            const _xStepAgo = await getStepN(runId, nMinusX);
+            if (_xStepAgo !== undefined) {
+              setXStepAgo(_xStepAgo);
+            }
           }
         }
 
