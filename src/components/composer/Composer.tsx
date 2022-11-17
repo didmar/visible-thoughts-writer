@@ -296,7 +296,7 @@ const Composer = ({
         editor={editor}
         value={toCustomElement(content, section)}
         onChange={(_) => {
-          console.log('editor.children: ', JSON.stringify(editor.children));
+          console.debug('editor.children: ', JSON.stringify(editor.children));
           setContent(parse(editor.children as CustomElement[]));
           // console.log('content: ', JSON.stringify(content));
         }}
