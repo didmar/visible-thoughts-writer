@@ -13,6 +13,7 @@ import { useAuth } from '../components/Auth';
 import Composer from '../components/composer/Composer';
 import { ComposerMode } from '../components/composer/types';
 import { SectionContent } from '../components/composer/utils';
+import GoToModal from '../components/GoToModal';
 import Navbar from '../components/Navbar';
 import StepElem, { renderLongTermThoughts } from '../components/StepElem';
 import { useWindowActivity } from '../components/WindowContextProvider';
@@ -550,6 +551,7 @@ function RunPage(): JSX.Element {
           <Grid item xs={12} md={isDM(role) ? 8 : 12} lg={isDM(role) ? 9 : 12}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {/* Steps */}
+              <GoToModal />
               <Paper
                 sx={{
                   p: panePadding,
