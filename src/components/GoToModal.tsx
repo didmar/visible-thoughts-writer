@@ -18,7 +18,10 @@ function GoToModal(): JSX.Element {
   const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
-  const handleOpen = (): void => setOpen(true);
+  const handleOpen = (): void => {
+    setTargetStep(undefined);
+    setOpen(true);
+  };
   const handleClose = (): void => setOpen(false);
 
   const [targetStep, setTargetStep] = useState<string | undefined>(undefined);
