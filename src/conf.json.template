@@ -1,4 +1,6 @@
 {
   "useEmulators": false,
-  "nbStepsToLoad": 5
+  "nbStepsToLoad": 5,
+  "algoliaAppId": "<your Algolia App ID>",
+  "algoliaAPIKey": "<your Algolia API key>"
 }

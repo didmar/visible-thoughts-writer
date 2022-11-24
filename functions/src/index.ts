@@ -1,5 +1,5 @@
-import { firestore, logger, config, https } from 'firebase-functions';
 import { FirebaseError } from 'firebase-admin/app';
+import { config, firestore, https, logger } from 'firebase-functions';
 
 import admin = require('firebase-admin');
 admin.initializeApp(config().firebase);
@@ -326,4 +326,52 @@ exports.deleteRun = https.onCall(async (data, context) => {
   });
 
   return null;
+});
+
+// Function transformStepForIndexing
+// Used by the Firestore Algolia Search extension to transform a step document
+// before indexing it in Algolia.
+
+function withoutUndefinedValues(
+  obj: Record<string, unknown>
+): Record<string, unknown> {
+  return Object.entries(obj).reduce(
+    (acc, [key, value]) =>
+      value !== undefined ? { ...acc, [key]: value } : acc,
+    {}
+  );
+}
+
+const flattenThoughtSection = (
+  bullets: Array<{ T: Array<{ txt: string }> }> | null | undefined
+): string[] | undefined => {
+  if (bullets === undefined || bullets === null) return undefined;
+  const flattened = bullets.flatMap((bullet) =>
+    bullet.T.flatMap((t) => (t.txt !== '' ? [t.txt] : []))
+  );
+  return flattened.length > 0 ? flattened : undefined;
+};
+
+export const transformedStep = (payload: any): any => {
+  // path looks like this: "runs/IuqDbf8iNJw6aM2DqVuB/steps/2"
+  const runId: string = payload.path.split('/')[1];
+  const n: number = payload.n;
+
+  return withoutUndefinedValues({
+    objectID: `${runId}/${n}`,
+    runId,
+    n,
+    initT: flattenThoughtSection(payload.initT),
+    ppt: payload.ppt,
+    ppptT: flattenThoughtSection(payload.ppptT),
+    act: payload.act?.txt,
+    pactT: flattenThoughtSection(payload.pactT),
+    out: payload.out?.txt,
+  });
+};
+
+export const transformStepForIndexing = https.onCall((payload) => {
+  const transformedData = transformedStep(payload);
+  logger.info('transformedData: ', JSON.stringify(transformedData));
+  return transformedData;
 });

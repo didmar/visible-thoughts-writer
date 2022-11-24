@@ -1,4 +1,6 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+.env.local
+.secret.local
 src/conf.json
 src/firebase.creds.json
 .firebase
@@ -7,7 +9,9 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 extensions/firestore-send-email.env
+extensions/firestore-algolia-search.env
 /export
+/firebase-export-*
 
 # dependencies
 /node_modules

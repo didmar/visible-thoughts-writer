@@ -15,6 +15,7 @@ import { ComposerMode } from '../components/composer/types';
 import { SectionContent } from '../components/composer/utils';
 import GoToModal from '../components/GoToModal';
 import Navbar from '../components/Navbar';
+import SearchModal from '../components/SearchModal';
 import StepElem, { renderLongTermThoughts } from '../components/StepElem';
 import { useWindowActivity } from '../components/WindowContextProvider';
 import conf from '../conf.json';
@@ -552,6 +553,7 @@ function RunPage(): JSX.Element {
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {/* Steps */}
               <GoToModal />
+              {<SearchModal runId={run.id} isDM={isDM(role)} />}
               <Paper
                 sx={{
                   p: panePadding,
