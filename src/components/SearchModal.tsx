@@ -139,8 +139,6 @@ interface Props {
 }
 
 function SearchModal({ runId, isDM }: Props): JSX.Element {
-  console.log(runId);
-  console.log(isDM);
   const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
