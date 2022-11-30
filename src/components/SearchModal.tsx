@@ -24,6 +24,7 @@ import {
   InfiniteHitsProvided,
 } from 'react-instantsearch-core';
 import {
+  Configure,
   connectHighlight,
   connectInfiniteHits,
   InstantSearch,
@@ -121,18 +122,6 @@ const Highlight = ({
 
 const CustomHighlight = connectHighlight(Highlight);
 
-const HitElem = ({ hit }: { hit: Hit<Doc> }): JSX.Element => (
-  <ul>
-    {['initT', 'ppt', 'ppptT', 'act', 'pactT', 'out'].map(
-      (attribute, index) => (
-        <Box key={index}>
-          <CustomHighlight hit={hit} attribute={attribute} />
-        </Box>
-      )
-    )}
-  </ul>
-);
-
 interface Props {
   runId: string;
   isDM: boolean;
@@ -153,6 +142,10 @@ function SearchModal({ runId, isDM }: Props): JSX.Element {
     console.log('SearchModal > useEffect []');
   }, []);
 
+  const attributesToSearch = isDM
+    ? ['initT', 'ppt', 'ppptT', 'act', 'pactT', 'out']
+    : ['ppt', 'act', 'out'];
+
   const customSearchClient =
     baseSearchClient === undefined
       ? undefined
@@ -170,21 +163,7 @@ function SearchModal({ runId, isDM }: Props): JSX.Element {
               // in order to avoid an initial querying before user input.
               if (request.params === undefined) return [];
               if (request.params.query === '') return [];
-
-              // Also, tweak some params and add restrict the search
-              // to publicly visible attributes if the user is not the DM.
-              const updatedParams = {
-                ...request.params,
-                facetFilters: [[`runId:${runId}`]],
-                facets: ['runId'],
-                hitsPerPage: 5,
-                ...(isDM
-                  ? {}
-                  : {
-                      restrictSearchableAttributes: ['ppt', 'act', 'out'],
-                    }),
-              };
-              return [{ ...request, params: updatedParams }];
+              return [request];
             });
 
             if (processedRequests.length === 0) {
@@ -198,6 +177,16 @@ function SearchModal({ runId, isDM }: Props): JSX.Element {
             return results;
           },
         };
+
+  const HitElem = ({ hit }: { hit: Hit<Doc> }): JSX.Element => (
+    <ul>
+      {attributesToSearch.map((attribute, index) => (
+        <Box key={index}>
+          <CustomHighlight hit={hit} attribute={attribute} />
+        </Box>
+      ))}
+    </ul>
+  );
 
   const MyInfiniteHits = ({
     hits,
@@ -244,9 +233,17 @@ function SearchModal({ runId, isDM }: Props): JSX.Element {
             </ListItem>
           ))}
         </List>
-        <button onClick={refineNext} disabled={!hasMore}>
-          Show more
-        </button>
+        {hasMore && (
+          <Button
+            variant="outlined"
+            size="large"
+            style={{ width: '100%', backgroundColor: 'white' }}
+            onClick={refineNext}
+            disabled={!hasMore}
+          >
+            Show more
+          </Button>
+        )}
       </>
     );
   };
@@ -305,6 +302,13 @@ function SearchModal({ runId, isDM }: Props): JSX.Element {
                   <SearchBox searchAsYouType={false} autoFocus={true} />
                 </Box>
               </Box>
+
+              <Configure
+                restrictSearchableAttributes={attributesToSearch}
+                facetFilters={[[`runId:${runId}`]]}
+                facets={['runId']}
+                hitsPerPage={10}
+              />
 
               {/* Start showing the results list once we have actually
                   looked something up */}
