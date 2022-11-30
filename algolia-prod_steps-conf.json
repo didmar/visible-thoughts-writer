@@ -16,37 +16,22 @@
     "attributesToRetrieve": null,
     "unretrievableAttributes": null,
     "optionalWords": null,
-    "attributesForFaceting": [
-      "filterOnly(runId)"
-    ],
+    "attributesForFaceting": ["filterOnly(runId)"],
     "attributesToSnippet": null,
     "attributesToHighlight": null,
     "paginationLimitedTo": 1000,
     "attributeForDistinct": null,
     "exactOnSingleWordQuery": "attribute",
-    "ranking": [
-      "typo",
-      "geo",
-      "words",
-      "filters",
-      "proximity",
-      "attribute",
-      "exact",
-      "custom"
-    ],
-    "customRanking": [
-      "desc(n)"
-    ],
+    "ranking": ["exact", "custom"],
+    "customRanking": ["desc(n)"],
     "separatorsToIndex": "",
     "removeWordsIfNoResults": "none",
     "queryType": "prefixLast",
     "highlightPreTag": "<em>",
     "highlightPostTag": "</em>",
     "snippetEllipsisText": "",
-    "alternativesAsExact": [
-      "ignorePlurals",
-      "singleWordSynonym"
-    ]
+    "typoTolerance": "false",
+    "alternativesAsExact": ["ignorePlurals", "singleWordSynonym"]
   },
   "rules": [],
   "synonyms": []
