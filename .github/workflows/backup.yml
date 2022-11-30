@@ -1,7 +1,9 @@
 name: Backup Firestore
 
 on:
-  - workflow_dispatch
+  push:
+    paths:
+      - '.github/workflows/backup.yml'
 
 env:
   PROJECT_ID: visible-thoughts-writer
