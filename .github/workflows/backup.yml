@@ -1,8 +1,7 @@
 name: Backup Firestore
 
 on:
-  schedule:
-    - cron: '0 0 * * *'
+  - workflow_dispatch
 
 env:
   PROJECT_ID: visible-thoughts-writer
@@ -12,6 +11,7 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - id: 'auth'
         uses: 'google-github-actions/auth@v1'
         with:
