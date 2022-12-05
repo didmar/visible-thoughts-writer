@@ -32,6 +32,8 @@ import {
   Invite,
   removePlayerFromRun,
   Run,
+  updateRunDesc,
+  updateRunTitle,
   UserProfile,
 } from '../firebase-app';
 import { downloadToJSON } from '../utils';
@@ -50,15 +52,18 @@ const style = {
 
 interface Props {
   run: Run;
+  initOpen: boolean;
 }
 
-function RunSettingsModal({ run }: Props): JSX.Element {
-  const [open, setOpen] = useState(false);
+function RunSettingsModal({ run, initOpen }: Props): JSX.Element {
+  const [open, setOpen] = useState(initOpen);
   const handleOpen = (): void => setOpen(true);
   const handleClose = (): void => setOpen(false);
 
   const navigate = useNavigate();
 
+  const [newTitle, setNewTitle] = useState<string>(run.title);
+  const [newDesc, setNewDesc] = useState<string>(run.desc);
   const [players, setPlayers] = useState<UserProfile[]>([]);
 
   const handleRemovePlayer = (playerId: string): void => {
@@ -99,6 +104,99 @@ function RunSettingsModal({ run }: Props): JSX.Element {
       await getInvites(run.id).then((invites) => setInvites(invites));
     })();
   }, []);
+
+  const onTitleEdit = (event: FormEvent): void => {
+    event.preventDefault();
+    if (newTitle === undefined) throw new Error('newTitle is undefined');
+    void (async function () {
+      await updateRunTitle(run.id, newTitle);
+    })();
+  };
+
+  const titleEditForm = (
+    <Box sx={{ mt: 2 }}>
+      <form onSubmit={onTitleEdit}>
+        <FormControl
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+          }}
+        >
+          <TextField
+            sx={{ flexBasis: '100%' }}
+            error={newTitle === ''}
+            id="name-input"
+            label="Title"
+            name="name-input"
+            variant="outlined"
+            size={'small'}
+            value={newTitle}
+            onChange={(event) => {
+              setNewTitle(event.target.value);
+            }}
+            inputProps={{ maxLength: Run.MAX_TITLE_LENGTH }}
+          />
+          <Button
+            sx={{ ml: 2, width: '100px' }}
+            type="submit"
+            variant="contained"
+            disabled={newTitle === '' || newTitle === run.title}
+          >
+            Change
+          </Button>
+        </FormControl>
+      </form>
+    </Box>
+  );
+
+  const onDescEdit = (event: FormEvent): void => {
+    event.preventDefault();
+    if (newDesc === undefined) throw new Error('newDesc is undefined');
+    void (async function () {
+      await updateRunDesc(run.id, newDesc);
+    })();
+  };
+
+  const descEditForm = (
+    <Box sx={{ mt: 2, width: '100%' }}>
+      <form onSubmit={onDescEdit}>
+        <FormControl
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+          }}
+        >
+          <TextField
+            multiline={true}
+            sx={{ flexBasis: '100%' }}
+            error={newDesc === ''}
+            id="desc-input"
+            label="Description"
+            placeholder="Enter a description for your run!"
+            name="desc-input"
+            variant="outlined"
+            value={newDesc}
+            onChange={(event) => {
+              setNewDesc(event.target.value);
+            }}
+            inputProps={{ maxLength: Run.MAX_DESC_LENGTH }}
+          />
+          <Button
+            sx={{
+              ml: 2,
+              width: '100px',
+              height: '40px',
+            }}
+            type="submit"
+            variant="contained"
+            disabled={newDesc === '' || newDesc === run.desc}
+          >
+            Change
+          </Button>
+        </FormControl>
+      </form>
+    </Box>
+  );
 
   const playersList = (
     <>
@@ -249,9 +347,12 @@ function RunSettingsModal({ run }: Props): JSX.Element {
 
   return run !== undefined && run !== null ? (
     <Box>
-      <IconButton size="large" onClick={handleOpen} color="inherit">
-        <SettingsIcon />
-      </IconButton>
+      {/* If starting as already opened, don't show the button to open it */}
+      {!initOpen && (
+        <IconButton size="large" onClick={handleOpen} color="inherit">
+          <SettingsIcon />
+        </IconButton>
+      )}
       <Modal
         open={open}
         onClose={handleClose}
@@ -263,6 +364,8 @@ function RunSettingsModal({ run }: Props): JSX.Element {
             Run settings
           </Typography>
           <Box>
+            {titleEditForm}
+            {descEditForm}
             {playersList}
             {pendingInvitationsList}
             {invitePlayerForm}

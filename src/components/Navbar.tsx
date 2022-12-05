@@ -81,7 +81,7 @@ const Navbar = ({ run }: Props): JSX.Element => {
   const titleElement = run === undefined ? homePageTitle : runPageTitle;
 
   const runSettings = run !== undefined && isDM(role) && (
-    <RunSettingsModal run={run} />
+    <RunSettingsModal run={run} initOpen={false} />
   );
 
   return (

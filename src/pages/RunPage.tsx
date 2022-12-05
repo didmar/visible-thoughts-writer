@@ -10,6 +10,7 @@ import { ComposerMode } from '../components/composer/types';
 import { SectionContent } from '../components/composer/utils';
 import GoToModal from '../components/GoToModal';
 import Navbar from '../components/Navbar';
+import RunSettingsModal from '../components/RunSettingsModal';
 import SearchModal from '../components/SearchModal';
 import StepElem, { renderLongTermThoughts } from '../components/StepElem';
 import { useWindowActivity } from '../components/WindowContextProvider';
@@ -653,6 +654,11 @@ function RunPage(): JSX.Element {
           </Allotment.Pane>
         )}
       </Allotment>
+
+      {/* Automatically open settings modal if description if not filled yet */}
+      {isDM(role) && run !== undefined && (run.desc?.length ?? 0) === 0 && (
+        <RunSettingsModal run={run} initOpen={true} />
+      )}
     </Box>
   );
 }

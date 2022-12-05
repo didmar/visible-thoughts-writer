@@ -71,7 +71,7 @@ function HomePage(): JSX.Element {
             onChange={(event) => {
               setNewTitle(event.target.value);
             }}
-            inputProps={{ maxLength: 256 }}
+            inputProps={{ maxLength: Run.MAX_TITLE_LENGTH }}
           />
         </FormControl>
 

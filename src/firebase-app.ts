@@ -87,15 +87,20 @@ const handleFirebaseError =
 export class Run {
   id: string;
   title: string;
+  desc: string;
   ltts: Record<string, Thought[]>;
   dm: string;
   players: string[];
   imported?: Timestamp;
   deleted?: boolean;
 
+  static MAX_TITLE_LENGTH = 256;
+  static MAX_DESC_LENGTH = 1024;
+
   constructor(
     id: string,
     title: string,
+    desc: string,
     ltts: Record<string, Thought[]>,
     dm: string,
     players: string[],
@@ -104,6 +109,7 @@ export class Run {
   ) {
     this.id = id;
     this.title = title;
+    this.desc = desc;
     this.ltts = ltts;
     this.dm = dm;
     this.players = players;
@@ -125,6 +131,7 @@ export class Run {
     return new Run(
       id,
       doc.title,
+      doc.desc,
       doc.ltts,
       doc.dm,
       doc.players,
@@ -152,9 +159,13 @@ export async function getRun(runId: string): Promise<Run | undefined> {
 }
 
 export async function createRun(title: string, dm: string): Promise<string> {
-  const doc = await addDoc(runsCol, { title, dm, players: [], ltts: {} }).catch(
-    handleFirebaseError()
-  );
+  const doc = await addDoc(runsCol, {
+    title,
+    desc: '',
+    dm,
+    players: [],
+    ltts: {},
+  }).catch(handleFirebaseError());
   const runId = doc.id;
 
   // Create the first step as well
@@ -245,6 +256,26 @@ export async function getRunUserProfiles(run: Run): Promise<UserProfile[]> {
     [run.dm, ...run.players].map(async (uid) => await getUserProfile(uid))
   );
   return profiles.filter((p) => p !== undefined) as UserProfile[];
+}
+
+export async function updateRunTitle(
+  runId: string,
+  newTitle: string
+): Promise<void> {
+  if (newTitle.length > Run.MAX_TITLE_LENGTH)
+    throw new Error('Title too long!');
+  const runRef = doc(db, 'runs', runId);
+  await updateDoc(runRef, { title: newTitle }).catch(handleFirebaseError());
+}
+
+export async function updateRunDesc(
+  runId: string,
+  newDesc: string
+): Promise<void> {
+  if (newDesc.length > Run.MAX_DESC_LENGTH)
+    throw new Error('Description too long!');
+  const runRef = doc(db, 'runs', runId);
+  await updateDoc(runRef, { desc: newDesc }).catch(handleFirebaseError());
 }
 
 export enum Role {
