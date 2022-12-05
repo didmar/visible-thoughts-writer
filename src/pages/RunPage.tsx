@@ -1,11 +1,6 @@
-import {
-  Box,
-  CircularProgress,
-  Container,
-  Grid,
-  Paper,
-  Typography,
-} from '@mui/material';
+import { Box, CircularProgress, Paper, Typography } from '@mui/material';
+import { Allotment } from 'allotment';
+import 'allotment/dist/style.css'; // Required for Allotment to work
 import { useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Link, useLocation, useParams } from 'react-router-dom';
@@ -542,121 +537,122 @@ function RunPage(): JSX.Element {
       sx={{
         flexGrow: 1,
         height: '100vh',
-        overflow: 'auto',
+        overflow: 'hidden',
       }}
     >
       <Navbar run={run} />
-      <Container maxWidth="lg" sx={{ mt: 2, mb: 2 }}>
-        <Grid container spacing={3}>
-          {/* Left-hand side */}
-          <Grid item xs={12} md={isDM(role) ? 8 : 12} lg={isDM(role) ? 9 : 12}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {/* Steps */}
-              <GoToModal />
-              {<SearchModal runId={run.id} isDM={isDM(role)} />}
+      <Allotment>
+        {/* Left-hand side */}
+        <Allotment.Pane preferredSize={'70%'}>
+          {/* Steps */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              m: 1,
+            }}
+          >
+            <GoToModal />
+            {<SearchModal runId={run.id} isDM={isDM(role)} />}
+            <Paper
+              sx={{
+                p: panePadding,
+                display: 'flex',
+                flexDirection: 'column-reverse',
+                height: queryN === null ? '60vh' : '83vh',
+                overflow: 'auto',
+              }}
+              id="scrollableDiv"
+            >
+              <InfiniteScroll
+                scrollThreshold={400} // Load more when less than 400px from the top
+                dataLength={steps !== undefined ? steps.length : 0}
+                next={() => {
+                  void (async function () {
+                    await loadMoreSteps();
+                  })();
+                }}
+                hasMore={
+                  steps !== undefined && steps.length !== 0
+                    ? steps[0].n > 1
+                    : false
+                }
+                loader={<CircularProgress />}
+                inverse={true}
+                style={{ display: 'flex', flexDirection: 'column-reverse' }}
+                scrollableTarget="scrollableDiv"
+              >
+                {stepElems}
+              </InfiniteScroll>
+            </Paper>
+            {queryN !== null && (
+              <Link to={{ search: `` }}>
+                <Typography
+                  variant="body1"
+                  sx={{ position: 'relative', bottom: 0, float: 'right' }}
+                >
+                  Jump to last step
+                </Typography>
+              </Link>
+            )}
+            {/* Compose */}
+            {queryN === null && (
               <Paper
                 sx={{
                   p: panePadding,
                   display: 'flex',
-                  flexDirection: 'column-reverse',
-                  height: queryN === null ? '60vh' : '83vh',
+                  flexDirection: 'column',
+                  height: '25vh',
                   overflow: 'auto',
+                  mt: 1,
                 }}
-                id="scrollableDiv"
               >
-                <InfiniteScroll
-                  scrollThreshold={400} // Load more when less than 400px from the top
-                  dataLength={steps !== undefined ? steps.length : 0}
-                  next={() => {
-                    void (async function () {
-                      await loadMoreSteps();
-                    })();
-                  }}
-                  hasMore={
-                    steps !== undefined && steps.length !== 0
-                      ? steps[0].n > 1
-                      : false
-                  }
-                  loader={<CircularProgress />}
-                  inverse={true}
-                  style={{ display: 'flex', flexDirection: 'column-reverse' }}
-                  scrollableTarget="scrollableDiv"
-                >
-                  {stepElems}
-                </InfiniteScroll>
+                {renderComposer()}
               </Paper>
-              {queryN !== null && (
-                <Link to={{ search: `` }}>
-                  <Typography
-                    variant="body1"
-                    sx={{ position: 'relative', bottom: 0, float: 'right' }}
-                  >
-                    Jump to last step
-                  </Typography>
-                </Link>
-              )}
-              {/* Compose */}
-              {queryN === null && (
-                <Paper
-                  sx={{
-                    p: panePadding,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '25vh',
-                    overflow: 'auto',
-                  }}
-                >
-                  {renderComposer()}
-                </Paper>
-              )}
-            </Box>
-          </Grid>
+            )}
+          </Box>
+        </Allotment.Pane>
 
-          {/* Right-hand side (for DM only) */}
-          {isDM(role) && (
-            <Grid
-              item
-              xs={0}
-              md={4}
-              lg={3}
-              display={{ xs: 'none', md: 'block', lg: 'block' }}
+        {/* Right-hand side (for DM only) */}
+        {isDM(role) && (
+          <Allotment.Pane>
+            <Box
+              sx={{ display: 'flex', flexDirection: 'column', gap: 1, m: 1 }}
             >
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                {/* Long-term thoughts */}
-                <Paper
-                  sx={{
-                    p: panePadding,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '60vh',
-                  }}
-                >
-                  <Typography variant="h6">Long-term thoughts</Typography>
-                  <Box sx={{ overflow: 'auto' }}>
-                    {renderLongTermThoughts(ltts)}
-                  </Box>
-                </Paper>
-                {/* X steps ago */}
-                <Paper
-                  sx={{
-                    p: panePadding,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    height: '25vh',
-                  }}
-                >
-                  <Typography variant="h6">{`${X} steps ago...`}</Typography>
-                  <Box sx={{ overflow: 'auto' }}>
-                    {xStepAgo !== undefined && (
-                      <StepElem step={xStepAgo} role={role} title={''} />
-                    )}
-                  </Box>
-                </Paper>
-              </Box>
-            </Grid>
-          )}
-        </Grid>
-      </Container>
+              {/* Long-term thoughts */}
+              <Paper
+                sx={{
+                  p: panePadding,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '60vh',
+                }}
+              >
+                <Typography variant="h6">Long-term thoughts</Typography>
+                <Box sx={{ overflow: 'auto' }}>
+                  {renderLongTermThoughts(ltts)}
+                </Box>
+              </Paper>
+              {/* X steps ago */}
+              <Paper
+                sx={{
+                  p: panePadding,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: '25vh',
+                }}
+              >
+                <Typography variant="h6">{`${X} steps ago...`}</Typography>
+                <Box sx={{ overflow: 'auto' }}>
+                  {xStepAgo !== undefined && (
+                    <StepElem step={xStepAgo} role={role} title={''} />
+                  )}
+                </Box>
+              </Paper>
+            </Box>
+          </Allotment.Pane>
+        )}
+      </Allotment>
     </Box>
   );
 }
