@@ -23,6 +23,8 @@ import {
 } from '@mui/material';
 import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import TagsInput from 'react-tagsinput';
+import '../styles.css';
 import isEmail from 'validator/lib/isEmail';
 import { exportRun } from '../export';
 import {
@@ -77,8 +79,10 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
   const navigate = useNavigate();
 
   const [newTitle, setNewTitle] = useState<string>(run.title);
-  const [newDesc, setNewDesc] = useState<string>(run.desc);
+  const [newDesc, setNewDesc] = useState<string>(run.desc ?? '');
+  const [newTags, setNewTags] = useState<string[]>(run.tags ?? []);
   const [edited, setEdited] = useState(false);
+
   const [players, setPlayers] = useState<UserProfile[]>([]);
 
   const handleRemovePlayer = (playerId: string): void => {
@@ -123,11 +127,14 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
   const saveChanges = (): void => {
     if (newTitle === undefined) throw new Error('newTitle is undefined');
     if (newDesc === undefined) throw new Error('newDesc is undefined');
+    if (newTags === undefined) throw new Error('newTags is undefined');
+
     void (async function () {
       // FIXME: not optimal, should do a single update instead of 2.
       // But this can wait until we have all the run settings implemented.
       if (newTitle !== run.title) await run.updateTitle(newTitle);
       if (newDesc !== run.desc) await run.updateDesc(newDesc);
+      if (newTags !== run.tags) await run.updateTags(newTags);
     })();
   };
 
@@ -182,6 +189,13 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
               setEdited(true);
             }}
             inputProps={{ maxLength: Run.MAX_DESC_LENGTH }}
+          />
+          <TagsInput
+            value={newTags}
+            onChange={(tags: string[]) => {
+              setNewTags(tags);
+              setEdited(true);
+            }}
           />
           <Box sx={{ mt: 1, flexDirection: 'column' }}>
             <Button

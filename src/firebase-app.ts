@@ -88,6 +88,7 @@ export class Run {
   id: string;
   title: string;
   desc: string;
+  tags: string[];
   ltts: Record<string, Thought[]>;
   dm: string;
   players: string[];
@@ -101,6 +102,7 @@ export class Run {
     id: string,
     title: string,
     desc: string,
+    tags: string[],
     ltts: Record<string, Thought[]>,
     dm: string,
     players: string[],
@@ -110,6 +112,7 @@ export class Run {
     this.id = id;
     this.title = title;
     this.desc = desc;
+    this.tags = tags;
     this.ltts = ltts;
     this.dm = dm;
     this.players = players;
@@ -132,6 +135,7 @@ export class Run {
       id,
       doc.title,
       doc.desc,
+      doc.tags,
       doc.ltts,
       doc.dm,
       doc.players,
@@ -152,6 +156,12 @@ export class Run {
     const runRef = doc(db, 'runs', this.id);
     await updateDoc(runRef, { desc: newDesc }).catch(handleFirebaseError());
     this.desc = newDesc;
+  }
+
+  async updateTags(newTags: string[]): Promise<void> {
+    const runRef = doc(db, 'runs', this.id);
+    await updateDoc(runRef, { tags: newTags }).catch(handleFirebaseError());
+    this.tags = newTags;
   }
 
   static isValidTitle(title: string | undefined): boolean {
@@ -192,6 +202,7 @@ export async function createRun(title: string, dm: string): Promise<string> {
   const doc = await addDoc(runsCol, {
     title,
     desc: '',
+    tags: [],
     dm,
     players: [],
     ltts: {},
