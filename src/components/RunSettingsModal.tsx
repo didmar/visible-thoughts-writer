@@ -18,6 +18,8 @@ import {
   ListItemText,
   Modal,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -37,6 +39,7 @@ import {
   Invite,
   removePlayerFromRun,
   Run,
+  RunStatus,
   UserProfile,
 } from '../firebase-app';
 import { downloadToJSON } from '../utils';
@@ -81,6 +84,9 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
   const [newTitle, setNewTitle] = useState<string>(run.title);
   const [newDesc, setNewDesc] = useState<string>(run.desc ?? '');
   const [newTags, setNewTags] = useState<string[]>(run.tags ?? []);
+  const [newStatus, setNewStatus] = useState<RunStatus>(
+    run.status ?? RunStatus.InProgress
+  );
   const [edited, setEdited] = useState(false);
 
   const [players, setPlayers] = useState<UserProfile[]>([]);
@@ -130,11 +136,12 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
     if (newTags === undefined) throw new Error('newTags is undefined');
 
     void (async function () {
-      // FIXME: not optimal, should do a single update instead of 2.
+      // FIXME: not optimal, should do a single update instead.
       // But this can wait until we have all the run settings implemented.
       if (newTitle !== run.title) await run.updateTitle(newTitle);
       if (newDesc !== run.desc) await run.updateDesc(newDesc);
       if (newTags !== run.tags) await run.updateTags(newTags);
+      if (newStatus !== run.status) await run.updateStatus(newStatus);
     })();
   };
 
@@ -147,6 +154,8 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
   const onReset = (): void => {
     setNewTitle(run.title);
     setNewDesc(run.desc);
+    setNewTags(run.tags);
+    setNewStatus(run.status);
     setEdited(false);
   };
 
@@ -197,28 +206,76 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
               setEdited(true);
             }}
           />
-          <Box sx={{ mt: 1, flexDirection: 'column' }}>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={
-                !edited ||
-                !Run.isValidTitle(newTitle) ||
-                !Run.isValidDesc(newDesc)
-              }
-              startIcon={<SaveIcon />}
+
+          <Box
+            sx={{
+              mt: 1,
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+            }}
+          >
+            <ToggleButtonGroup
+              sx={{ flex: 0 }}
+              value={newStatus}
+              exclusive
+              onChange={(_, newStatus) => {
+                if (newStatus !== null) {
+                  setNewStatus(newStatus);
+                  setEdited(true);
+                }
+              }}
             >
-              Save
-            </Button>
-            <Button
-              variant="outlined"
-              disabled={!edited}
-              onClick={onReset}
-              sx={{ ml: 1 }}
-              startIcon={<UndoIcon />}
+              <ToggleButton size={'small'} value={RunStatus.InProgress}>
+                <Tooltip title="Run is in progress">
+                  <Typography>In progress</Typography>
+                </Tooltip>
+              </ToggleButton>
+              <ToggleButton size={'small'} value={RunStatus.Completed}>
+                <Tooltip title="Run is completed, but steps can still be modified or added">
+                  <Typography>Completed</Typography>
+                </Tooltip>
+              </ToggleButton>
+              <ToggleButton size={'small'} value={RunStatus.Archived}>
+                <Tooltip title="Run is archived, access is read-only">
+                  <Typography>Archived</Typography>
+                </Tooltip>
+              </ToggleButton>
+            </ToggleButtonGroup>
+
+            <Box
+              sx={{
+                flex: 0,
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                padding: 1,
+                display: 'flex',
+                flexDirection: 'row',
+                justifyContent: 'flex-end',
+              }}
             >
-              Reset
-            </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={
+                  !edited ||
+                  !Run.isValidTitle(newTitle) ||
+                  !Run.isValidDesc(newDesc)
+                }
+                startIcon={<SaveIcon />}
+              >
+                Save
+              </Button>
+              <Button
+                variant="outlined"
+                disabled={!edited}
+                onClick={onReset}
+                sx={{ ml: 1 }}
+                startIcon={<UndoIcon />}
+              >
+                Reset
+              </Button>
+            </Box>
           </Box>
         </FormControl>
       </form>

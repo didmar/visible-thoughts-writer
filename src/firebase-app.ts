@@ -84,11 +84,18 @@ const handleFirebaseError =
 // Database types and functions
 // ============================
 
+export enum RunStatus {
+  InProgress = 'InProgress',
+  Completed = 'Completed',
+  Archived = 'Archived',
+}
+
 export class Run {
   id: string;
   title: string;
   desc: string;
   tags: string[];
+  status: RunStatus;
   ltts: Record<string, Thought[]>;
   dm: string;
   players: string[];
@@ -103,6 +110,7 @@ export class Run {
     title: string,
     desc: string,
     tags: string[],
+    status: RunStatus,
     ltts: Record<string, Thought[]>,
     dm: string,
     players: string[],
@@ -113,6 +121,7 @@ export class Run {
     this.title = title;
     this.desc = desc;
     this.tags = tags;
+    this.status = status;
     this.ltts = ltts;
     this.dm = dm;
     this.players = players;
@@ -136,6 +145,7 @@ export class Run {
       doc.title,
       doc.desc,
       doc.tags,
+      doc.status,
       doc.ltts,
       doc.dm,
       doc.players,
@@ -162,6 +172,12 @@ export class Run {
     const runRef = doc(db, 'runs', this.id);
     await updateDoc(runRef, { tags: newTags }).catch(handleFirebaseError());
     this.tags = newTags;
+  }
+
+  async updateStatus(newStatus: RunStatus): Promise<void> {
+    const runRef = doc(db, 'runs', this.id);
+    await updateDoc(runRef, { status: newStatus }).catch(handleFirebaseError());
+    this.status = newStatus;
   }
 
   static isValidTitle(title: string | undefined): boolean {
@@ -203,6 +219,7 @@ export async function createRun(title: string, dm: string): Promise<string> {
     title,
     desc: '',
     tags: [],
+    status: RunStatus.InProgress,
     dm,
     players: [],
     ltts: {},

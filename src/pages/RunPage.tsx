@@ -34,6 +34,7 @@ import {
   onUserProfileChanged,
   Role,
   Run,
+  RunStatus,
   Section,
   Step,
   TextYBR,
@@ -464,6 +465,9 @@ function RunPage(): JSX.Element {
     if (role === null) {
       return <>Only designated users can participate</>;
     }
+    if (run?.status === RunStatus.Archived) {
+      return <>Run is archived, access is read-only</>;
+    }
 
     const section = getNextSection();
     if (section === undefined) {
@@ -527,7 +531,9 @@ function RunPage(): JSX.Element {
         key={step.n}
         step={step}
         role={role}
-        onSubmitted={onSubmitted}
+        onSubmitted={
+          run?.status !== RunStatus.Archived ? onSubmitted : undefined
+        }
         prevStep={prevStep}
       />
     ));
