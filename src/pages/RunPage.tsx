@@ -657,7 +657,11 @@ function RunPage(): JSX.Element {
 
       {/* Automatically open settings modal if description if not filled yet */}
       {isDM(role) && run !== undefined && (run.desc?.length ?? 0) === 0 && (
-        <RunSettingsModal run={run} initOpen={true} />
+        <RunSettingsModal
+          initRun={run}
+          initOpen={true}
+          onClose={(updatedRun) => setRun(updatedRun)}
+        />
       )}
     </Box>
   );

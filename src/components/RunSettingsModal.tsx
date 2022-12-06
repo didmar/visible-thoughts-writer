@@ -1,7 +1,10 @@
 import { AccountCircle } from '@mui/icons-material';
+import EmailIcon from '@mui/icons-material/Email';
 import PendingIcon from '@mui/icons-material/Pending';
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
+import SaveIcon from '@mui/icons-material/Save';
 import SettingsIcon from '@mui/icons-material/Settings';
+import UndoIcon from '@mui/icons-material/Undo';
 import {
   Avatar,
   Box,
@@ -32,8 +35,6 @@ import {
   Invite,
   removePlayerFromRun,
   Run,
-  updateRunDesc,
-  updateRunTitle,
   UserProfile,
 } from '../firebase-app';
 import { downloadToJSON } from '../utils';
@@ -51,19 +52,33 @@ const style = {
 };
 
 interface Props {
-  run: Run;
+  initRun: Run;
   initOpen: boolean;
+  onClose?: (updatedRun: Run) => void;
 }
 
-function RunSettingsModal({ run, initOpen }: Props): JSX.Element {
+function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
+  const [run] = useState<Run>(initRun);
   const [open, setOpen] = useState(initOpen);
   const handleOpen = (): void => setOpen(true);
-  const handleClose = (): void => setOpen(false);
+  const handleClose = (): void => {
+    if (
+      edited &&
+      !confirm(
+        `Are you sure you want to close without saving? Changes will be lost.`
+      )
+    )
+      return;
+
+    setOpen(false);
+    if (onClose !== undefined) onClose(run);
+  };
 
   const navigate = useNavigate();
 
   const [newTitle, setNewTitle] = useState<string>(run.title);
   const [newDesc, setNewDesc] = useState<string>(run.desc);
+  const [edited, setEdited] = useState(false);
   const [players, setPlayers] = useState<UserProfile[]>([]);
 
   const handleRemovePlayer = (playerId: string): void => {
@@ -105,26 +120,41 @@ function RunSettingsModal({ run, initOpen }: Props): JSX.Element {
     })();
   }, []);
 
-  const onTitleEdit = (event: FormEvent): void => {
-    event.preventDefault();
+  const saveChanges = (): void => {
     if (newTitle === undefined) throw new Error('newTitle is undefined');
+    if (newDesc === undefined) throw new Error('newDesc is undefined');
     void (async function () {
-      await updateRunTitle(run.id, newTitle);
+      // FIXME: not optimal, should do a single update instead of 2.
+      // But this can wait until we have all the run settings implemented.
+      if (newTitle !== run.title) await run.updateTitle(newTitle);
+      if (newDesc !== run.desc) await run.updateDesc(newDesc);
     })();
   };
 
-  const titleEditForm = (
+  const onSubmit = (event: FormEvent): void => {
+    event.preventDefault();
+    saveChanges();
+    setEdited(false);
+  };
+
+  const onReset = (): void => {
+    setNewTitle(run.title);
+    setNewDesc(run.desc);
+    setEdited(false);
+  };
+
+  const editForm = (
     <Box sx={{ mt: 2 }}>
-      <form onSubmit={onTitleEdit}>
+      <form onSubmit={onSubmit}>
         <FormControl
           sx={{
             display: 'flex',
-            flexDirection: 'row',
+            flexDirection: 'column',
           }}
         >
           <TextField
             sx={{ flexBasis: '100%' }}
-            error={newTitle === ''}
+            error={!Run.isValidTitle(newTitle)}
             id="name-input"
             label="Title"
             name="name-input"
@@ -133,43 +163,14 @@ function RunSettingsModal({ run, initOpen }: Props): JSX.Element {
             value={newTitle}
             onChange={(event) => {
               setNewTitle(event.target.value);
+              setEdited(true);
             }}
             inputProps={{ maxLength: Run.MAX_TITLE_LENGTH }}
           />
-          <Button
-            sx={{ ml: 2, width: '100px' }}
-            type="submit"
-            variant="contained"
-            disabled={newTitle === '' || newTitle === run.title}
-          >
-            Change
-          </Button>
-        </FormControl>
-      </form>
-    </Box>
-  );
-
-  const onDescEdit = (event: FormEvent): void => {
-    event.preventDefault();
-    if (newDesc === undefined) throw new Error('newDesc is undefined');
-    void (async function () {
-      await updateRunDesc(run.id, newDesc);
-    })();
-  };
-
-  const descEditForm = (
-    <Box sx={{ mt: 2, width: '100%' }}>
-      <form onSubmit={onDescEdit}>
-        <FormControl
-          sx={{
-            display: 'flex',
-            flexDirection: 'row',
-          }}
-        >
           <TextField
             multiline={true}
-            sx={{ flexBasis: '100%' }}
-            error={newDesc === ''}
+            sx={{ flexBasis: '100%', mt: 1 }}
+            error={!Run.isValidDesc(newDesc)}
             id="desc-input"
             label="Description"
             placeholder="Enter a description for your run!"
@@ -178,21 +179,33 @@ function RunSettingsModal({ run, initOpen }: Props): JSX.Element {
             value={newDesc}
             onChange={(event) => {
               setNewDesc(event.target.value);
+              setEdited(true);
             }}
             inputProps={{ maxLength: Run.MAX_DESC_LENGTH }}
           />
-          <Button
-            sx={{
-              ml: 2,
-              width: '100px',
-              height: '40px',
-            }}
-            type="submit"
-            variant="contained"
-            disabled={newDesc === '' || newDesc === run.desc}
-          >
-            Change
-          </Button>
+          <Box sx={{ mt: 1, flexDirection: 'column' }}>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={
+                !edited ||
+                !Run.isValidTitle(newTitle) ||
+                !Run.isValidDesc(newDesc)
+              }
+              startIcon={<SaveIcon />}
+            >
+              Save
+            </Button>
+            <Button
+              variant="outlined"
+              disabled={!edited}
+              onClick={onReset}
+              sx={{ ml: 1 }}
+              startIcon={<UndoIcon />}
+            >
+              Reset
+            </Button>
+          </Box>
         </FormControl>
       </form>
     </Box>
@@ -200,7 +213,7 @@ function RunSettingsModal({ run, initOpen }: Props): JSX.Element {
 
   const playersList = (
     <>
-      <Typography sx={{ mt: 4 }} component="div" variant="h5">
+      <Typography sx={{ mt: 1 }} component="div" variant="h5">
         Players:
       </Typography>
 
@@ -296,6 +309,7 @@ function RunSettingsModal({ run, initOpen }: Props): JSX.Element {
           type="submit"
           variant="contained"
           disabled={!isEmail(email)}
+          startIcon={<EmailIcon />}
         >
           Invite player
         </Button>
@@ -364,8 +378,8 @@ function RunSettingsModal({ run, initOpen }: Props): JSX.Element {
             Run settings
           </Typography>
           <Box>
-            {titleEditForm}
-            {descEditForm}
+            {editForm}
+            <Divider sx={{ mt: 2 }} />
             {playersList}
             {pendingInvitationsList}
             {invitePlayerForm}
