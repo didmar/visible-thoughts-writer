@@ -572,6 +572,7 @@ function RunPage(): JSX.Element {
                 sx={{
                   display: 'flex',
                   flexDirection: 'column',
+                  width: '100%',
                   m: 1,
                 }}
               >
