@@ -10,6 +10,7 @@ firestore-debug.log
 ui-debug.log
 extensions/firestore-send-email.env
 extensions/firestore-algolia-search.env
+extensions/firestore-algolia-search-runs.env
 /export
 /firebase-export-*
 

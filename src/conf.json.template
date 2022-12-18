@@ -2,5 +2,6 @@
   "useEmulators": false,
   "nbStepsToLoad": 5,
   "algoliaAppId": "<your Algolia App ID>",
-  "algoliaAPIKey": "<your Algolia API key>"
+  "algoliaAPIKey": "<your Algolia API key for searching prod_steps index>"
+  "algoliaAPIKeyRuns": "<your Algolia API key for searching prod_runs index>"
 }

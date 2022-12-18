@@ -90,6 +90,22 @@ export enum RunStatus {
   Archived = 'Archived',
 }
 
+export function runStatusTooltip(status: RunStatus): string {
+  let tooltip = '';
+  switch (status) {
+    case RunStatus.InProgress:
+      tooltip = 'Run is in progress.';
+      break;
+    case RunStatus.Completed:
+      tooltip = 'Run is completed, but steps can still be modified or added.';
+      break;
+    case RunStatus.Archived:
+      tooltip = 'Run is archived, access is read-only.';
+      break;
+  }
+  return tooltip;
+}
+
 export class Run {
   id: string;
   title: string;
@@ -99,8 +115,8 @@ export class Run {
   ltts: Record<string, Thought[]>;
   dm: string;
   players: string[];
+  deleted: boolean;
   imported?: Timestamp;
-  deleted?: boolean;
 
   static MAX_TITLE_LENGTH = 256;
   static MAX_DESC_LENGTH = 1024;
@@ -114,8 +130,8 @@ export class Run {
     ltts: Record<string, Thought[]>,
     dm: string,
     players: string[],
-    imported?: Timestamp,
-    deleted?: boolean
+    deleted: boolean,
+    imported?: Timestamp
   ) {
     this.id = id;
     this.title = title;
@@ -125,8 +141,8 @@ export class Run {
     this.ltts = ltts;
     this.dm = dm;
     this.players = players;
-    this.imported = imported;
     this.deleted = deleted;
+    this.imported = imported;
   }
 
   sortedLtts(): Thought[] {
@@ -149,8 +165,8 @@ export class Run {
       doc.ltts,
       doc.dm,
       doc.players,
-      doc.imported,
-      doc.deleted
+      doc.deleted,
+      doc.imported
     );
   }
 
@@ -223,6 +239,7 @@ export async function createRun(title: string, dm: string): Promise<string> {
     dm,
     players: [],
     ltts: {},
+    deleted: false,
   }).catch(handleFirebaseError());
   const runId = doc.id;
 
@@ -370,6 +387,19 @@ export async function removePlayerFromRun(
   await deleteDoc(doc(db, 'users', uid, 'runs', runId)).catch(
     handleFirebaseError()
   );
+}
+
+/** Necessary migration to make the RunsListing component work */
+export async function addMissingDeletedField(): Promise<void> {
+  const runsSnapshot = await getDocs(runsCol).catch(handleFirebaseError());
+  const batch = writeBatch(db);
+  runsSnapshot.docs.forEach((doc) => {
+    const data = doc.data();
+    if (data.deleted === undefined) {
+      batch.update(doc.ref, { deleted: false });
+    }
+  });
+  await batch.commit().catch(handleFirebaseError());
 }
 
 // Steps and thought sections

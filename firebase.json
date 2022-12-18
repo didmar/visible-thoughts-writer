@@ -5,11 +5,7 @@
   },
   "hosting": {
     "public": "build",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
         "source": "**",
@@ -49,6 +45,7 @@
   ],
   "extensions": {
     "firestore-send-email": "firebase/firestore-send-email@0.1.19",
-    "firestore-algolia-search": "algolia/firestore-algolia-search@0.5.14"
+    "firestore-algolia-search": "algolia/firestore-algolia-search@0.5.14",
+    "firestore-algolia-search-runs": "algolia/firestore-algolia-search@0.5.14"
   }
 }

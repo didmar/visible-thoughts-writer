@@ -6,6 +6,8 @@
 
 Create a project on [Firebase](https://console.firebase.google.com) and enable the following modules: Authentication, Firestore, Hosting and Functions.
 
+### Email notifications
+
 For sending notification emails, the application needs an SMTP relay service such as SendGrid:
 
 - [Create a free account on SendGrid](https://signup.sendgrid.com/)
@@ -13,18 +15,19 @@ For sending notification emails, the application needs an SMTP relay service suc
 - Install the [Trigger Email extension](https://extensions.dev/extensions/firebase/firestore-send-email) in your Firebase project and configure it with the SendGrid API key.
 - Rename `extensions/firestore-send-email.env.template` into `extensions/firestore-send-email.env.template` and edit it to change `<your_name>`, `<your_email_address>` and `<your_api_key>` with your SendGrid API key.
 
+### Algolia search
+
 For search capabilities, the application uses Algolia:
 
 - [Create a free account on Algolia](https://www.algolia.com/users/sign_up).
-- Create an application and an index named `prod_steps`
-- Import the configuration of that index from the file `algolia-prod_steps-conf.json`
-- Install the [Firestore Algolia Search extension](https://extensions.dev/extensions/algolia/firestore-algolia-search) in your Firebase project and configure it with the following settings:
-  - `COLLECTION_PATH`: `runs/{parentId}/steps`
-  - `ALGOLIA_APP_ID`: your Algolia app ID
-  - `ALGOLIA_API_KEY`: your Algolia API key created specifically for indexing (see [this](https://github.com/algolia/firestore-algolia-search#configuration-parameters))
-  - `ALGOLIA_INDEX_NAME`: `prod_steps`
-  - `TRANSFORM_FUNCTION`: `transformStepForIndexing`
-- Rename `extensions/firestore-algolia-search.env.template` into `extensions/firestore-algolia-search.env` and fill in the info like above.
+- Create an application
+- Create two indexes named, `prod_steps` and `prod_runs`
+- Inside the `prod_runs` index, create replicas `title_asc`, `title_desc`, `status_asc` and `status_desc`
+- Import the configuration for each of these indexes and replicas, using the provided `algolia-*.json` files
+- Rename `extensions/firestore-algolia-search.env.template` into `extensions/firestore-algolia-search.env` and fill in the missing info (see [this](https://github.com/algolia/firestore-algolia-search#configuration-parameters) for more explanations)
+- Install the [Firestore Algolia Search extension](https://extensions.dev/extensions/algolia/firestore-algolia-search) in your Firebase project and configure it with the settings from `extensions/firestore-algolia-search.env`
+- Rename `extensions/firestore-algolia-search-runs.env.template` into `extensions/firestore-algolia-search-runs.env` and fill in the missing info
+- Install the [Firestore Algolia Search extension](https://extensions.dev/extensions/algolia/firestore-algolia-search) again, this time with the name `firestore-algolia-search-runs`, and use the settings from `extensions/firestore-algolia-search-runs.env`
 
 ### Local setup
 

@@ -26,7 +26,6 @@ import {
 import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TagsInput from 'react-tagsinput';
-import '../styles.css';
 import isEmail from 'validator/lib/isEmail';
 import { exportRun } from '../export';
 import {
@@ -40,8 +39,10 @@ import {
   removePlayerFromRun,
   Run,
   RunStatus,
+  runStatusTooltip,
   UserProfile,
 } from '../firebase-app';
+import '../styles.css';
 import { downloadToJSON } from '../utils';
 
 const style = {
@@ -227,21 +228,13 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
                 }
               }}
             >
-              <ToggleButton size={'small'} value={RunStatus.InProgress}>
-                <Tooltip title="Run is in progress">
-                  <Typography>In progress</Typography>
-                </Tooltip>
-              </ToggleButton>
-              <ToggleButton size={'small'} value={RunStatus.Completed}>
-                <Tooltip title="Run is completed, but steps can still be modified or added">
-                  <Typography>Completed</Typography>
-                </Tooltip>
-              </ToggleButton>
-              <ToggleButton size={'small'} value={RunStatus.Archived}>
-                <Tooltip title="Run is archived, access is read-only">
-                  <Typography>Archived</Typography>
-                </Tooltip>
-              </ToggleButton>
+              {Object.entries(RunStatus).map(([_, status]) => (
+                <ToggleButton key={status} size={'small'} value={status}>
+                  <Tooltip title={runStatusTooltip(status)}>
+                    <Typography>{status}</Typography>
+                  </Tooltip>
+                </ToggleButton>
+              ))}
             </ToggleButtonGroup>
 
             <Box
