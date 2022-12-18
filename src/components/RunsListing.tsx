@@ -187,6 +187,7 @@ function RunsListing({ userId }: Props): JSX.Element {
                 display: 'flex',
                 flexGrow: 1,
                 justifyContent: 'flex-start',
+                marginBottom: '10px',
               }}
             >
               <SearchBox
@@ -224,7 +225,12 @@ function RunsListing({ userId }: Props): JSX.Element {
             )}
             <Divider orientation="vertical" flexItem sx={{ margin: '10px' }} />
             <Box
-              sx={{ display: 'flex', flexGrow: 1, justifyContent: 'flex-end' }}
+              sx={{
+                display: 'flex',
+                flexGrow: 1,
+                justifyContent: 'flex-end',
+                marginBottom: '10px',
+              }}
             >
               <Typography sx={{ marginRight: '10px' }}>Sort by: </Typography>
               <SortBy
