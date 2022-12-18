@@ -167,7 +167,7 @@ interface Props {
 function RunsListing({ userId }: Props): JSX.Element {
   return (
     <InstantSearch searchClient={searchClient} indexName="prod_runs">
-      <Configure hitsPerPage={5} filters={'deleted:false'} />
+      <Configure hitsPerPage={20} filters={'deleted:false'} />
       <Box
         className="search-panel"
         sx={{
