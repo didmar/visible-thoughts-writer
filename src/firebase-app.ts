@@ -869,6 +869,26 @@ export async function getUserProfile(
   return UserProfile.fromDocData(runSnapshot.data());
 }
 
+export async function getUsersUidToName(
+  uids: string[]
+): Promise<Map<string, string>> {
+  const promises: Array<Promise<UserProfile | undefined>> = [];
+  uids.forEach((uid) => {
+    promises.push(getUserProfile(uid));
+  });
+
+  const usersFound: UserProfile[] = await Promise.all(promises).then(
+    (maybeUsers) =>
+      maybeUsers.filter((user) => user !== undefined) as UserProfile[]
+  );
+
+  const uidToName = new Map();
+  usersFound.forEach((user) => {
+    uidToName.set(user.id, user.name);
+  });
+  return uidToName;
+}
+
 export async function getOrCreateUserProfile(
   uid: string,
   name: string

@@ -1,7 +1,7 @@
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { onRunsCreated, Run } from '../firebase-app';
+import { getUsersUidToName, onRunsCreated, Run } from '../firebase-app';
 
 interface Props {
   userId: string | undefined;
@@ -14,6 +14,9 @@ interface Props {
 function SimpleRunsListing({ userId }: Props): JSX.Element {
   const [runs, setRuns] = useState<Run[]>([]);
   const [newRuns, setNewRuns] = useState<Run[] | undefined>(undefined);
+  const [dmUidToName, setDMUidToName] = useState<Map<string, string>>(
+    new Map()
+  );
 
   // Set up a listener
   useEffect(() => {
@@ -29,6 +32,14 @@ function SimpleRunsListing({ userId }: Props): JSX.Element {
       const newRunsNotDeleted = newRuns.filter((run) => !run.deleted);
       const updateRuns = [...runs, ...newRunsNotDeleted];
       setRuns(updateRuns);
+      // Get the mapping from DM uids to their names
+      // (FIXME: Could be optimized to only get the new DMs)
+      void (async function () {
+        const _dmUidToName = await getUsersUidToName([
+          ...new Set(updateRuns.map((run) => run.dm)),
+        ]);
+        setDMUidToName(_dmUidToName);
+      })();
     }
   }, [newRuns]);
 
@@ -38,7 +49,7 @@ function SimpleRunsListing({ userId }: Props): JSX.Element {
         {runs.map((run) => (
           <li key={run.id}>
             <Link to={`/runs/${run.id}`}>{run.title}</Link> (
-            {run.nsteps ?? '???'} steps)
+            {run.nsteps ?? '???'} steps) by {dmUidToName.get(run.dm) ?? '???'}
           </li>
         ))}
       </ul>

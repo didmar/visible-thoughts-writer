@@ -20,6 +20,7 @@ import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import algoliasearch from 'algoliasearch';
+import { useEffect, useState } from 'react';
 import { Hit } from 'react-instantsearch-core';
 import {
   ClearRefinements,
@@ -37,7 +38,11 @@ import { useNavigate } from 'react-router-dom';
 import TagsInput from 'react-tagsinput';
 
 import conf from '../conf.json';
-import { RunStatus, runStatusTooltip } from '../firebase-app';
+import {
+  getUsersUidToName,
+  RunStatus,
+  runStatusTooltip,
+} from '../firebase-app';
 import '../styles.css';
 import { noop } from '../utils';
 
@@ -86,6 +91,18 @@ const CustomHits = connectHits<
   { hits: Array<Hit<Doc>>; userId: string | undefined },
   Doc
 >(({ hits, userId }) => {
+  const [dmUidToName, setDMUidToName] = useState<Map<string, string>>(
+    new Map()
+  );
+
+  useEffect(() => {
+    const dmUids = [...new Set(hits.map((hit) => hit.dm))];
+    void (async function () {
+      const _dmUidToName = await getUsersUidToName(dmUids);
+      setDMUidToName(_dmUidToName);
+    })();
+  }, []);
+
   const navigate = useNavigate();
   return (
     <TableContainer component={Paper}>
@@ -95,7 +112,7 @@ const CustomHits = connectHits<
             <TableCell></TableCell>
             <TableCell></TableCell>
             <TableCell>Title</TableCell>
-            {/* <TableCell>DM</TableCell> */}
+            <TableCell>DM</TableCell>
             <TableCell>Steps</TableCell>
             <TableCell>Status</TableCell>
             <TableCell>Tags</TableCell>
@@ -136,7 +153,7 @@ const CustomHits = connectHits<
               >
                 {hit.title}
               </TableCell>
-              {/* <TableCell>{hit.dm}</TableCell> */}
+              <TableCell>{dmUidToName.get(hit.dm) ?? '-'}</TableCell>
               <TableCell align="right">{hit.nsteps}</TableCell>
               <TableCell>{createStatusChip(hit.status)}</TableCell>
               <TableCell>
