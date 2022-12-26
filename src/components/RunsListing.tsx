@@ -49,6 +49,7 @@ interface Doc {
   title: string;
   dm: string;
   players: string[];
+  nsteps: number;
   status: RunStatus;
   tags: string[];
 }
@@ -94,8 +95,8 @@ const CustomHits = connectHits<
             <TableCell></TableCell>
             <TableCell></TableCell>
             <TableCell>Title</TableCell>
-            {/* <TableCell>DM</TableCell>
-            <TableCell>Steps</TableCell> */}
+            {/* <TableCell>DM</TableCell> */}
+            <TableCell>Steps</TableCell>
             <TableCell>Status</TableCell>
             <TableCell>Tags</TableCell>
           </TableRow>
@@ -135,8 +136,8 @@ const CustomHits = connectHits<
               >
                 {hit.title}
               </TableCell>
-              {/* <TableCell>{hit.dm}</TableCell>
-              <TableCell align="right">42</TableCell> */}
+              {/* <TableCell>{hit.dm}</TableCell> */}
+              <TableCell align="right">{hit.nsteps}</TableCell>
               <TableCell>{createStatusChip(hit.status)}</TableCell>
               <TableCell>
                 {/* Reuse TagsInput to display the tags, disabling the input */}

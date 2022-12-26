@@ -41,6 +41,7 @@ import {
   Thought,
   UpdatedSteps,
   updateRunLongTermThoughtsForStep,
+  updateRunNbSteps,
   updateStep,
   updateUserRunState,
   UserProfile,
@@ -248,6 +249,8 @@ function RunPage(): JSX.Element {
           steps.length !== 0 ? steps[steps.length - 1] : undefined;
         const newStep = createNextStep(currentStep);
         await addStep(runId, newStep);
+        // Update the counter in the run's document as well
+        await updateRunNbSteps(runId, newStep.n);
       } else {
         // Note: the else clause is to optimize the number of calls to Firestore.
         // If we add a new step, we will came back here anyways!

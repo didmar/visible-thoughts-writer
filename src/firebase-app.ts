@@ -115,6 +115,7 @@ export class Run {
   ltts: Record<string, Thought[]>;
   dm: string;
   players: string[];
+  nsteps: number;
   deleted: boolean;
   imported?: Timestamp;
 
@@ -130,6 +131,7 @@ export class Run {
     ltts: Record<string, Thought[]>,
     dm: string,
     players: string[],
+    nsteps: number,
     deleted: boolean,
     imported?: Timestamp
   ) {
@@ -141,6 +143,7 @@ export class Run {
     this.ltts = ltts;
     this.dm = dm;
     this.players = players;
+    this.nsteps = nsteps;
     this.deleted = deleted;
     this.imported = imported;
   }
@@ -165,6 +168,7 @@ export class Run {
       doc.ltts,
       doc.dm,
       doc.players,
+      doc.nsteps,
       doc.deleted,
       doc.imported
     );
@@ -238,6 +242,7 @@ export async function createRun(title: string, dm: string): Promise<string> {
     status: RunStatus.InProgress,
     dm,
     players: [],
+    nsteps: 1,
     ltts: {},
     deleted: false,
   }).catch(handleFirebaseError());
@@ -274,6 +279,7 @@ export async function createRunFromImport(
     title,
     dm,
     players: [],
+    nsteps: steps.length,
     ltts,
     imported: Timestamp.now(),
   }).catch(handleFirebaseError());
@@ -773,6 +779,15 @@ export async function updateRunLongTermThoughtsForStep(
   const payload = {
     [`ltts.${n}`]: stepLtts.map((ltt) => Object.assign({}, ltt)),
   };
+  await updateDoc(docRef, payload).catch(handleFirebaseError());
+}
+
+export async function updateRunNbSteps(
+  runId: string,
+  n: number
+): Promise<void> {
+  const docRef = doc(db, 'runs', runId);
+  const payload = { nsteps: n };
   await updateDoc(docRef, payload).catch(handleFirebaseError());
 }
 

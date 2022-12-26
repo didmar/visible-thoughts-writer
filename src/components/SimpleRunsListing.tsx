@@ -37,7 +37,8 @@ function SimpleRunsListing({ userId }: Props): JSX.Element {
       <ul>
         {runs.map((run) => (
           <li key={run.id}>
-            <Link to={`/runs/${run.id}`}>{run.title}</Link>
+            <Link to={`/runs/${run.id}`}>{run.title}</Link> (
+            {run.nsteps ?? '???'} steps)
           </li>
         ))}
       </ul>
