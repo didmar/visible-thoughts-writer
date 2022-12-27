@@ -4,6 +4,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import {
   Box,
   Chip,
+  CircularProgress,
   Divider,
   Fab,
   Paper,
@@ -91,9 +92,9 @@ const CustomHits = connectHits<
   { hits: Array<Hit<Doc>>; userId: string | undefined },
   Doc
 >(({ hits, userId }) => {
-  const [dmUidToName, setDMUidToName] = useState<Map<string, string>>(
-    new Map()
-  );
+  const [dmUidToName, setDMUidToName] = useState<
+    Map<string, string> | undefined
+  >(undefined);
 
   useEffect(() => {
     const dmUids = [...new Set(hits.map((hit) => hit.dm))];
@@ -101,10 +102,16 @@ const CustomHits = connectHits<
       const _dmUidToName = await getUsersUidToName(dmUids);
       setDMUidToName(_dmUidToName);
     })();
-  }, []);
+  }, [hits]);
 
   const navigate = useNavigate();
-  return (
+  return dmUidToName === undefined ? (
+    <Box
+      sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    >
+      <CircularProgress />
+    </Box>
+  ) : (
     <TableContainer component={Paper}>
       <Table aria-label="table">
         <TableHead>
