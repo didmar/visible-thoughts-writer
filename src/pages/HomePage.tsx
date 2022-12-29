@@ -4,7 +4,8 @@ import AddRunModal from '../components/AddRunModal';
 import { useAuth } from '../components/Auth';
 import Navbar from '../components/Navbar';
 import RunsListing from '../components/RunsListing';
-// import SimpleRunsListing from '../components/SimpleRunsListing';
+import SimpleRunsListing from '../components/SimpleRunsListing';
+import conf from '../conf.json';
 
 function HomePage(): JSX.Element {
   const currentUser = useAuth();
@@ -24,8 +25,11 @@ function HomePage(): JSX.Element {
             marginRight: 'auto',
           }}
         >
-          <RunsListing userId={currentUser?.uid()} />
-          {/* <SimpleRunsListing userId={currentUser?.uid()} /> */}
+          {conf.searchableRunsList ? (
+            <RunsListing userId={currentUser?.uid()} />
+          ) : (
+            <SimpleRunsListing userId={currentUser?.uid()} />
+          )}
         </Box>
         {currentUser !== null && currentUser !== undefined && <AddRunModal />}
       </>
