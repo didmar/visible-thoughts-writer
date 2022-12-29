@@ -213,7 +213,7 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
             sx={{
               mt: 1,
               display: 'flex',
-              flexDirection: 'row',
+              flexFlow: 'row wrap',
               justifyContent: 'space-between',
             }}
           >
