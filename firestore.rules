@@ -24,21 +24,26 @@ service cloud.firestore {
         let data = get(/databases/$(database)/documents/runs/$(runId)).data;
         return request.auth.uid == data.dm || request.auth.uid in data.players
       }
+      
+      function isUserReviewer() {
+        let data = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+        return data.isReviewer
+      }
     
       match /steps/{stepId} {
         // Anyone can see the steps
         allow read: if true;
-        // Only the run's DM can create steps
-        allow create: if request.auth != null && isRunDM();
-        // Only the run's DM or players can update steps
-        allow update: if request.auth != null && isRunDMOrPlayer();
+        // Only the run's DM can create steps, or a reviewer
+        allow create: if request.auth != null && (isRunDM() || isUserReviewer());
+        // Only the run's DM or players can update steps, or a reviewer
+        allow update: if request.auth != null && (isRunDMOrPlayer() || isUserReviewer());
         // Nobody can delete a step
         allow delete: if false;
       }
 
       match /invites/{inviteId} {
-        // Only the run's DM can interact with invitations
-        allow read, write: if request.auth != null && isRunDM();
+        // Only the run's DM or a reviewer can interact with invitations
+        allow read, write: if request.auth != null && (isRunDM() || isUserReviewer());
       }
     }
 
@@ -50,6 +55,11 @@ service cloud.firestore {
                     && request.resource.data.id == request.auth.uid;
       // Nobody can delete a user profile
       allow delete: if false;
+      
+      function isUserReviewer() {
+        let data = get(/databases/$(database)/documents/users/$(userId)).data;
+        return data.isReviewer
+      }
 
       match /runs/{runId} {
         function isRunDMOrPlayer() {
@@ -63,14 +73,24 @@ service cloud.firestore {
         }
 
         // Users can read/write their own run states,
-        // provided that they are either DM or player on that run
+        // provided that they are either DM or player on that run,
+        // or have the reviewer status
         allow create, read, write: if request.auth != null
-                                    && request.auth.uid == userId
-                                    && isRunDMOrPlayer();
+                                    && (
+                                      (
+                                        request.auth.uid == userId
+                                        && isRunDMOrPlayer()
+                                      )
+                                      || isUserReviewer()
+                                    );
         // Users can delete their own run states,
-        // or that run's DM can do it
+        // or that run's DM or a reviewer can do it
         allow delete: if request.auth != null
-                        && (request.auth.uid == userId || isRunDM())
+                        && (
+                          request.auth.uid == userId
+                          || isRunDM()
+                          || isUserReviewer()
+                        )
       }
     }
   }

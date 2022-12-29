@@ -28,6 +28,7 @@ const style = {
   left: '50%',
   transform: 'translate(-50%, -50%)',
   width: '75%',
+  maxWidth: '800px',
   bgcolor: 'background.paper',
   border: '2px solid #000',
   boxShadow: 24,
@@ -82,8 +83,14 @@ function UserProfileModal(): JSX.Element {
   const nameEditForm = (
     <Box sx={{ mt: 2 }}>
       <form onSubmit={onNameEdit}>
-        <FormControl>
+        <FormControl
+          sx={{
+            display: 'flex',
+            flexFlow: 'row wrap',
+          }}
+        >
           <TextField
+            sx={{ flexGrow: 1 }}
             error={newName === ''}
             id="name-input"
             label="Screen name"
@@ -96,16 +103,15 @@ function UserProfileModal(): JSX.Element {
             }}
             inputProps={{ maxLength: UserProfile.maxNameLength }}
           />
+          <Button
+            sx={{ ml: 2, width: '100px' }}
+            type="submit"
+            variant="contained"
+            disabled={newName === '' || newName === userProfile.name}
+          >
+            Change
+          </Button>
         </FormControl>
-
-        <Button
-          sx={{ ml: 2 }}
-          type="submit"
-          variant="contained"
-          disabled={newName === '' || newName === userProfile.name}
-        >
-          Change
-        </Button>
       </form>
     </Box>
   );
@@ -199,6 +205,9 @@ function UserProfileModal(): JSX.Element {
               {soundNotifSwitch}
               {emailNotifSwitch}
             </FormGroup>
+            {userProfile.isReviewer && (
+              <Typography sx={{ mt: 2 }}>🔍 You are a reviewer!</Typography>
+            )}
           </Box>
         </Box>
       </Modal>

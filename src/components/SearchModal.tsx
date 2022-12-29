@@ -124,10 +124,10 @@ const CustomHighlight = connectHighlight(Highlight);
 
 interface Props {
   runId: string;
-  isDM: boolean;
+  visibleThoughts: boolean;
 }
 
-function SearchModal({ runId, isDM }: Props): JSX.Element {
+function SearchModal({ runId, visibleThoughts }: Props): JSX.Element {
   const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
@@ -142,7 +142,7 @@ function SearchModal({ runId, isDM }: Props): JSX.Element {
     console.log('SearchModal > useEffect []');
   }, []);
 
-  const attributesToSearch = isDM
+  const attributesToSearch = visibleThoughts
     ? ['initT', 'ppt', 'ppptT', 'act', 'pactT', 'out']
     : ['ppt', 'act', 'out'];
 

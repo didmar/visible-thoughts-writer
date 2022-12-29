@@ -818,6 +818,7 @@ export async function getInvites(runId: string): Promise<Invite[]> {
 export class UserProfile {
   id: string; // corresponds to the uid for firebase authentication
   name: string; // the user's screen name
+  isReviewer: boolean; // whether the user is a reviewer, or not
   canDM: boolean; // whether the user can be a DM for a run, or not
   soundNotif: boolean; // whether the user wants to receive sound notifications, or not
   emailNotif: boolean; // whether the user wants to receive email notifications, or not
@@ -825,6 +826,7 @@ export class UserProfile {
   constructor(
     id: string,
     name: string,
+    isReviewer?: boolean,
     canDM?: boolean,
     soundNotif?: boolean,
     emailNotif?: boolean
@@ -832,6 +834,7 @@ export class UserProfile {
     if (name.length > UserProfile.maxNameLength) throw Error('Name too long');
     this.id = id;
     this.name = name;
+    this.isReviewer = isReviewer ?? false;
     this.canDM = canDM ?? true;
     this.soundNotif = soundNotif ?? false;
     this.emailNotif = emailNotif ?? false;
@@ -842,6 +845,7 @@ export class UserProfile {
     return new UserProfile(
       data.id,
       data.name,
+      data.isReviewer,
       data.canDM,
       data.soundNotif,
       data.emailNotif

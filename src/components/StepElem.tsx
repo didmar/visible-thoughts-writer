@@ -12,6 +12,8 @@ import CopyToClipboard from './CopyToClipboard';
 interface StepElemProps {
   step: Step;
   role: Role | null | undefined;
+  userIsReviewer: boolean;
+  runInProgress: boolean;
   onSubmitted?: (n: number, content: SectionContent, section: Section) => void;
   title?: string;
   prevStep?: Step;
@@ -49,6 +51,8 @@ const itemProps = {
 const StepElem: React.FunctionComponent<StepElemProps> = ({
   step,
   role,
+  userIsReviewer,
+  runInProgress,
   onSubmitted,
   title,
   prevStep,
@@ -85,11 +89,20 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
       <></>
     );
 
+  /**
+   * Thought sections may be visible to the user if:
+   * - The user is a DM for this run
+   * - The run is not in progress (completed or archived)
+   * - The user has the reviewer status
+   */
+  const visibleThoughts = isDM(role) || !runInProgress || userIsReviewer;
+
   return (
     <Box className="StepsPane" sx={{ mx: 0.5, mt: 0.5, mb: 0.5 }} key={42}>
       {titleElem}
       <Stack key={1} spacing={2}>
-        {step?.initT !== undefined && isDM(role) && (
+        {/* Display initial thoughts, only if the user may see it */}
+        {step?.initT !== undefined && visibleThoughts && (
           <Paper key={0} {...itemProps}>
             <Composer
               initMode={ComposerMode.VIEW}
@@ -97,12 +110,16 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               section={Section.InitT}
               n={step.n}
               editable={
-                onSubmitted !== undefined && isDM(role) && !previousOutcomeYBR
+                onSubmitted !== undefined &&
+                (isDM(role) || userIsReviewer) &&
+                !previousOutcomeYBR
               }
               onSubmitted={onSubmitted ?? noop}
             />
           </Paper>
         )}
+
+        {/* Display the prompt */}
         {step?.ppt !== undefined && (
           <Paper key={1} {...itemProps}>
             <Composer
@@ -111,13 +128,17 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               section={Section.Ppt}
               n={step.n}
               editable={
-                onSubmitted !== undefined && isDM(role) && !previousOutcomeYBR
+                onSubmitted !== undefined &&
+                (isDM(role) || userIsReviewer) &&
+                !previousOutcomeYBR
               }
               onSubmitted={onSubmitted ?? noop}
             />
           </Paper>
         )}
-        {step?.ppptT !== undefined && isDM(role) && (
+
+        {/* Display the post-prompt thoughts, only if the user may see it */}
+        {step?.ppptT !== undefined && visibleThoughts && (
           <Paper key={2} {...itemProps}>
             <Composer
               initMode={ComposerMode.VIEW}
@@ -125,12 +146,16 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               section={Section.PpptT}
               n={step.n}
               editable={
-                onSubmitted !== undefined && isDM(role) && !previousOutcomeYBR
+                onSubmitted !== undefined &&
+                (isDM(role) || userIsReviewer) &&
+                !previousOutcomeYBR
               }
               onSubmitted={onSubmitted ?? noop}
             />
           </Paper>
         )}
+
+        {/* Display the action */}
         {step?.act !== undefined && (
           <Paper key={3} {...itemProps}>
             <Composer
@@ -140,25 +165,31 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               section={Section.Act}
               editable={
                 onSubmitted !== undefined &&
-                role === Role.Both &&
+                (role === Role.Both || userIsReviewer) &&
                 step.act !== null
               }
               onSubmitted={onSubmitted ?? noop}
             />
           </Paper>
         )}
-        {step?.pactT !== undefined && isDM(role) && (
+
+        {/* Display the post-action thoughts, only if the user may see it */}
+        {step?.pactT !== undefined && visibleThoughts && (
           <Paper key={4} {...itemProps}>
             <Composer
               initMode={ComposerMode.VIEW}
               initValue={step.pactT}
               section={Section.PactT}
               n={step.n}
-              editable={onSubmitted !== undefined && isDM(role)}
+              editable={
+                onSubmitted !== undefined && (isDM(role) || userIsReviewer)
+              }
               onSubmitted={onSubmitted ?? noop}
             />
           </Paper>
         )}
+
+        {/* Display the outcome */}
         {step?.out !== undefined && (
           <Paper key={5} {...itemProps}>
             <Composer
@@ -166,7 +197,9 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               initValue={step.out}
               section={Section.Out}
               n={step.n}
-              editable={onSubmitted !== undefined && isDM(role)}
+              editable={
+                onSubmitted !== undefined && (isDM(role) || userIsReviewer)
+              }
               onSubmitted={onSubmitted ?? noop}
               actionHasYBRTag={step.act?.ybr ?? false}
             />

@@ -22,6 +22,7 @@ interface Props {
 const Navbar = ({ run }: Props): JSX.Element => {
   const [role, setRole] = useState<Role | null | undefined>(undefined);
   const [dmName, setDMName] = useState<string | undefined>(undefined);
+  const [userIsReviewer, setUserIsReviewer] = useState<boolean>(false);
 
   const currentUser = useAuth();
 
@@ -34,7 +35,12 @@ const Navbar = ({ run }: Props): JSX.Element => {
       if (run !== undefined && uid !== undefined) {
         const role = await getUserRoleInRun(uid, run.id);
         setRole(role);
-        setDMName((await getUserProfile(run.dm))?.name);
+        const dmUserProfile = await getUserProfile(run.dm);
+        setDMName(dmUserProfile?.name);
+        const userProfile = isDM(role)
+          ? dmUserProfile
+          : await getUserProfile(uid);
+        setUserIsReviewer(userProfile?.isReviewer ?? false);
       } else {
         setRole(null); // Guest
       }
@@ -80,7 +86,7 @@ const Navbar = ({ run }: Props): JSX.Element => {
 
   const titleElement = run === undefined ? homePageTitle : runPageTitle;
 
-  const runSettings = run !== undefined && isDM(role) && (
+  const runSettings = run !== undefined && (isDM(role) || userIsReviewer) && (
     <RunSettingsModal initRun={run} initOpen={false} />
   );
 

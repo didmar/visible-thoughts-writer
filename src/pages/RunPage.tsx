@@ -127,9 +127,6 @@ function RunPage(): JSX.Element {
       // // The listener will not fire for the first N - 1 steps, so we need to
       // // fetch them manually if they get edited!
       // setMonitorFromStepN(n);
-
-      // Create listener for user profile change (for sound notifs)
-      await onUserProfileChanged(runId, setUserProfile);
     })();
   }, []);
 
@@ -176,11 +173,15 @@ function RunPage(): JSX.Element {
     console.log('RunPage > useEffect [currentUser]: ', currentUser);
 
     void (async function () {
-      // Init role of user for this particular run
       const uid = currentUser?.uid();
-      if (runId !== undefined && uid !== undefined) {
-        const role = await getUserRoleInRun(uid, runId);
-        setRole(role);
+      if (uid !== undefined) {
+        if (runId !== undefined) {
+          // Init role of user for this particular run
+          const role = await getUserRoleInRun(uid, runId);
+          setRole(role);
+        }
+        // Create listener for user profile change (for sound notifs)
+        await onUserProfileChanged(uid, setUserProfile);
       } else {
         setRole(null); // Guest
       }
@@ -278,6 +279,10 @@ function RunPage(): JSX.Element {
       }
     })();
   }, [steps]);
+
+  const userIsReviewer = (): boolean => {
+    return userProfile?.isReviewer ?? false;
+  };
 
   const onSubmitted = (
     n: number,
@@ -465,7 +470,7 @@ function RunPage(): JSX.Element {
     if (role === undefined || steps === undefined || steps.length === 0) {
       return <CircularProgress />;
     }
-    if (role === null) {
+    if (role === null && !userIsReviewer()) {
       return <>Only designated users can participate</>;
     }
     if (run?.status === RunStatus.Archived) {
@@ -478,12 +483,15 @@ function RunPage(): JSX.Element {
     }
 
     // Is it our time to write?
-    if (section === Section.Act) {
-      if (!isPlayer(role)) {
-        return <>Wait for the player to write their part...</>;
+    // First check if we are a reviewer, in which case we can write at any time
+    if (!userIsReviewer()) {
+      if (section === Section.Act) {
+        if (!isPlayer(role)) {
+          return <>Wait for the player to write their part...</>;
+        }
+      } else if (!isDM(role)) {
+        return <>Wait for the DM to write their part...</>;
       }
-    } else if (!isDM(role)) {
-      return <>Wait for the DM to write their part...</>;
     }
 
     const step = steps[steps.length - 1];
@@ -527,6 +535,12 @@ function RunPage(): JSX.Element {
   if (run === undefined) return <CircularProgress />;
   if (run === null) return <NotFoundPage />;
 
+  /**
+   * JSX elements for each step.
+   * We "zip" each step with its previous step, so that we can pass the previous step to the StepElem
+   * (necessary for some of the logic).
+   * The steps are reversed because the most recent step is at the bottom.
+   */
   const stepElems = zipWithPrev(steps ?? [])
     .reverse()
     .map(([step, prevStep]) => (
@@ -534,6 +548,8 @@ function RunPage(): JSX.Element {
         key={step.n}
         step={step}
         role={role}
+        userIsReviewer={userIsReviewer()}
+        runInProgress={run.status === RunStatus.InProgress}
         onSubmitted={
           run?.status !== RunStatus.Archived ? onSubmitted : undefined
         }
@@ -580,7 +596,12 @@ function RunPage(): JSX.Element {
                 }}
               >
                 <GoToModal />
-                {<SearchModal runId={run.id} isDM={isDM(role)} />}
+                {
+                  <SearchModal
+                    runId={run.id}
+                    visibleThoughts={isDM(role) || userIsReviewer()}
+                  />
+                }
                 <Paper
                   sx={{
                     p: panePadding,
@@ -641,8 +662,8 @@ function RunPage(): JSX.Element {
             </Box>
           </Allotment.Pane>
 
-          {/* Right-hand side (for DM only) */}
-          {isDM(role) && (
+          {/* Right-hand side (for DM or reviewer only) */}
+          {(isDM(role) || userIsReviewer()) && (
             <Allotment.Pane>
               <Box
                 sx={{ display: 'flex', flexDirection: 'column', gap: 1, m: 1 }}
@@ -673,7 +694,13 @@ function RunPage(): JSX.Element {
                   <Typography variant="h6">{`${X} steps ago...`}</Typography>
                   <Box sx={{ overflow: 'auto' }}>
                     {xStepAgo !== undefined && (
-                      <StepElem step={xStepAgo} role={role} title={''} />
+                      <StepElem
+                        step={xStepAgo}
+                        role={role}
+                        userIsReviewer={userIsReviewer()}
+                        runInProgress={run.status === RunStatus.InProgress}
+                        title={''}
+                      />
                     )}
                   </Box>
                 </Paper>
