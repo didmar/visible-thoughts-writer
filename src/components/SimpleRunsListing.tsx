@@ -1,7 +1,12 @@
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getUsersUidToName, onRunsCreated, Run } from '../firebase-app';
+import {
+  getUsersUidToName,
+  isRunParticipant,
+  onRunsCreated,
+  Run,
+} from '../firebase-app';
 
 interface Props {
   userId: string | undefined;
@@ -43,14 +48,23 @@ function SimpleRunsListing({ userId }: Props): JSX.Element {
     }
   }, [newRuns]);
 
+  const renderRunListItem = (run: Run): JSX.Element => (
+    <>
+      {run.priv && `🔒 `}
+      {!run.priv || (userId !== undefined && isRunParticipant(userId, run)) ? (
+        <Link to={`/runs/${run.id}`}>{run.title}</Link>
+      ) : (
+        run.title
+      )}{' '}
+      ({run.nsteps ?? '???'} steps) by {dmUidToName.get(run.dm) ?? '???'}
+    </>
+  );
+
   const renderRunsList = (runs: Run[]): JSX.Element =>
     runs.length > 0 ? (
       <ul>
         {runs.map((run) => (
-          <li key={run.id}>
-            <Link to={`/runs/${run.id}`}>{run.title}</Link> (
-            {run.nsteps ?? '???'} steps) by {dmUidToName.get(run.dm) ?? '???'}
-          </li>
+          <li key={run.id}>{renderRunListItem(run)}</li>
         ))}
       </ul>
     ) : (
@@ -62,7 +76,7 @@ function SimpleRunsListing({ userId }: Props): JSX.Element {
   }
   const yourRuns =
     userId !== undefined
-      ? runs.filter((run) => run.dm === userId || run.players.includes(userId))
+      ? runs.filter((run) => isRunParticipant(userId, run))
       : [];
   const otherRuns = runs.filter(
     (run) =>

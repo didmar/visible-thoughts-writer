@@ -35,22 +35,26 @@ import {
   SortBy,
   ToggleRefinement,
 } from 'react-instantsearch-dom';
-import { useNavigate } from 'react-router-dom';
+import { NavigateFunction, useNavigate } from 'react-router-dom';
 import TagsInput from 'react-tagsinput';
 
 import conf from '../conf.json';
 import {
+  getUserProfile,
   getUsersUidToName,
+  isRunParticipant,
+  Run,
   RunStatus,
   runStatusTooltip,
+  UserProfile,
 } from '../firebase-app';
 import '../styles.css';
 import { noop } from '../utils';
 
 const searchClient = algoliasearch(conf.algoliaAppId, conf.algoliaAPIKeyRuns);
 
-// Format of a document in the Algolia index (excluding objectID)
-interface Doc {
+// Format of a document in the Algolia index
+interface IndexedDoc {
   objectID: string;
   title: string;
   dm: string;
@@ -58,10 +62,28 @@ interface Doc {
   nsteps: number;
   status: RunStatus;
   tags: string[];
+  priv: boolean;
+  deleted: boolean;
 }
 
-const isUserAParticipant = (hit: Doc, userId: string): boolean => {
-  return hit.dm === userId || hit.players.includes(userId);
+/**
+ * Transforms the indexed Algolia document into a Run object, for convenience.
+ */
+const indexedDocToRun = (doc: IndexedDoc): Run => {
+  return new Run(
+    doc.objectID,
+    doc.title,
+    '',
+    doc.tags,
+    doc.status,
+    {},
+    doc.dm,
+    doc.players,
+    doc.nsteps,
+    doc.priv ?? false, // Legacy runs are not private, default is public
+    doc.deleted,
+    undefined
+  );
 };
 
 const createStatusChip = (status: RunStatus): JSX.Element => {
@@ -88,24 +110,94 @@ const createStatusChip = (status: RunStatus): JSX.Element => {
   }
 };
 
+const renderRunTableRow = (
+  run: Run,
+  dmName: string | undefined,
+  userProfile: UserProfile | undefined,
+  navigate: NavigateFunction
+): JSX.Element => {
+  const isParticipant =
+    userProfile !== undefined && isRunParticipant(userProfile.id, run);
+  const hasAccess =
+    !run.priv || isParticipant || (userProfile?.isReviewer ?? false);
+  return (
+    <TableRow
+      key={run.id}
+      sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+    >
+      <TableCell>
+        <Tooltip title={'Go to this run'}>
+          <Fab
+            size="small"
+            color="primary"
+            aria-label="go to run"
+            onClick={() => {
+              if (hasAccess) navigate(`/runs/${run.id}`);
+            }}
+            disabled={!hasAccess}
+          >
+            <NavigationIcon />
+          </Fab>
+        </Tooltip>
+      </TableCell>
+      <TableCell style={{ padding: 0 }}>
+        {isParticipant && (
+          <Tooltip title={'You are a participant'}>
+            <PersonIcon />
+          </Tooltip>
+        )}
+      </TableCell>
+
+      <TableCell component="th" scope="row" style={{ maxWidth: '500px' }}>
+        {run.priv && '🔒 '}
+        {run.title}
+      </TableCell>
+      <TableCell>{dmName ?? '-'}</TableCell>
+      <TableCell align="right">{run.nsteps}</TableCell>
+      <TableCell>{createStatusChip(run.status)}</TableCell>
+      <TableCell>
+        {/* Reuse TagsInput to display the tags, disabling the input */}
+        {run.tags !== undefined && (
+          <TagsInput
+            className="react-tagsinput--view"
+            value={run.tags}
+            disabled={true}
+            onChange={noop}
+            renderLayout={(tagComponents, _) => <span>{tagComponents}</span>}
+          />
+        )}
+      </TableCell>
+    </TableRow>
+  );
+};
+
 const CustomHits = connectHits<
-  { hits: Array<Hit<Doc>>; userId: string | undefined },
-  Doc
+  { hits: Array<Hit<IndexedDoc>>; userId: string | undefined },
+  IndexedDoc
 >(({ hits, userId }) => {
+  const [runs, setRuns] = useState<Run[] | undefined>(undefined);
   const [dmUidToName, setDMUidToName] = useState<
     Map<string, string> | undefined
   >(undefined);
+  const [userProfile, setUserProfile] = useState<UserProfile | undefined>(
+    undefined
+  );
 
   useEffect(() => {
-    const dmUids = [...new Set(hits.map((hit) => hit.dm))];
+    const _runs = hits.map((hit) => indexedDocToRun(hit));
+    setRuns(_runs);
+    const dmUids = [...new Set(_runs.map((run) => run.dm))];
     void (async function () {
       const _dmUidToName = await getUsersUidToName(dmUids);
       setDMUidToName(_dmUidToName);
+      const _userProfile =
+        userId !== undefined ? await getUserProfile(userId) : undefined;
+      setUserProfile(_userProfile);
     })();
   }, [hits]);
 
   const navigate = useNavigate();
-  return dmUidToName === undefined ? (
+  return dmUidToName === undefined || runs === undefined ? (
     <Box
       sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >
@@ -126,59 +218,14 @@ const CustomHits = connectHits<
           </TableRow>
         </TableHead>
         <TableBody>
-          {hits.map((hit: Doc) => (
-            <TableRow
-              key={hit.objectID}
-              sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-            >
-              <TableCell>
-                <Tooltip title={'Go to this run'}>
-                  <Fab
-                    size="small"
-                    color="primary"
-                    aria-label="go to run"
-                    onClick={() => {
-                      navigate(`/runs/${hit.objectID}`);
-                    }}
-                  >
-                    <NavigationIcon />
-                  </Fab>
-                </Tooltip>
-              </TableCell>
-              <TableCell style={{ padding: 0 }}>
-                {userId !== undefined && isUserAParticipant(hit, userId) && (
-                  <Tooltip title={'You are a participant'}>
-                    <PersonIcon />
-                  </Tooltip>
-                )}
-              </TableCell>
-
-              <TableCell
-                component="th"
-                scope="row"
-                style={{ maxWidth: '500px' }}
-              >
-                {hit.title}
-              </TableCell>
-              <TableCell>{dmUidToName.get(hit.dm) ?? '-'}</TableCell>
-              <TableCell align="right">{hit.nsteps}</TableCell>
-              <TableCell>{createStatusChip(hit.status)}</TableCell>
-              <TableCell>
-                {/* Reuse TagsInput to display the tags, disabling the input */}
-                {hit.tags !== undefined && (
-                  <TagsInput
-                    className="react-tagsinput--view"
-                    value={hit.tags}
-                    disabled={true}
-                    onChange={noop}
-                    renderLayout={(tagComponents, _) => (
-                      <span>{tagComponents}</span>
-                    )}
-                  />
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
+          {runs.map((run) =>
+            renderRunTableRow(
+              run,
+              dmUidToName.get(run.dm),
+              userProfile,
+              navigate
+            )
+          )}
         </TableBody>
       </Table>
     </TableContainer>

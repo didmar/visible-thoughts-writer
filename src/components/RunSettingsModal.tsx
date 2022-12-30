@@ -11,12 +11,14 @@ import {
   Button,
   Divider,
   FormControl,
+  FormControlLabel,
   IconButton,
   List,
   ListItem,
   ListItemAvatar,
   ListItemText,
   Modal,
+  Switch,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -89,6 +91,7 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
   const [newStatus, setNewStatus] = useState<RunStatus>(
     run.status ?? RunStatus.InProgress
   );
+  const [newPriv, setNewPriv] = useState<boolean>(run.priv ?? false);
   const [edited, setEdited] = useState(false);
 
   const [players, setPlayers] = useState<UserProfile[]>([]);
@@ -144,6 +147,7 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
       if (newDesc !== run.desc) await run.updateDesc(newDesc);
       if (newTags !== run.tags) await run.updateTags(newTags);
       if (newStatus !== run.status) await run.updateStatus(newStatus);
+      if (newPriv !== run.priv) await run.updatePriv(newPriv);
     })();
   };
 
@@ -209,6 +213,7 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
             }}
           />
 
+          {/* Put status toggle, visibility toggle and save/reset buttons on the same row */}
           <Box
             sx={{
               mt: 1,
@@ -236,6 +241,20 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
                 </ToggleButton>
               ))}
             </ToggleButtonGroup>
+
+            <FormControlLabel
+              sx={{ flex: 0 }}
+              control={
+                <Switch
+                  checked={newPriv}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    setNewPriv(event.target.checked);
+                    setEdited(true);
+                  }}
+                />
+              }
+              label={'Private?'}
+            />
 
             <Box
               sx={{

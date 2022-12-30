@@ -116,6 +116,7 @@ export class Run {
   dm: string;
   players: string[];
   nsteps: number;
+  priv: boolean;
   deleted: boolean;
   imported?: Timestamp;
 
@@ -132,6 +133,7 @@ export class Run {
     dm: string,
     players: string[],
     nsteps: number,
+    priv: boolean,
     deleted: boolean,
     imported?: Timestamp
   ) {
@@ -144,6 +146,7 @@ export class Run {
     this.dm = dm;
     this.players = players;
     this.nsteps = nsteps;
+    this.priv = priv;
     this.deleted = deleted;
     this.imported = imported;
   }
@@ -169,6 +172,7 @@ export class Run {
       doc.dm,
       doc.players,
       doc.nsteps,
+      doc.priv ?? false, // Legacy runs are not private, default is public
       doc.deleted,
       doc.imported
     );
@@ -198,6 +202,12 @@ export class Run {
     const runRef = doc(db, 'runs', this.id);
     await updateDoc(runRef, { status: newStatus }).catch(handleFirebaseError());
     this.status = newStatus;
+  }
+
+  async updatePriv(newPriv: boolean): Promise<void> {
+    const runRef = doc(db, 'runs', this.id);
+    await updateDoc(runRef, { priv: newPriv }).catch(handleFirebaseError());
+    this.priv = newPriv;
   }
 
   static isValidTitle(title: string | undefined): boolean {
@@ -244,6 +254,7 @@ export async function createRun(title: string, dm: string): Promise<string> {
     players: [],
     nsteps: 1,
     ltts: {},
+    priv: false,
     deleted: false,
   }).catch(handleFirebaseError());
   const runId = doc.id;
@@ -281,6 +292,8 @@ export async function createRunFromImport(
     players: [],
     nsteps: steps.length,
     ltts,
+    priv: false,
+    deleted: false,
     imported: Timestamp.now(),
   }).catch(handleFirebaseError());
   const runId = runDoc.id;
@@ -366,18 +379,26 @@ export const isOurTurnToWrite = (
   );
 };
 
-export async function getUserRoleInRun(
-  uid: string,
-  runId: string
-): Promise<Role | null> {
-  const run = await getRun(runId);
-  if (run === undefined) return null;
+function _getUserRoleInRun(uid: string, run: Run): Role | null {
   const isDM = run.dm === uid;
   const isPlayer = run.players.includes(uid);
   if (isDM && isPlayer) return Role.Both;
   if (isDM) return Role.DM;
   if (isPlayer) return Role.Player;
   return null;
+}
+
+export async function getUserRoleInRun(
+  uid: string,
+  runId: string
+): Promise<Role | null> {
+  const run = await getRun(runId);
+  if (run === undefined) return null;
+  return _getUserRoleInRun(uid, run);
+}
+
+export function isRunParticipant(uid: string, run: Run): boolean {
+  return _getUserRoleInRun(uid, run) !== null;
 }
 
 export async function removePlayerFromRun(
