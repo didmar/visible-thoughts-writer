@@ -255,6 +255,7 @@ export async function createRun(title: string, admin: string): Promise<string> {
     status: RunStatus.InProgress,
     admin,
     dms: [admin], // Admin is always the initial DM
+    dm: admin, // Legacy field, remove once all runs are migrated
     players: [],
     nsteps: 1,
     ltts: {},
@@ -950,18 +951,13 @@ export async function onUserProfileChanged(
 // Document type for the runs sub-collection of the users collection.
 // Keeps track of what was already notified to the user, and what their role is.
 export class UserRunState {
-  roles: Set<Role>; // roles assumed by the user for this run (e.g., admin, DM and/or player)
+  roles: Role[]; // roles assumed by the user for this run (e.g., admin, DM and/or player)
   lastStepNotified: number; // last step for which the user has been notified that it was their turn
   // (when ready for the action section for the player, or the post-action thoughts section for the DM).
 
   constructor(roles: Set<Role>, lastStepNotified?: number) {
-    this.roles = roles;
+    this.roles = [...roles];
     this.lastStepNotified = lastStepNotified ?? 0;
-  }
-
-  static fromDocData(data?: DocumentData): UserRunState | undefined {
-    if (data === undefined) return undefined;
-    return new UserRunState(data.roles, data.lastStepNotified);
   }
 }
 
@@ -985,7 +981,7 @@ export async function updateUserRunState(
 ): Promise<void> {
   if (roles === null || roles === undefined) return;
   const docRef = doc(db, 'users', userId, 'runs', runId);
-  const update: Partial<UserRunState> = { roles, lastStepNotified };
+  const update: Partial<UserRunState> = { roles: [...roles], lastStepNotified };
   await setDoc(docRef, update, { merge: true }).catch(handleFirebaseError());
 }
 
