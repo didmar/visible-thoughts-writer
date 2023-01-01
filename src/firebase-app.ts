@@ -2,7 +2,6 @@ import { FirebaseError, initializeApp } from 'firebase/app';
 // import { getAnalytics } from "firebase/analytics";
 import {
   addDoc,
-  arrayRemove,
   collection,
   connectFirestoreEmulator,
   deleteDoc,
@@ -35,7 +34,7 @@ import {
 } from 'firebase/functions';
 import conf from './conf.json';
 import * as firebaseConfig from './firebase.creds.json';
-import { withoutUndefinedValues } from './utils';
+import { orderedArrayWithoutDupes, withoutUndefinedValues } from './utils';
 
 const app = initializeApp(firebaseConfig);
 
@@ -113,7 +112,8 @@ export class Run {
   tags: string[];
   status: RunStatus;
   ltts: Record<string, Thought[]>;
-  dm: string;
+  admin: string;
+  dms: string[];
   players: string[];
   nsteps: number;
   priv: boolean;
@@ -130,7 +130,8 @@ export class Run {
     tags: string[],
     status: RunStatus,
     ltts: Record<string, Thought[]>,
-    dm: string,
+    admin: string,
+    dms: string[],
     players: string[],
     nsteps: number,
     priv: boolean,
@@ -143,7 +144,8 @@ export class Run {
     this.tags = tags;
     this.status = status;
     this.ltts = ltts;
-    this.dm = dm;
+    this.admin = admin;
+    this.dms = dms;
     this.players = players;
     this.nsteps = nsteps;
     this.priv = priv;
@@ -169,7 +171,8 @@ export class Run {
       doc.tags,
       doc.status,
       doc.ltts,
-      doc.dm,
+      doc.admin,
+      doc.dms,
       doc.players,
       doc.nsteps,
       doc.priv ?? false, // Legacy runs are not private, default is public
@@ -244,13 +247,14 @@ export async function getRun(runId: string): Promise<Run | undefined> {
   return data !== undefined ? Run.fromDocData(runId, data) : undefined;
 }
 
-export async function createRun(title: string, dm: string): Promise<string> {
+export async function createRun(title: string, admin: string): Promise<string> {
   const doc = await addDoc(runsCol, {
     title,
     desc: '',
     tags: [],
     status: RunStatus.InProgress,
-    dm,
+    admin,
+    dms: [admin], // Admin is always the initial DM
     players: [],
     nsteps: 1,
     ltts: {},
@@ -263,8 +267,8 @@ export async function createRun(title: string, dm: string): Promise<string> {
   const firstStep = createNextStep(undefined);
   await addStep(runId, firstStep);
 
-  // Create a UserRunState for this run in the DM's profile
-  await createUserRunState(dm, runId, Role.DM);
+  // Create a UserRunState for this run in the Admin's profile
+  await createUserRunState(admin, runId, new Set([Role.Admin, Role.DM]));
 
   return runId;
 }
@@ -319,8 +323,8 @@ export async function createRunFromImport(
     throw error;
   }
 
-  // Create a UserRunState for this run in the DM's profile
-  await createUserRunState(dm, runId, Role.DM);
+  // Create a UserRunState for this run in the Admin's profile
+  await createUserRunState(dm, runId, new Set([Role.Admin, Role.DM]));
 
   return runId;
 }
@@ -347,7 +351,9 @@ export function onRunsCreated(callback: (newRuns: Run[]) => void): void {
 
 export async function getRunUserProfiles(run: Run): Promise<UserProfile[]> {
   const profiles = await Promise.all(
-    [run.dm, ...run.players].map(async (uid) => await getUserProfile(uid))
+    orderedArrayWithoutDupes([run.admin, ...run.dms, ...run.players]).map(
+      async (uid) => await getUserProfile(uid)
+    )
   );
   return profiles.filter((p) => p !== undefined) as UserProfile[];
 }
@@ -355,65 +361,54 @@ export async function getRunUserProfiles(run: Run): Promise<UserProfile[]> {
 export enum Role {
   Player = 'player',
   DM = 'dm',
-  Both = 'both',
+  Admin = 'admin',
 }
 
-export function isDM(role: Role | null | undefined): boolean {
-  return role === Role.DM || role === Role.Both;
+export function isAdmin(roles: Set<Role> | null | undefined): boolean {
+  return roles?.has(Role.Admin) ?? false;
 }
 
-export function isPlayer(role: Role | null | undefined): boolean {
-  return role === Role.Player || role === Role.Both;
+export function isDM(roles: Set<Role> | null | undefined): boolean {
+  return roles?.has(Role.DM) ?? false;
+}
+
+export function isPlayer(roles: Set<Role> | null | undefined): boolean {
+  return roles?.has(Role.Player) ?? false;
 }
 
 export const isOurTurnToWrite = (
-  role: Role | null | undefined,
+  roles: Set<Role> | null | undefined,
   lastStep: Step | undefined
 ): boolean => {
   const nextSection = getNextSectionForStep(lastStep);
   return (
-    role !== undefined &&
-    role !== null &&
-    ((nextSection === Section.Act && isPlayer(role)) ||
-      (nextSection === Section.PactT && isDM(role)))
+    roles !== undefined &&
+    roles !== null &&
+    ((nextSection === Section.Act && isPlayer(roles)) ||
+      (nextSection === Section.PactT && isDM(roles)))
   );
 };
 
-function _getUserRoleInRun(uid: string, run: Run): Role | null {
-  const isDM = run.dm === uid;
-  const isPlayer = run.players.includes(uid);
-  if (isDM && isPlayer) return Role.Both;
-  if (isDM) return Role.DM;
-  if (isPlayer) return Role.Player;
-  return null;
-}
-
-export async function getUserRoleInRun(
-  uid: string,
-  runId: string
-): Promise<Role | null> {
-  const run = await getRun(runId);
-  if (run === undefined) return null;
-  return _getUserRoleInRun(uid, run);
+export function getUserRolesInRun(uid: string, run: Run): Set<Role> {
+  const roles: Set<Role> = new Set();
+  if (run.admin === uid) roles.add(Role.Admin);
+  if (run.dms.includes(uid)) roles.add(Role.DM);
+  if (run.players.includes(uid)) roles.add(Role.Player);
+  return roles;
 }
 
 export function isRunParticipant(uid: string, run: Run): boolean {
-  return _getUserRoleInRun(uid, run) !== null;
+  const roles = getUserRolesInRun(uid, run);
+  return roles.size > 0;
 }
 
-export async function removePlayerFromRun(
+export async function updateRunParticipants(
   runId: string,
-  uid: string
+  dms: string[],
+  players: string[]
 ): Promise<void> {
-  // Delete the player from the run
-  await updateDoc(doc(db, `runs/${runId}`), {
-    players: arrayRemove(uid),
-  }).catch(handleFirebaseError());
-
-  // Also delete the UserRunState for this run in the player's profile
-  await deleteDoc(doc(db, 'users', uid, 'runs', runId)).catch(
-    handleFirebaseError()
-  );
+  const runDoc = doc(db, 'runs', runId);
+  await updateDoc(runDoc, { dms, players }).catch(handleFirebaseError());
 }
 
 /** Necessary migration to make the RunsListing component work */
@@ -955,27 +950,27 @@ export async function onUserProfileChanged(
 // Document type for the runs sub-collection of the users collection.
 // Keeps track of what was already notified to the user, and what their role is.
 export class UserRunState {
-  role: Role; // whether the user is a player of the run, a DM, or both
+  roles: Set<Role>; // roles assumed by the user for this run (e.g., admin, DM and/or player)
   lastStepNotified: number; // last step for which the user has been notified that it was their turn
   // (when ready for the action section for the player, or the post-action thoughts section for the DM).
 
-  constructor(role: Role, lastStepNotified?: number) {
-    this.role = role;
+  constructor(roles: Set<Role>, lastStepNotified?: number) {
+    this.roles = roles;
     this.lastStepNotified = lastStepNotified ?? 0;
   }
 
   static fromDocData(data?: DocumentData): UserRunState | undefined {
     if (data === undefined) return undefined;
-    return new UserRunState(data.role, data.lastStepNotified);
+    return new UserRunState(data.roles, data.lastStepNotified);
   }
 }
 
 export async function createUserRunState(
   userId: string,
   runId: string,
-  role: Role
+  roles: Set<Role>
 ): Promise<void> {
-  const status = new UserRunState(role);
+  const status = new UserRunState(roles);
   await setDoc(
     doc(db, 'users', userId, 'runs', runId),
     Object.assign({}, status)
@@ -985,12 +980,12 @@ export async function createUserRunState(
 export async function updateUserRunState(
   userId: string,
   runId: string,
-  role: Role | null | undefined,
+  roles: Set<Role> | null | undefined,
   lastStepNotified: number
 ): Promise<void> {
-  if (role === null || role === undefined) return;
+  if (roles === null || roles === undefined) return;
   const docRef = doc(db, 'users', userId, 'runs', runId);
-  const update: Partial<UserRunState> = { role, lastStepNotified };
+  const update: Partial<UserRunState> = { roles, lastStepNotified };
   await setDoc(docRef, update, { merge: true }).catch(handleFirebaseError());
 }
 

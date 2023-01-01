@@ -6,7 +6,8 @@ import '../App.css';
 import UserMenu from '../components/UserMenu';
 import {
   getUserProfile,
-  getUserRoleInRun,
+  getUserRolesInRun,
+  isAdmin,
   isDM,
   Role,
   Run,
@@ -20,8 +21,8 @@ interface Props {
 }
 
 const Navbar = ({ run }: Props): JSX.Element => {
-  const [role, setRole] = useState<Role | null | undefined>(undefined);
-  const [dmName, setDMName] = useState<string | undefined>(undefined);
+  const [roles, setRoles] = useState<Set<Role> | null | undefined>(undefined);
+  const [adminName, setAdminName] = useState<string | undefined>(undefined);
   const [userIsReviewer, setUserIsReviewer] = useState<boolean>(false);
 
   const currentUser = useAuth();
@@ -30,19 +31,21 @@ const Navbar = ({ run }: Props): JSX.Element => {
     console.log('Navbar > useEffect [currentUser]: ', currentUser);
 
     void (async function () {
-      // Init role of user for this particular run
       const uid = currentUser?.uid();
       if (run !== undefined && uid !== undefined) {
-        const role = await getUserRoleInRun(uid, run.id);
-        setRole(role);
-        const dmUserProfile = await getUserProfile(run.dm);
-        setDMName(dmUserProfile?.name);
-        const userProfile = isDM(role)
-          ? dmUserProfile
+        // What is the role of current user for this particular run?
+        const roles = await getUserRolesInRun(uid, run);
+        setRoles(roles);
+        // Retrieve name of run's admin to display in the navbar
+        const adminUserProfile = await getUserProfile(run.admin);
+        setAdminName(adminUserProfile?.name);
+        // Is the current user a reviewer?
+        const userProfile = isAdmin(roles)
+          ? adminUserProfile
           : await getUserProfile(uid);
         setUserIsReviewer(userProfile?.isReviewer ?? false);
       } else {
-        setRole(null); // Guest
+        setRoles(null); // Guest
       }
     })();
   }, [currentUser]);
@@ -80,15 +83,16 @@ const Navbar = ({ run }: Props): JSX.Element => {
     <>
       {homeIcon}
       {run !== undefined &&
-        pageTitle(`"${run.title}" by ${dmName ?? 'Anonymous'}`)}
+        pageTitle(`"${run.title}" by ${adminName ?? '???'}`)}
     </>
   );
 
   const titleElement = run === undefined ? homePageTitle : runPageTitle;
 
-  const runSettings = run !== undefined && (isDM(role) || userIsReviewer) && (
-    <RunSettingsModal initRun={run} initOpen={false} />
-  );
+  const runSettings = run !== undefined &&
+    (isAdmin(roles) || isDM(roles) || userIsReviewer) && (
+      <RunSettingsModal initRun={run} initOpen={false} />
+    );
 
   return (
     <Box sx={{ flexGrow: 1 }}>

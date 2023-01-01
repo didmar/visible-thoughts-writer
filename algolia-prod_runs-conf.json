@@ -10,8 +10,10 @@
     "unretrievableAttributes": null,
     "optionalWords": null,
     "attributesForFaceting": [
+      "filterOnly(admin)",
       "filterOnly(deleted)",
       "filterOnly(dm)",
+      "filterOnly(dms)",
       "filterOnly(players)",
       "searchable(status)",
       "searchable(tags)"
@@ -38,10 +40,7 @@
     "highlightPreTag": "<em>",
     "highlightPostTag": "</em>",
     "snippetEllipsisText": "",
-    "alternativesAsExact": [
-      "ignorePlurals",
-      "singleWordSynonym"
-    ]
+    "alternativesAsExact": ["ignorePlurals", "singleWordSynonym"]
   },
   "rules": [],
   "synonyms": []

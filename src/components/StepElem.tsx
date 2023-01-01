@@ -1,7 +1,7 @@
 import { Box, Divider, Paper, Typography } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import { useLocation } from 'react-router-dom';
-import { isDM, Role, Section, Step, Thought } from '../firebase-app';
+import { isDM, isPlayer, Role, Section, Step, Thought } from '../firebase-app';
 import { noop } from '../utils';
 import Composer from './composer/Composer';
 import RenderedLeaf from './composer/RenderedLeaf';
@@ -11,7 +11,7 @@ import CopyToClipboard from './CopyToClipboard';
 
 interface StepElemProps {
   step: Step;
-  role: Role | null | undefined;
+  roles: Set<Role> | null | undefined;
   userIsReviewer: boolean;
   runInProgress: boolean;
   onSubmitted?: (n: number, content: SectionContent, section: Section) => void;
@@ -50,7 +50,7 @@ const itemProps = {
 
 const StepElem: React.FunctionComponent<StepElemProps> = ({
   step,
-  role,
+  roles,
   userIsReviewer,
   runInProgress,
   onSubmitted,
@@ -95,7 +95,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
    * - The run is not in progress (completed or archived)
    * - The user has the reviewer status
    */
-  const visibleThoughts = isDM(role) || !runInProgress || userIsReviewer;
+  const visibleThoughts = isDM(roles) || !runInProgress || userIsReviewer;
 
   return (
     <Box className="StepsPane" sx={{ mx: 0.5, mt: 0.5, mb: 0.5 }} key={42}>
@@ -111,7 +111,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               n={step.n}
               editable={
                 onSubmitted !== undefined &&
-                (isDM(role) || userIsReviewer) &&
+                (isDM(roles) || userIsReviewer) &&
                 !previousOutcomeYBR
               }
               onSubmitted={onSubmitted ?? noop}
@@ -129,7 +129,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               n={step.n}
               editable={
                 onSubmitted !== undefined &&
-                (isDM(role) || userIsReviewer) &&
+                (isDM(roles) || userIsReviewer) &&
                 !previousOutcomeYBR
               }
               onSubmitted={onSubmitted ?? noop}
@@ -147,7 +147,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               n={step.n}
               editable={
                 onSubmitted !== undefined &&
-                (isDM(role) || userIsReviewer) &&
+                (isDM(roles) || userIsReviewer) &&
                 !previousOutcomeYBR
               }
               onSubmitted={onSubmitted ?? noop}
@@ -163,9 +163,10 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               initValue={step.act}
               n={step.n}
               section={Section.Act}
+              // Action is only editable if the user is both player and DM, or a reviewer
               editable={
                 onSubmitted !== undefined &&
-                (role === Role.Both || userIsReviewer) &&
+                ((isDM(roles) && isPlayer(roles)) || userIsReviewer) &&
                 step.act !== null
               }
               onSubmitted={onSubmitted ?? noop}
@@ -182,7 +183,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               section={Section.PactT}
               n={step.n}
               editable={
-                onSubmitted !== undefined && (isDM(role) || userIsReviewer)
+                onSubmitted !== undefined && (isDM(roles) || userIsReviewer)
               }
               onSubmitted={onSubmitted ?? noop}
             />
@@ -198,7 +199,7 @@ const StepElem: React.FunctionComponent<StepElemProps> = ({
               section={Section.Out}
               n={step.n}
               editable={
-                onSubmitted !== undefined && (isDM(role) || userIsReviewer)
+                onSubmitted !== undefined && (isDM(roles) || userIsReviewer)
               }
               onSubmitted={onSubmitted ?? noop}
               actionHasYBRTag={step.act?.ybr ?? false}

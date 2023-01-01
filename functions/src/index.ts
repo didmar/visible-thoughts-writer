@@ -10,7 +10,7 @@ const baseURL = 'https://visible-thoughts-writer.web.app';
 enum Role {
   Player = 'player',
   DM = 'dm',
-  Both = 'both',
+  Admin = 'admin',
 }
 
 enum RoleToNotify {
@@ -84,17 +84,17 @@ exports.notifyUpdateByEmail = firestore
       const userRunStateDocRef = db.doc(path);
       const userRunState = await userRunStateDocRef.get();
       if (userRunState.exists) {
-        const { role, lastStepNotified } = userRunState?.data() as {
-          role: Role | undefined;
+        const { roles, lastStepNotified } = userRunState?.data() as {
+          roles: Set<Role> | undefined;
           lastStepNotified: number | undefined;
         };
         if (
-          role !== undefined &&
-          role !== Role.Both &&
-          role.valueOf() !== roleToNotify.valueOf()
+          roles !== undefined &&
+          !(roles.has(Role.DM) && roles.has(Role.Player)) &&
+          !roles.has(roleToNotify.valueOf() as Role)
         ) {
           logger.warn(
-            `Inconsistency between role (${role}) and roleToNotify(${roleToNotify})`
+            `Inconsistency between roles (${roles}) and roleToNotify(${roleToNotify})`
           );
         }
         // If they have not already been notified of the current step
@@ -198,8 +198,6 @@ exports.processInvite = firestore
   });
 
 exports.confirmInvite = https.onCall(async (data, context) => {
-  logger.info('START !!!');
-
   if (context === undefined) {
     throw new https.HttpsError(
       'failed-precondition',
@@ -214,7 +212,6 @@ exports.confirmInvite = https.onCall(async (data, context) => {
   }
 
   const uid = context.auth.uid; // Authenticated user that accepted the invite
-  console.log('uid: ', uid);
 
   const token: string | undefined = data; // Message text should contain the token for the invite
   if (token === undefined) {
@@ -243,15 +240,15 @@ exports.confirmInvite = https.onCall(async (data, context) => {
   // Check if the user has already a role in the run
   const userRunStateDocRef = db.doc(`users/${uid}/runs/${runId}`);
   const userRunStateDoc = await userRunStateDocRef.get();
-  let previousRole;
+  let newRoles = new Set();
   if (userRunStateDoc.exists) {
-    const { role } = userRunStateDoc?.data() as { role: Role | undefined };
-    if (previousRole !== undefined) previousRole = role;
+    const { roles } = userRunStateDoc?.data() as {
+      roles: Set<Role> | undefined;
+    };
+    if (roles !== undefined) newRoles = roles;
   }
-  const newRole: Role =
-    previousRole === Role.DM || previousRole === Role.Both
-      ? Role.Both
-      : Role.Player;
+  // Invited users are granted the Player role
+  newRoles.add(Role.Player);
 
   const batch = db.batch();
   // Add the player to the list of players for the run
@@ -261,7 +258,7 @@ exports.confirmInvite = https.onCall(async (data, context) => {
   // Set the user run state
   batch.set(userRunStateDocRef, {
     lastStepNotified: 0,
-    role: newRole,
+    roles: newRoles,
   });
   // Delete the invite
   batch.delete(inviteDocRef);

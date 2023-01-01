@@ -25,7 +25,7 @@ import {
   getNextSectionForStep,
   getRun,
   getStepN,
-  getUserRoleInRun,
+  getUserRolesInRun,
   isDM,
   isOurTurnToWrite,
   isPlayer,
@@ -88,7 +88,7 @@ function RunPage(): JSX.Element {
 
   const [xStepAgo, setXStepAgo] = useState<Step | undefined>(undefined);
   const [ltts, setLtts] = useState<Thought[]>([]);
-  const [role, setRole] = useState<Role | null | undefined>(undefined);
+  const [roles, setRoles] = useState<Set<Role> | null | undefined>(undefined);
   const [userProfile, setUserProfile] = useState<UserProfile | undefined>(
     undefined
   );
@@ -168,7 +168,7 @@ function RunPage(): JSX.Element {
     }
   };
 
-  // When user change, initialize the role
+  // When user change, initialize their roles for this run
   useEffect(() => {
     console.log('RunPage > useEffect [currentUser]: ', currentUser);
 
@@ -176,14 +176,16 @@ function RunPage(): JSX.Element {
       const uid = currentUser?.uid();
       if (uid !== undefined) {
         if (runId !== undefined) {
-          // Init role of user for this particular run
-          const role = await getUserRoleInRun(uid, runId);
-          setRole(role);
+          // Init roles of user for this particular run
+          const run = await getRun(runId);
+          const roles =
+            run !== undefined ? await getUserRolesInRun(uid, run) : null;
+          setRoles(roles);
         }
         // Create listener for user profile change (for sound notifs)
         await onUserProfileChanged(uid, setUserProfile);
       } else {
-        setRole(null); // Guest
+        setRoles(null); // Guest
       }
     })();
   }, [currentUser]);
@@ -211,11 +213,11 @@ function RunPage(): JSX.Element {
     // Is there some changes that could mean it is user's turn to write?
     if (lastStepModified && currentUser !== undefined && currentUser !== null) {
       const lastStep = merged[merged.length - 1];
-      if (isOurTurnToWrite(role, lastStep)) {
+      if (isOurTurnToWrite(roles, lastStep)) {
         void (async function () {
           // Should we sound the bell and change window title?
           if (
-            role !== Role.Both &&
+            !(isPlayer(roles) && isDM(roles)) &&
             !windowIsActive &&
             userProfile?.soundNotif === true
           ) {
@@ -225,7 +227,7 @@ function RunPage(): JSX.Element {
           // Update the user's run state, to indicate that the user has been
           // notified of their cue on this step, and that there is not need to
           // sent a notification by email.
-          await updateUserRunState(currentUser.uid(), runId, role, lastStep.n);
+          await updateUserRunState(currentUser.uid(), runId, roles, lastStep.n);
         })();
       }
     }
@@ -245,7 +247,7 @@ function RunPage(): JSX.Element {
       // Did we reach the end of the step?
       // Create the next step if we are the DM
       // and we are not querying a specific step
-      if (section === undefined && isDM(role) && queryN === null) {
+      if (section === undefined && isDM(roles) && queryN === null) {
         const currentStep =
           steps.length !== 0 ? steps[steps.length - 1] : undefined;
         const newStep = createNextStep(currentStep);
@@ -467,10 +469,10 @@ function RunPage(): JSX.Element {
   }
 
   function renderComposer(): JSX.Element {
-    if (role === undefined || steps === undefined || steps.length === 0) {
+    if (roles === undefined || steps === undefined || steps.length === 0) {
       return <CircularProgress />;
     }
-    if (role === null && !userIsReviewer()) {
+    if (roles === null && !userIsReviewer()) {
       return <>Only designated users can participate</>;
     }
     if (run?.status === RunStatus.Archived) {
@@ -486,10 +488,10 @@ function RunPage(): JSX.Element {
     // First check if we are a reviewer, in which case we can write at any time
     if (!userIsReviewer()) {
       if (section === Section.Act) {
-        if (!isPlayer(role)) {
+        if (!isPlayer(roles)) {
           return <>Wait for the player to write their part...</>;
         }
-      } else if (!isDM(role)) {
+      } else if (!isDM(roles)) {
         return <>Wait for the DM to write their part...</>;
       }
     }
@@ -547,7 +549,7 @@ function RunPage(): JSX.Element {
       <StepElem
         key={step.n}
         step={step}
-        role={role}
+        roles={roles}
         userIsReviewer={userIsReviewer()}
         runInProgress={run.status === RunStatus.InProgress}
         onSubmitted={
@@ -599,7 +601,7 @@ function RunPage(): JSX.Element {
                 {
                   <SearchModal
                     runId={run.id}
-                    visibleThoughts={isDM(role) || userIsReviewer()}
+                    visibleThoughts={isDM(roles) || userIsReviewer()}
                   />
                 }
                 <Paper
@@ -663,7 +665,7 @@ function RunPage(): JSX.Element {
           </Allotment.Pane>
 
           {/* Right-hand side (for DM or reviewer only) */}
-          {(isDM(role) || userIsReviewer()) && (
+          {(isDM(roles) || userIsReviewer()) && (
             <Allotment.Pane>
               <Box
                 sx={{ display: 'flex', flexDirection: 'column', gap: 1, m: 1 }}
@@ -696,7 +698,7 @@ function RunPage(): JSX.Element {
                     {xStepAgo !== undefined && (
                       <StepElem
                         step={xStepAgo}
-                        role={role}
+                        roles={roles}
                         userIsReviewer={userIsReviewer()}
                         runInProgress={run.status === RunStatus.InProgress}
                         title={''}
@@ -711,7 +713,7 @@ function RunPage(): JSX.Element {
       </Box>
 
       {/* Automatically open settings modal if description if not filled yet */}
-      {isDM(role) && run !== undefined && (run.desc?.length ?? 0) === 0 && (
+      {isDM(roles) && run !== undefined && (run.desc?.length ?? 0) === 0 && (
         <RunSettingsModal
           initRun={run}
           initOpen={true}

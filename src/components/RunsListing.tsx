@@ -57,7 +57,8 @@ const searchClient = algoliasearch(conf.algoliaAppId, conf.algoliaAPIKeyRuns);
 interface IndexedDoc {
   objectID: string;
   title: string;
-  dm: string;
+  admin: string;
+  dms: string[];
   players: string[];
   nsteps: number;
   status: RunStatus;
@@ -73,16 +74,17 @@ const indexedDocToRun = (doc: IndexedDoc): Run => {
   return new Run(
     doc.objectID,
     doc.title,
-    '',
+    '', // desc
     doc.tags,
     doc.status,
-    {},
-    doc.dm,
+    {}, // ltts
+    doc.admin,
+    doc.dms,
     doc.players,
     doc.nsteps,
     doc.priv ?? false, // Legacy runs are not private, default is public
     doc.deleted,
-    undefined
+    undefined // imported
   );
 };
 
@@ -112,7 +114,7 @@ const createStatusChip = (status: RunStatus): JSX.Element => {
 
 const renderRunTableRow = (
   run: Run,
-  dmName: string | undefined,
+  adminName: string | undefined,
   userProfile: UserProfile | undefined,
   navigate: NavigateFunction
 ): JSX.Element => {
@@ -126,18 +128,20 @@ const renderRunTableRow = (
       sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
     >
       <TableCell>
-        <Tooltip title={'Go to this run'}>
-          <Fab
-            size="small"
-            color="primary"
-            aria-label="go to run"
-            onClick={() => {
-              if (hasAccess) navigate(`/runs/${run.id}`);
-            }}
-            disabled={!hasAccess}
-          >
-            <NavigationIcon />
-          </Fab>
+        <Tooltip title={hasAccess ? 'Go to this run' : "You don't have access"}>
+          <span>
+            <Fab
+              size="small"
+              color="primary"
+              aria-label="go to run"
+              onClick={() => {
+                if (hasAccess) navigate(`/runs/${run.id}`);
+              }}
+              disabled={!hasAccess}
+            >
+              <NavigationIcon />
+            </Fab>
+          </span>
         </Tooltip>
       </TableCell>
       <TableCell style={{ padding: 0 }}>
@@ -152,7 +156,7 @@ const renderRunTableRow = (
         {run.priv && '🔒 '}
         {run.title}
       </TableCell>
-      <TableCell>{dmName ?? '-'}</TableCell>
+      <TableCell>{adminName ?? '-'}</TableCell>
       <TableCell align="right">{run.nsteps}</TableCell>
       <TableCell>{createStatusChip(run.status)}</TableCell>
       <TableCell>
@@ -176,7 +180,7 @@ const CustomHits = connectHits<
   IndexedDoc
 >(({ hits, userId }) => {
   const [runs, setRuns] = useState<Run[] | undefined>(undefined);
-  const [dmUidToName, setDMUidToName] = useState<
+  const [adminUidToName, setAdminUidToName] = useState<
     Map<string, string> | undefined
   >(undefined);
   const [userProfile, setUserProfile] = useState<UserProfile | undefined>(
@@ -186,10 +190,10 @@ const CustomHits = connectHits<
   useEffect(() => {
     const _runs = hits.map((hit) => indexedDocToRun(hit));
     setRuns(_runs);
-    const dmUids = [...new Set(_runs.map((run) => run.dm))];
+    const adminUids = [...new Set(_runs.map((run) => run.admin))];
     void (async function () {
-      const _dmUidToName = await getUsersUidToName(dmUids);
-      setDMUidToName(_dmUidToName);
+      const _adminUidToName = await getUsersUidToName(adminUids);
+      setAdminUidToName(_adminUidToName);
       const _userProfile =
         userId !== undefined ? await getUserProfile(userId) : undefined;
       setUserProfile(_userProfile);
@@ -197,7 +201,7 @@ const CustomHits = connectHits<
   }, [hits]);
 
   const navigate = useNavigate();
-  return dmUidToName === undefined || runs === undefined ? (
+  return adminUidToName === undefined || runs === undefined ? (
     <Box
       sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >
@@ -211,7 +215,7 @@ const CustomHits = connectHits<
             <TableCell></TableCell>
             <TableCell></TableCell>
             <TableCell>Title</TableCell>
-            <TableCell>DM</TableCell>
+            <TableCell>Admin</TableCell>
             <TableCell>Steps</TableCell>
             <TableCell>Status</TableCell>
             <TableCell>Tags</TableCell>
@@ -221,7 +225,7 @@ const CustomHits = connectHits<
           {runs.map((run) =>
             renderRunTableRow(
               run,
-              dmUidToName.get(run.dm),
+              adminUidToName.get(run.admin),
               userProfile,
               navigate
             )
@@ -285,8 +289,13 @@ function RunsListing({ userId }: Props): JSX.Element {
                     justifyContent: 'center',
                   }}
                 >
-                  <Typography>My role: </Typography>
-                  <ToggleRefinement attribute="dm" label="DM" value={userId} />
+                  <Typography>My roles: </Typography>
+                  <ToggleRefinement
+                    attribute="admin"
+                    label="Admin"
+                    value={userId}
+                  />
+                  <ToggleRefinement attribute="dms" label="DM" value={userId} />
                   <ToggleRefinement
                     attribute="players"
                     label="Player"

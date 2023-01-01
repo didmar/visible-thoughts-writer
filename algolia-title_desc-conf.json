@@ -10,8 +10,10 @@
     "unretrievableAttributes": null,
     "optionalWords": null,
     "attributesForFaceting": [
+      "filterOnly(admin)",
       "filterOnly(deleted)",
       "filterOnly(dm)",
+      "filterOnly(dms)",
       "filterOnly(players)",
       "searchable(status)",
       "searchable(tags)"

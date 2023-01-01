@@ -10,7 +10,12 @@ import {
   ThoughtType,
   UserProfile,
 } from './firebase-app';
-import { isEmpty, swapKeyValue, withoutUndefinedValues } from './utils';
+import {
+  isEmpty,
+  orderedArrayWithoutDupes,
+  swapKeyValue,
+  withoutUndefinedValues,
+} from './utils';
 
 interface ExportedThought {
   type: string;
@@ -110,13 +115,15 @@ export const exportAuthors = (
   run: Run,
   userProfiles: UserProfile[]
 ): string[] => {
-  return [run.dm, ...run.players].map((uid) => {
-    const userProfile = userProfiles.find((u) => u.id === uid);
-    if (userProfile === undefined) {
-      return uid;
+  return orderedArrayWithoutDupes([run.admin, ...run.dms, ...run.players]).map(
+    (uid) => {
+      const userProfile = userProfiles.find((u) => u.id === uid);
+      if (userProfile === undefined) {
+        return uid;
+      }
+      return `${userProfile.name} (${uid})`;
     }
-    return `${userProfile.name} (${uid})`;
-  });
+  );
 };
 
 export const exportRun = (

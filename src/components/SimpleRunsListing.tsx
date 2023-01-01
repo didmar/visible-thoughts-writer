@@ -19,7 +19,7 @@ interface Props {
 function SimpleRunsListing({ userId }: Props): JSX.Element {
   const [runs, setRuns] = useState<Run[]>([]);
   const [newRuns, setNewRuns] = useState<Run[] | undefined>(undefined);
-  const [dmUidToName, setDMUidToName] = useState<Map<string, string>>(
+  const [adminUidToName, setAdminUidToName] = useState<Map<string, string>>(
     new Map()
   );
 
@@ -40,10 +40,10 @@ function SimpleRunsListing({ userId }: Props): JSX.Element {
       // Get the mapping from DM uids to their names
       // (FIXME: Could be optimized to only get the new DMs)
       void (async function () {
-        const _dmUidToName = await getUsersUidToName([
-          ...new Set(updateRuns.map((run) => run.dm)),
+        const _adminUidToName = await getUsersUidToName([
+          ...new Set(updateRuns.map((run) => run.admin)),
         ]);
-        setDMUidToName(_dmUidToName);
+        setAdminUidToName(_adminUidToName);
       })();
     }
   }, [newRuns]);
@@ -56,7 +56,7 @@ function SimpleRunsListing({ userId }: Props): JSX.Element {
       ) : (
         run.title
       )}{' '}
-      ({run.nsteps ?? '???'} steps) by {dmUidToName.get(run.dm) ?? '???'}
+      ({run.nsteps ?? '???'} steps) by {adminUidToName.get(run.admin) ?? '???'}
     </>
   );
 
@@ -79,9 +79,7 @@ function SimpleRunsListing({ userId }: Props): JSX.Element {
       ? runs.filter((run) => isRunParticipant(userId, run))
       : [];
   const otherRuns = runs.filter(
-    (run) =>
-      userId === undefined ||
-      (run.dm !== userId && !run.players.includes(userId))
+    (run) => userId === undefined || !isRunParticipant(userId, run)
   );
 
   return (

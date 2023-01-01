@@ -6,19 +6,22 @@ import SaveIcon from '@mui/icons-material/Save';
 import SettingsIcon from '@mui/icons-material/Settings';
 import UndoIcon from '@mui/icons-material/Undo';
 import {
-  Avatar,
   Box,
   Button,
+  Checkbox,
   Divider,
   FormControl,
   FormControlLabel,
   IconButton,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
   Modal,
+  Paper,
   Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -37,15 +40,17 @@ import {
   getRunUserProfiles,
   getSteps,
   getUserProfile,
+  getUserRolesInRun,
   Invite,
-  removePlayerFromRun,
+  Role,
   Run,
   RunStatus,
   runStatusTooltip,
+  updateRunParticipants,
   UserProfile,
 } from '../firebase-app';
 import '../styles.css';
-import { downloadToJSON } from '../utils';
+import { downloadToJSON, orderedArrayWithoutDupes } from '../utils';
 
 const style = {
   position: 'absolute',
@@ -59,6 +64,11 @@ const style = {
   boxShadow: 24,
   p: 4,
 };
+
+interface Participant {
+  userProfile: UserProfile;
+  roles: Set<Role>;
+}
 
 interface Props {
   initRun: Run;
@@ -94,21 +104,43 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
   const [newPriv, setNewPriv] = useState<boolean>(run.priv ?? false);
   const [edited, setEdited] = useState(false);
 
-  const [players, setPlayers] = useState<UserProfile[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
 
-  const handleRemovePlayer = (playerId: string): void => {
-    const name = players.find((player) => player.id === playerId)?.name;
-    if (name === undefined) throw new Error('Player not found!');
+  const onRoleChange = (
+    participant: Participant,
+    role: Role,
+    checked: boolean
+  ): void => {
+    // Update our local state
+    if (checked) participant.roles.add(role);
+    else participant.roles.delete(role);
+    const newParticipants = participants.map((p) =>
+      // Recreate an object with our update,
+      // or use the original if it's not the one we're updating
+      p.userProfile.id === participant.userProfile.id
+        ? // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+          ({
+            ...p,
+            roles: participant.roles,
+          } as Participant)
+        : p
+    );
+    setParticipants(newParticipants);
+  };
+
+  const handleRemoveParticipant = (participant: Participant): void => {
+    if (participant.roles.has(Role.Admin))
+      throw new Error(`Can't remove an admin from the participants!`);
 
     if (
-      !confirm(`This will exclude player ${name} from the run. Are you sure?`)
+      !confirm(
+        `This will exclude participant ${participant.userProfile.name} from the run. Are you sure?`
+      )
     )
       return;
 
-    void (async function () {
-      await removePlayerFromRun(run.id, playerId);
-    })();
-    setPlayers(players.filter((other) => other.id !== playerId));
+    const uid = participant.userProfile.id;
+    setParticipants(participants.filter((p) => p.userProfile.id !== uid));
   };
 
   const [invites, setInvites] = useState<Invite[]>([]);
@@ -119,21 +151,42 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
   useEffect(() => {
     console.log('RunSettingsModal > useEffect []');
 
-    const playerIds = run.players;
+    const participantIds = orderedArrayWithoutDupes([
+      run.admin,
+      ...run.dms,
+      ...run.players,
+    ]);
     void (async function () {
       const userProfiles = await Promise.all(
-        playerIds.map(async (playerId) => {
-          const player = await getUserProfile(playerId);
-          if (player === undefined)
-            throw new Error(`Player ${playerId} not found!`);
-          return player;
+        participantIds.map(async (uid) => {
+          const p = await getUserProfile(uid);
+          if (p === undefined) throw new Error(`Participant ${uid} not found!`);
+          return p;
         })
       );
-      setPlayers(userProfiles);
+      const _participants = userProfiles.map((p) => {
+        return { userProfile: p, roles: getUserRolesInRun(p.id, run) };
+      });
+      setParticipants(_participants);
 
       await getInvites(run.id).then((invites) => setInvites(invites));
     })();
   }, []);
+
+  useEffect(() => {
+    console.log('RunSettingsModal > useEffect [participants]');
+
+    const dms: string[] = [];
+    const players: string[] = [];
+    participants.forEach((p) => {
+      if (p.roles.has(Role.DM)) dms.push(p.userProfile.id);
+      if (p.roles.has(Role.Player)) players.push(p.userProfile.id);
+    });
+
+    void (async function () {
+      await updateRunParticipants(run.id, dms, players);
+    })();
+  }, [participants]);
 
   const saveChanges = (): void => {
     if (newTitle === undefined) throw new Error('newTitle is undefined');
@@ -295,61 +348,106 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
     </Box>
   );
 
-  const playersList = (
-    <>
-      <Typography sx={{ mt: 1 }} component="div" variant="h5">
-        Players:
-      </Typography>
-
-      <List>
-        {players.length > 0 ? (
-          players.map((player, index) => (
-            <ListItem
-              key={index}
-              secondaryAction={
-                <IconButton
-                  edge="start"
-                  aria-label="remove"
-                  onClick={() => handleRemovePlayer(player.id)}
-                >
-                  <RemoveCircleIcon />
-                </IconButton>
-              }
-            >
-              <Tooltip title="Registered player">
-                <ListItemAvatar>
-                  <Avatar>
-                    <AccountCircle />
-                  </Avatar>
-                </ListItemAvatar>
-              </Tooltip>
-              <ListItemText primary={player.name} />
-            </ListItem>
-          ))
-        ) : (
-          <ListItem key={0}>
-            <ListItemText primary={'No registered players'} />
-          </ListItem>
-        )}
-      </List>
-    </>
-  );
-
-  const pendingInvitationsList = (
-    <List>
-      {invites.map((invite, index) => (
-        <ListItem key={index}>
-          <Tooltip title="Pending invitation">
-            <ListItemAvatar>
-              <Avatar>
-                <PendingIcon />
-              </Avatar>
-            </ListItemAvatar>
+  const participantsTableRows = participants.map((participant, index) => (
+    <TableRow key={index}>
+      {/* Participant name column */}
+      <TableCell component="th" scope="row">
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+          }}
+        >
+          <Tooltip title="Registered player">
+            <AccountCircle sx={{ mr: 1 }} />
           </Tooltip>
-          <ListItemText primary={invite.email} />
-        </ListItem>
-      ))}
-    </List>
+          <Typography>{participant.userProfile.name}</Typography>
+        </Box>
+      </TableCell>
+      {/* Role checkboxes columns */}
+      {[Role.Admin, Role.DM, Role.Player].map((role, index) => {
+        return (
+          <TableCell key={index} className="roleCell">
+            <Tooltip title={`Toggle ${role.valueOf()} role`}>
+              <Checkbox
+                checked={participant.roles.has(role)}
+                onChange={(_, checked) => {
+                  onRoleChange(participant, role, checked);
+                }}
+                inputProps={{ 'aria-label': 'controlled' }}
+                disabled={role === Role.Admin}
+              />
+            </Tooltip>
+          </TableCell>
+        );
+      })}
+      {/* Remove participant column */}
+      <TableCell>
+        {!participant.roles.has(Role.Admin) && (
+          <Tooltip title="Remove participant">
+            <IconButton
+              aria-label="remove"
+              onClick={() => handleRemoveParticipant(participant)}
+            >
+              <RemoveCircleIcon />
+            </IconButton>
+          </Tooltip>
+        )}
+      </TableCell>
+    </TableRow>
+  ));
+
+  const invitesTableRows = invites.map((invite, index) => (
+    <TableRow key={100 + index}>
+      {/* Participant name column */}
+      <TableCell component="th" scope="row">
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            paddingTop: '8px',
+            paddingBottom: '8px',
+          }}
+        >
+          <Tooltip title="Pending invitation">
+            <PendingIcon sx={{ mr: 1 }} />
+          </Tooltip>
+          <Typography>{invite.email}</Typography>
+        </Box>
+      </TableCell>
+      {/* Empty role checkboxes columns */}
+      <TableCell></TableCell>
+      <TableCell></TableCell>
+      <TableCell></TableCell>
+      {/* Empty remove participant column */}
+      <TableCell></TableCell>
+    </TableRow>
+  ));
+
+  const participantsList = (
+    <TableContainer component={Paper}>
+      <Table aria-label="table" className="participantsTable">
+        <TableHead>
+          <TableRow>
+            <TableCell>Participants</TableCell>
+            <TableCell align="center" className="roleCell">
+              Admin
+            </TableCell>
+            <TableCell align="center" className="roleCell">
+              DM
+            </TableCell>
+            <TableCell align="center" className="roleCell">
+              Player
+            </TableCell>
+            <TableCell></TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {participantsTableRows}
+          {invitesTableRows}
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 
   const onInvite = (event: FormEvent): void => {
@@ -463,9 +561,8 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
           </Typography>
           <Box>
             {editForm}
-            <Divider sx={{ mt: 2 }} />
-            {playersList}
-            {pendingInvitationsList}
+            <Divider sx={{ mt: 2, mb: 2 }} />
+            {participantsList}
             {invitePlayerForm}
             <Divider sx={{ mt: 2 }} />
             <Box sx={{ mt: 2, display: 'flex' }}>

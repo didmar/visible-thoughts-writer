@@ -86,3 +86,25 @@ export function isEmpty(obj: object): boolean {
 export function zipWithPrev<T>(arr: T[]): Array<[T, T | undefined]> {
   return arr.map((v, i, a) => [v, a[i - 1]]);
 }
+
+/**
+ * Return a copy of an array without duplicate values and without changing the order.
+ * @param arr an array of any type
+ * @returns a new array with duplicate values removed
+ */
+export const orderedArrayWithoutDupes = <T>(arr: T[]): T[] => {
+  const seen: Set<T> = new Set();
+  const result = [];
+
+  for (let i = 0; i < arr.length; i++) {
+    const item: T = arr[i];
+
+    if (!seen.has(item)) {
+      result[result.length] = item;
+
+      seen.add(item);
+    }
+  }
+
+  return result;
+};

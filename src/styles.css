@@ -112,3 +112,12 @@ a[class^='ais-'] {
 .ais-Pagination-item--selected .ais-Pagination-link:focus {
   color: #fff;
 }
+
+.participantsTable .MuiTableCell-root {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+.participantsTable .roleCell {
+  width: 50px;
+}
