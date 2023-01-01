@@ -85,17 +85,21 @@ exports.notifyUpdateByEmail = firestore
       const userRunState = await userRunStateDocRef.get();
       if (userRunState.exists) {
         const { roles, lastStepNotified } = userRunState?.data() as {
-          roles: Set<Role> | undefined;
+          roles: Role[] | undefined;
           lastStepNotified: number | undefined;
         };
-        if (
-          roles !== undefined &&
-          !(roles.has(Role.DM) && roles.has(Role.Player)) &&
-          !roles.has(roleToNotify.valueOf() as Role)
-        ) {
-          logger.warn(
-            `Inconsistency between roles (${roles}) and roleToNotify(${roleToNotify})`
-          );
+        if (roles !== undefined) {
+          const rolesSet = new Set(roles);
+          if (
+            !(rolesSet.has(Role.DM) && rolesSet.has(Role.Player)) &&
+            !rolesSet.has(roleToNotify.valueOf() as Role)
+          ) {
+            logger.warn(
+              `Inconsistency between roles (${JSON.stringify(
+                rolesSet
+              )}) and roleToNotify(${roleToNotify})`
+            );
+          }
         }
         // If they have not already been notified of the current step
         if (lastStepNotified !== undefined && lastStepNotified < n) {
@@ -243,9 +247,9 @@ exports.confirmInvite = https.onCall(async (data, context) => {
   let newRoles = new Set();
   if (userRunStateDoc.exists) {
     const { roles } = userRunStateDoc?.data() as {
-      roles: Set<Role> | undefined;
+      roles: Role[] | undefined;
     };
-    if (roles !== undefined) newRoles = roles;
+    if (roles !== undefined) newRoles = new Set([...roles]);
   }
   // Invited users are granted the Player role
   newRoles.add(Role.Player);
@@ -258,7 +262,7 @@ exports.confirmInvite = https.onCall(async (data, context) => {
   // Set the user run state
   batch.set(userRunStateDocRef, {
     lastStepNotified: 0,
-    roles: newRoles,
+    roles: [...newRoles], // convert back to array because Firestore doesn't support Set
   });
   // Delete the invite
   batch.delete(inviteDocRef);
