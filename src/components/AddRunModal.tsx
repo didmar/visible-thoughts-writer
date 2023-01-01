@@ -30,9 +30,7 @@ function NewRunForm(): JSX.Element {
     if (currentUser === null || currentUser === undefined) return;
 
     void (async function () {
-      console.log('newTitle ', newTitle);
       const runId = await createRun(newTitle, currentUser.uid());
-      console.log('runId ', newTitle);
       setNewRunId(runId);
     })();
   };
