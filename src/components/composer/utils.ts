@@ -97,17 +97,17 @@ export function resetEditor(
 export function getDefaultSlateValue(section: Section): CustomElement[] {
   switch (section) {
     case Section.InitT:
-      return structuredClone(initialBulletElements);
+      return structuredClone(initialBulletElements) as CustomElement[];
     case Section.Ppt:
-      return structuredClone(initialTextElements);
+      return structuredClone(initialTextElements) as CustomElement[];
     case Section.PpptT:
-      return structuredClone(initialBulletElements);
+      return structuredClone(initialBulletElements) as CustomElement[];
     case Section.Act:
-      return structuredClone(initialYBRTextElements);
+      return structuredClone(initialYBRTextElements) as CustomElement[];
     case Section.PactT:
-      return structuredClone(initialBulletElements);
+      return structuredClone(initialBulletElements) as CustomElement[];
     case Section.Out:
-      return structuredClone(initialYBRTextElements);
+      return structuredClone(initialYBRTextElements) as CustomElement[];
     default:
       throw new Error(`Unknown section: ${Section[section]}`);
   }
