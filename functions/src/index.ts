@@ -296,16 +296,24 @@ exports.deleteRun = https.onCall(async (data, context) => {
     throw new https.HttpsError('not-found', `Run ${runId} does not exist!`);
   }
 
-  // Check that the caller is the run's DM
+  // Retrieve whether the user is a reviewer or not
+  const userDocRef = db.doc(`users/${uid}`);
+  const user = await userDocRef.get();
+  if (!user.exists) {
+    throw new https.HttpsError('not-found', `User ${uid} does not exist!`);
+  }
+  const { isReviewer } = user?.data() as { isReviewer: boolean | undefined };
+
+  // Check that the caller has the right to delete the run
   const { admin, dms, players } = run?.data() as {
     admin: string;
     dms: string;
     players: string[];
   };
-  if (!(dms.includes(uid) || admin === uid)) {
+  if (!(admin === uid || isReviewer === true)) {
     throw new https.HttpsError(
       'permission-denied',
-      `Only the DM can delete the run!`
+      `Only the run admin or a reviewer can delete the run!`
     );
   }
 
