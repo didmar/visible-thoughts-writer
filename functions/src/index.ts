@@ -56,8 +56,11 @@ exports.notifyUpdateByEmail = firestore
       logger.error(`Run ${runId} doesn't exist!`);
       return null;
     }
-    const { players, dm } = run?.data() as { players: string[]; dm: string };
-    logger.info('dm: ', JSON.stringify(dm));
+    const { players, dms } = run?.data() as {
+      players: string[];
+      dms: string[];
+    };
+    logger.info('dms: ', JSON.stringify(dms));
     logger.info('players: ', JSON.stringify(players));
 
     // Get user ids of users to notify
@@ -66,8 +69,8 @@ exports.notifyUpdateByEmail = firestore
       logger.info('Getting players uids');
       uids = players;
     } else {
-      logger.info('Getting DM uid');
-      uids = [dm];
+      logger.info('Getting DM uids');
+      uids = dms;
     }
 
     if (uids.length === 0) {
@@ -179,9 +182,7 @@ exports.processInvite = firestore
       logger.error(`Run ${runId} doesn't exist!`);
       return null;
     }
-    const { title, dm } = run?.data() as { title: string; dm: string };
-    logger.info('title: ', title);
-    logger.info('dm: ', dm);
+    const { title } = run?.data() as { title: string };
 
     // Send the invitation via email
     const { email } = inviteData as { email: string };
@@ -296,8 +297,12 @@ exports.deleteRun = https.onCall(async (data, context) => {
   }
 
   // Check that the caller is the run's DM
-  const { dm, players } = run?.data() as { dm: string; players: string[] };
-  if (dm !== uid) {
+  const { admin, dms, players } = run?.data() as {
+    admin: string;
+    dms: string;
+    players: string[];
+  };
+  if (!(dms.includes(uid) || admin === uid)) {
     throw new https.HttpsError(
       'permission-denied',
       `Only the DM can delete the run!`
@@ -314,7 +319,7 @@ exports.deleteRun = https.onCall(async (data, context) => {
 
   // Delete user run states from this run
   const batch = db.batch();
-  const userIds = [dm, ...players];
+  const userIds = new Set([admin, ...dms, ...players]);
   userIds.forEach((userId) => {
     const userRunStateDocRef = db.doc(`users/${userId}/runs/${runId}`);
     if (userRunStateDocRef !== undefined) batch.delete(userRunStateDocRef);
