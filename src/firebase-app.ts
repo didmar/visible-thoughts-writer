@@ -255,7 +255,6 @@ export async function createRun(title: string, admin: string): Promise<string> {
     status: RunStatus.InProgress,
     admin,
     dms: [admin], // Admin is always the initial DM
-    dm: admin, // Legacy field, remove once all runs are migrated
     players: [],
     nsteps: 1,
     ltts: {},
@@ -827,6 +826,7 @@ export async function createInvite(
 export async function getInvites(runId: string): Promise<Invite[]> {
   const colRef = collection(db, 'runs', runId, 'invites');
   const snapshot = await getDocs(colRef).catch(handleFirebaseError());
+  if (snapshot.empty) return [];
   return snapshot.docs.map((doc) => doc.data() as Invite);
 }
 
