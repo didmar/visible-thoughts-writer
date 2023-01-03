@@ -35,6 +35,7 @@ import isEmail from 'validator/lib/isEmail';
 import { exportRun } from '../export';
 import {
   createInvite,
+  deleteInvite,
   deleteRun,
   getInvites,
   getRunUserProfiles,
@@ -144,6 +145,24 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
   };
 
   const [invites, setInvites] = useState<Invite[]>([]);
+
+  const handleRemoveInvite = (invite: Invite): void => {
+    if (
+      !confirm(
+        `This will delete the invite ${invite.id} for ${invite.email} to join the run. Are you sure?`
+      )
+    )
+      return;
+
+    setInvites(invites.filter((i) => i.id !== invite.id));
+
+    void (async function () {
+      await deleteInvite(run.id, invite.id);
+    })();
+  };
+
+  const alreadyInvited = (email: string): boolean =>
+    invites.some((i) => i.email === email);
 
   const [email, setEmail] = useState<string>('');
   const [placeholder, setPlaceholder] = useState<string>('');
@@ -419,8 +438,19 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
       <TableCell></TableCell>
       <TableCell></TableCell>
       <TableCell></TableCell>
-      {/* Empty remove participant column */}
-      <TableCell></TableCell>
+      {/* Remove invite column */}
+      <TableCell>
+        {
+          <Tooltip title="Remove invite">
+            <IconButton
+              aria-label="remove"
+              onClick={() => handleRemoveInvite(invite)}
+            >
+              <RemoveCircleIcon />
+            </IconButton>
+          </Tooltip>
+        }
+      </TableCell>
     </TableRow>
   ));
 
@@ -456,9 +486,8 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
     if (!isEmail(email)) return;
 
     void (async function () {
-      const inviteId = await createInvite(run.id, email);
-      console.log('inviteId: ', inviteId);
-      setInvites([...invites, { email }]);
+      const invite = await createInvite(run.id, email);
+      setInvites([...invites, invite]);
     })();
 
     // Clear input
@@ -471,7 +500,7 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
       <form onSubmit={onInvite}>
         <FormControl>
           <TextField
-            error={email !== '' && !isEmail(email)}
+            error={email !== '' && (!isEmail(email) || alreadyInvited(email))}
             id="email-input"
             label="Email"
             name="email-input"
@@ -490,7 +519,7 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
           sx={{ ml: 2 }}
           type="submit"
           variant="contained"
-          disabled={!isEmail(email)}
+          disabled={!isEmail(email) || alreadyInvited(email)}
           startIcon={<EmailIcon />}
         >
           Invite player

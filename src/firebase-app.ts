@@ -810,24 +810,45 @@ export async function updateRunNbSteps(
 // Invites collection
 
 export interface Invite {
+  id: string;
   email: string;
+  roles?: Role[];
 }
 
 export async function createInvite(
   runId: string,
-  email: string
-): Promise<string> {
+  email: string,
+  roles?: Set<Role>
+): Promise<Invite> {
+  if (roles !== undefined && Role.Admin in roles)
+    throw new Error('Cannot invite to have admin role');
+
   const colRef = collection(db, 'runs', runId, 'invites');
-  const invite: Invite = { email };
+  const invite = {
+    email,
+    // Default to player role
+    roles: [...(roles ?? [Role.Player])],
+  };
   const doc = await addDoc(colRef, invite).catch(handleFirebaseError());
-  return doc.id;
+  return { ...invite, id: doc.id };
 }
 
 export async function getInvites(runId: string): Promise<Invite[]> {
   const colRef = collection(db, 'runs', runId, 'invites');
   const snapshot = await getDocs(colRef).catch(handleFirebaseError());
   if (snapshot.empty) return [];
-  return snapshot.docs.map((doc) => doc.data() as Invite);
+  return snapshot.docs.map((doc) => {
+    const docData = doc.data() as { email: string; roles?: Role[] };
+    return { ...docData, id: doc.id };
+  });
+}
+
+export async function deleteInvite(
+  runId: string,
+  inviteId: string
+): Promise<void> {
+  const docRef = doc(db, 'runs', runId, 'invites', inviteId);
+  await deleteDoc(docRef).catch(handleFirebaseError());
 }
 
 // Users collection
