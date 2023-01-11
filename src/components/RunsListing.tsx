@@ -82,7 +82,7 @@ const indexedDocToRun = (doc: IndexedDoc): Run => {
     doc.dms,
     doc.players,
     doc.nsteps,
-    doc.priv ?? false, // Legacy runs are not private, default is public
+    doc.priv,
     doc.deleted,
     undefined // imported
   );

@@ -134,8 +134,8 @@ export class Run {
     dms: string[],
     players: string[],
     nsteps: number,
-    priv: boolean,
-    deleted: boolean,
+    priv?: boolean,
+    deleted?: boolean,
     imported?: Timestamp
   ) {
     this.id = id;
@@ -148,8 +148,8 @@ export class Run {
     this.dms = dms;
     this.players = players;
     this.nsteps = nsteps;
-    this.priv = priv;
-    this.deleted = deleted;
+    this.priv = priv ?? false;
+    this.deleted = deleted ?? false;
     this.imported = imported;
   }
 
@@ -175,7 +175,7 @@ export class Run {
       doc.dms,
       doc.players,
       doc.nsteps,
-      doc.priv ?? false, // Legacy runs are not private, default is public
+      doc.priv,
       doc.deleted,
       doc.imported
     );

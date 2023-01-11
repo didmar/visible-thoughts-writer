@@ -8,7 +8,13 @@ import {
   importTextYBR,
   importThoughtSection,
 } from '../export';
-import { defaultThoughts, Run, Step, ThoughtType } from '../firebase-app';
+import {
+  defaultThoughts,
+  Run,
+  RunStatus,
+  Step,
+  ThoughtType,
+} from '../firebase-app';
 
 const step: Step = {
   n: 1,
@@ -145,8 +151,19 @@ const exportedStep2 = {
   },
 };
 
-const dmId = 'abc';
-const run = new Run('123', 'My run', {}, dmId, ['def', 'ghi']);
+const adminId = 'abc';
+const run = new Run(
+  '123',
+  'My run',
+  'Description',
+  [],
+  RunStatus.InProgress,
+  {},
+  adminId,
+  [adminId],
+  ['def', 'ghi'],
+  1
+);
 
 const exportedRun = {
   title: 'My run',
@@ -280,6 +297,7 @@ describe('exportAuthors', () => {
           canDM: true,
           soundNotif: false,
           emailNotif: false,
+          isReviewer: false,
         },
       ])
     ).toEqual(['abcName (abc)', 'def', 'ghi']);
