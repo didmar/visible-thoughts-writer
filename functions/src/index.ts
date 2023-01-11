@@ -313,18 +313,6 @@ exports.confirmInvite = https.onCall(async (data, context) => {
     );
   }
 
-  // Get existing roles from the user run state document
-  const path = `users/${uid}/runs/${runId}`;
-  const userRunStateDocRef = db.doc(path);
-  const userRunStateDoc = await userRunStateDocRef.get();
-  let oldRoles: Set<Role> = new Set();
-  if (userRunStateDoc.exists) {
-    const { roles } = userRunStateDoc?.data() as {
-      roles: Role[] | undefined;
-    };
-    if (roles !== undefined) oldRoles = new Set([...roles]);
-  }
-
   // Get roles from the invite, default to Player role
   const newRoles: Set<Role> = new Set(inviteDoc.data()?.roles ?? [Role.Player]);
 
