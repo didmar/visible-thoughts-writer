@@ -272,7 +272,7 @@ export async function createRun(title: string, admin: string): Promise<string> {
 
 export async function createRunFromImport(
   title: string,
-  dm: string,
+  admin: string,
   steps: Step[]
 ): Promise<string> {
   if (steps.length === 0) {
@@ -289,7 +289,8 @@ export async function createRunFromImport(
 
   const runDoc = await addDoc(runsCol, {
     title,
-    dm,
+    admin,
+    dms: [admin], // Admin is always the initial DM
     players: [],
     nsteps: steps.length,
     ltts,
