@@ -33,7 +33,6 @@ const InvitePage = (): JSX.Element => {
   if (inviteId === undefined) {
     return <>Invalid token!</>;
   }
-  console.log('runId: ', runId);
   const [status, setStatus] = useState<InviteStatus>(InviteStatus.NotConfirmed);
 
   const currentUser = useAuth();
@@ -80,10 +79,16 @@ const InvitePage = (): JSX.Element => {
   }
   return (
     <Box sx={style}>
-      <Typography>
-        <p>Signed in as {currentUser?.email()}.</p>
-        <p>You will be added as player with this account, is that ok?</p>
-      </Typography>
+      {currentUser === undefined ? (
+        <CircularProgress />
+      ) : (
+        <Typography>
+          <p>Signed in as {currentUser.email()}.</p>
+          <p>
+            You will be added as a participant with this account, is that ok?
+          </p>
+        </Typography>
+      )}
       {status === InviteStatus.Error ? (
         <Typography>
           <p>Error!</p>

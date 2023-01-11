@@ -8,7 +8,6 @@ import {
   getUserProfile,
   getUserRolesInRun,
   isAdmin,
-  isDM,
   Role,
   Run,
 } from '../firebase-app';
@@ -90,7 +89,7 @@ const Navbar = ({ run }: Props): JSX.Element => {
   const titleElement = run === undefined ? homePageTitle : runPageTitle;
 
   const runSettings = run !== undefined &&
-    (isAdmin(roles) || isDM(roles) || userIsReviewer) && (
+    (isAdmin(roles) || userIsReviewer) && (
       <RunSettingsModal initRun={run} initOpen={false} />
     );
 

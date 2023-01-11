@@ -31,6 +31,74 @@ function getRoleToNotify(
   return undefined;
 }
 
+function getParticipantsUid(runDoc: FirebaseFirestore.DocumentData): Set<Role> {
+  const { admin, players, dms } = runDoc;
+  const uids = new Set([admin, ...players, ...dms]);
+  return uids;
+}
+
+function getRolesByUid(
+  runDoc: FirebaseFirestore.DocumentData
+): Map<string, Set<Role>> {
+  const { admin, players, dms } = runDoc;
+  const uids = new Set([admin, ...players, ...dms]);
+  const rolesByUid: Map<string, Set<Role>> = new Map();
+  for (const uid of uids) {
+    rolesByUid.set(uid, new Set());
+  }
+  rolesByUid.get(admin)!.add(Role.Admin);
+  for (const player of players) {
+    rolesByUid.get(player)!.add(Role.Player);
+  }
+  for (const dm of dms) {
+    rolesByUid.get(dm)!.add(Role.DM);
+  }
+  return rolesByUid;
+}
+
+/**
+ * This function is called when a new run is created, or an existing run is updated.
+ * The purpose is to propagate the role of the participants to the users' run state documents.
+ */
+exports.onRunUpdated = firestore
+  .document('runs/{runId}')
+  .onWrite(async (change, context) => {
+    // console.log('change: ', change);
+    // console.log('context: ', context);
+
+    const runId = context.params.runId as string;
+
+    const before: FirebaseFirestore.DocumentData | undefined =
+      change.before.data();
+
+    const after: FirebaseFirestore.DocumentData | undefined =
+      change.after.data();
+    if (after === undefined) return null;
+
+    const rolesByUid = getRolesByUid(after);
+    // Add any participants that were removed from the run
+    if (before !== undefined) {
+      const beforeUids = getParticipantsUid(before);
+      for (const uid of beforeUids) {
+        if (!rolesByUid.has(uid)) {
+          rolesByUid.set(uid, new Set());
+        }
+      }
+    }
+
+    const batch = db.batch();
+    rolesByUid.forEach((roles, uid) => {
+      const path = `users/${uid}/runs/${runId}`;
+      const rolesArr = [...roles];
+      logger.info(`Updating ${path} with roles ${JSON.stringify(rolesArr)}}`);
+      batch.set(db.doc(path), { roles: rolesArr }, { merge: true });
+    });
+    const results = await batch.commit();
+    logger.info('results: ', JSON.stringify(results));
+
+    return null;
+  });
+
 exports.notifyUpdateByEmail = firestore
   .document('runs/{runId}/steps/{stepId}')
   .onWrite(async (change, context) => {
@@ -82,6 +150,7 @@ exports.notifyUpdateByEmail = firestore
     const n: number = parseInt(context.params.stepId as string);
     const uidsToNotify = [];
     for (const uid of uids) {
+      // Get the roles of the user for that run from the user run state document
       const path = `users/${uid}/runs/${runId}`;
       logger.info(`Getting user run state doc ${path}`);
       const userRunStateDocRef = db.doc(path);
@@ -91,6 +160,7 @@ exports.notifyUpdateByEmail = firestore
           roles: Role[] | undefined;
           lastStepNotified: number | undefined;
         };
+        // Make sure the roles are consistent with what is in the run document
         if (roles !== undefined) {
           const rolesSet = new Set(roles);
           if (
@@ -185,16 +255,17 @@ exports.processInvite = firestore
     const { title } = run?.data() as { title: string };
 
     // Send the invitation via email
-    const { email } = inviteData as { email: string };
+    const { email, roles } = inviteData as { email: string; roles?: Role[] };
     const inviteId = snapshot.id;
     const token = runId + '-' + inviteId;
     logger.info('token: ', token);
+    const rolesStr = roles !== undefined ? roles.join(' and ') : 'participant';
     await db.collection('mail').add({
       to: email,
       message: {
-        subject: '[Visible Thoughts Writer] Invitation to play!',
+        subject: '[Visible Thoughts Writer] Invitation to participate!',
         html:
-          `<p>You have been invited to play a run named "${title}".</p></br>` +
+          `<p>You have been invited to be a ${rolesStr} to a run named "${title}".</p></br>` +
           `<p>Ready? Click <a href="${baseURL}/invite?token=${token}">HERE</a> to accept the invitation!</p>`,
       },
     });
@@ -242,29 +313,40 @@ exports.confirmInvite = https.onCall(async (data, context) => {
     );
   }
 
-  // Check if the user has already a role in the run
-  const userRunStateDocRef = db.doc(`users/${uid}/runs/${runId}`);
+  // Get existing roles from the user run state document
+  const path = `users/${uid}/runs/${runId}`;
+  const userRunStateDocRef = db.doc(path);
   const userRunStateDoc = await userRunStateDocRef.get();
-  let newRoles = new Set();
+  let oldRoles: Set<Role> = new Set();
   if (userRunStateDoc.exists) {
     const { roles } = userRunStateDoc?.data() as {
       roles: Role[] | undefined;
     };
-    if (roles !== undefined) newRoles = new Set([...roles]);
+    if (roles !== undefined) oldRoles = new Set([...roles]);
   }
-  // Invited users are granted the Player role
-  newRoles.add(Role.Player);
+
+  // Get roles from the invite, default to Player role
+  const newRoles: Set<Role> = new Set(inviteDoc.data()?.roles ?? [Role.Player]);
 
   const batch = db.batch();
-  // Add the player to the list of players for the run
-  batch.update(db.doc(`runs/${runId}`), {
-    players: admin.firestore.FieldValue.arrayUnion(uid),
-  });
-  // Set the user run state
-  batch.set(userRunStateDocRef, {
-    lastStepNotified: 0,
-    roles: [...newRoles], // convert back to array because Firestore doesn't support Set
-  });
+  // Update the run with the new roles
+  let runUpdate = {};
+  if (newRoles.has(Role.DM)) {
+    runUpdate = {
+      ...runUpdate,
+      dms: admin.firestore.FieldValue.arrayUnion(uid),
+    };
+  }
+  if (newRoles.has(Role.Player)) {
+    runUpdate = {
+      ...runUpdate,
+      players: admin.firestore.FieldValue.arrayUnion(uid),
+    };
+  }
+  batch.update(db.doc(`runs/${runId}`), runUpdate);
+  // Note: User run state will be updated accordingly
+  // by the onRunUpdated cloud function
+
   // Delete the invite
   batch.delete(inviteDocRef);
   const results = await batch.commit().catch((err: FirebaseError) => {

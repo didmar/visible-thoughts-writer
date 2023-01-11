@@ -267,9 +267,6 @@ export async function createRun(title: string, admin: string): Promise<string> {
   const firstStep = createNextStep(undefined);
   await addStep(runId, firstStep);
 
-  // Create a UserRunState for this run in the Admin's profile
-  await createUserRunState(admin, runId, new Set([Role.Admin, Role.DM]));
-
   return runId;
 }
 
@@ -322,9 +319,6 @@ export async function createRunFromImport(
     deleteDoc(doc(db, 'runs', runId)).catch(handleFirebaseError());
     throw error;
   }
-
-  // Create a UserRunState for this run in the Admin's profile
-  await createUserRunState(dm, runId, new Set([Role.Admin, Role.DM]));
 
   return runId;
 }
@@ -409,6 +403,7 @@ export async function updateRunParticipants(
 ): Promise<void> {
   const runDoc = doc(db, 'runs', runId);
   await updateDoc(runDoc, { dms, players }).catch(handleFirebaseError());
+  // Note: user run state will be updated indirectly by the onRunUpdated cloud function
 }
 
 /** Necessary migration to make the RunsListing component work */
@@ -812,8 +807,10 @@ export async function updateRunNbSteps(
 export interface Invite {
   id: string;
   email: string;
-  roles?: Role[];
+  roles: Set<Role>;
 }
+
+const defaultInviteRoles = new Set([Role.Player]);
 
 export async function createInvite(
   runId: string,
@@ -824,13 +821,13 @@ export async function createInvite(
     throw new Error('Cannot invite to have admin role');
 
   const colRef = collection(db, 'runs', runId, 'invites');
-  const invite = {
+  const rolesOrDefault = roles ?? defaultInviteRoles;
+  const data = {
     email,
-    // Default to player role
-    roles: [...(roles ?? [Role.Player])],
+    roles: [...rolesOrDefault],
   };
-  const doc = await addDoc(colRef, invite).catch(handleFirebaseError());
-  return { ...invite, id: doc.id };
+  const doc = await addDoc(colRef, data).catch(handleFirebaseError());
+  return { id: doc.id, email, roles: rolesOrDefault };
 }
 
 export async function getInvites(runId: string): Promise<Invite[]> {
@@ -839,8 +836,25 @@ export async function getInvites(runId: string): Promise<Invite[]> {
   if (snapshot.empty) return [];
   return snapshot.docs.map((doc) => {
     const docData = doc.data() as { email: string; roles?: Role[] };
-    return { ...docData, id: doc.id };
+    return {
+      id: doc.id,
+      email: docData.email,
+      roles:
+        docData.roles !== undefined
+          ? new Set([...docData.roles])
+          : defaultInviteRoles,
+    };
   });
+}
+
+export async function updateInviteRoles(
+  runId: string,
+  inviteId: string,
+  newRoles: Set<Role>
+): Promise<void> {
+  const docRef = doc(db, 'runs', runId, 'invites', inviteId);
+  const payload = { roles: [...newRoles] };
+  await updateDoc(docRef, payload).catch(handleFirebaseError());
 }
 
 export async function deleteInvite(
@@ -969,8 +983,15 @@ export async function onUserProfileChanged(
   );
 }
 
-// Document type for the runs sub-collection of the users collection.
-// Keeps track of what was already notified to the user, and what their role is.
+/**
+ * Document type for the runs sub-collection of the users collection.
+ * Keeps track of what was already notified to the user, and what their role is.
+ *
+ * The creation of the document is triggered by cloud function onRunUpdated,
+ * a new run is created. Updates to roles are also done by the cloud function.
+ * Only updates to lastStepNotified may be done either by the client when using the app,
+ * or the cloud function.
+ */
 export class UserRunState {
   roles: Role[]; // roles assumed by the user for this run (e.g., admin, DM and/or player)
   lastStepNotified: number; // last step for which the user has been notified that it was their turn
@@ -982,28 +1003,15 @@ export class UserRunState {
   }
 }
 
-export async function createUserRunState(
+export async function updateLastStepNotified(
   userId: string,
   runId: string,
-  roles: Set<Role>
-): Promise<void> {
-  const status = new UserRunState(roles);
-  await setDoc(
-    doc(db, 'users', userId, 'runs', runId),
-    Object.assign({}, status)
-  ).catch(handleFirebaseError());
-}
-
-export async function updateUserRunState(
-  userId: string,
-  runId: string,
-  roles: Set<Role> | null | undefined,
   lastStepNotified: number
 ): Promise<void> {
-  if (roles === null || roles === undefined) return;
   const docRef = doc(db, 'users', userId, 'runs', runId);
-  const update: Partial<UserRunState> = { roles: [...roles], lastStepNotified };
-  await setDoc(docRef, update, { merge: true }).catch(handleFirebaseError());
+  await setDoc(docRef, { lastStepNotified }, { merge: true }).catch(
+    handleFirebaseError()
+  );
 }
 
 // ===============

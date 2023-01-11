@@ -47,6 +47,7 @@ import {
   Run,
   RunStatus,
   runStatusTooltip,
+  updateInviteRoles,
   updateRunParticipants,
   UserProfile,
 } from '../firebase-app';
@@ -77,6 +78,11 @@ interface Props {
   onClose?: (updatedRun: Run) => void;
 }
 
+/**
+ * RunSettingsModal is a modal that allows the admin to edit the run's settings and participants.
+ * It should only be display to the admin or to a reviewer, otherwise the lack of permissions
+ * will prevent any changes from being saved.
+ */
 function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
   const [run] = useState<Run>(initRun);
   const [open, setOpen] = useState(initOpen);
@@ -107,7 +113,7 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
 
   const [participants, setParticipants] = useState<Participant[]>([]);
 
-  const onRoleChange = (
+  const onParticipantRoleChange = (
     participant: Participant,
     role: Role,
     checked: boolean
@@ -119,14 +125,38 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
       // Recreate an object with our update,
       // or use the original if it's not the one we're updating
       p.userProfile.id === participant.userProfile.id
-        ? // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-          ({
+        ? {
             ...p,
             roles: participant.roles,
-          } as Participant)
+          }
         : p
     );
     setParticipants(newParticipants);
+  };
+
+  const onInviteRoleChange = (
+    invite: Invite,
+    role: Role,
+    checked: boolean
+  ): void => {
+    if (checked) invite.roles.add(role);
+    else invite.roles.delete(role);
+
+    // Update our local state
+    const newInvites = invites.map((i) =>
+      i.id === invite.id
+        ? {
+            ...i,
+            roles: invite.roles,
+          }
+        : i
+    );
+    setInvites(newInvites);
+
+    // Update in the DB
+    void (async function () {
+      await updateInviteRoles(run.id, invite.id, invite.roles);
+    })();
   };
 
   const handleRemoveParticipant = (participant: Participant): void => {
@@ -198,8 +228,8 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
     const dms: string[] = [];
     const players: string[] = [];
     participants.forEach((p) => {
-      if (p.roles.has(Role.DM)) dms.push(p.userProfile.id);
       if (p.roles.has(Role.Player)) players.push(p.userProfile.id);
+      if (p.roles.has(Role.DM)) dms.push(p.userProfile.id);
     });
 
     void (async function () {
@@ -391,7 +421,7 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
               <Checkbox
                 checked={participant.roles.has(role)}
                 onChange={(_, checked) => {
-                  onRoleChange(participant, role, checked);
+                  onParticipantRoleChange(participant, role, checked);
                 }}
                 inputProps={{ 'aria-label': 'controlled' }}
                 disabled={role === Role.Admin}
@@ -434,10 +464,23 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
           <Typography>{invite.email}</Typography>
         </Box>
       </TableCell>
-      {/* Empty role checkboxes columns */}
-      <TableCell></TableCell>
-      <TableCell></TableCell>
-      <TableCell></TableCell>
+      {/* Role checkboxes columns */}
+      {[Role.Admin, Role.DM, Role.Player].map((role, index) => {
+        return (
+          <TableCell key={index} className="roleCell">
+            <Tooltip title={`Toggle ${role.valueOf()} role`}>
+              <Checkbox
+                checked={invite.roles.has(role)}
+                onChange={(_, checked) => {
+                  onInviteRoleChange(invite, role, checked);
+                }}
+                inputProps={{ 'aria-label': 'controlled' }}
+                disabled={role === Role.Admin}
+              />
+            </Tooltip>
+          </TableCell>
+        );
+      })}
       {/* Remove invite column */}
       <TableCell>
         {
@@ -522,7 +565,7 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
           disabled={!isEmail(email) || alreadyInvited(email)}
           startIcon={<EmailIcon />}
         >
-          Invite player
+          Invite
         </Button>
       </form>
     </Box>

@@ -40,10 +40,10 @@ import {
   TextYBR,
   Thought,
   UpdatedSteps,
+  updateLastStepNotified,
   updateRunLongTermThoughtsForStep,
   updateRunNbSteps,
   updateStep,
-  updateUserRunState,
   UserProfile,
 } from '../firebase-app';
 import {
@@ -227,7 +227,7 @@ function RunPage(): JSX.Element {
           // Update the user's run state, to indicate that the user has been
           // notified of their cue on this step, and that there is not need to
           // sent a notification by email.
-          await updateUserRunState(currentUser.uid(), runId, roles, lastStep.n);
+          await updateLastStepNotified(currentUser.uid(), runId, lastStep.n);
         })();
       }
     }

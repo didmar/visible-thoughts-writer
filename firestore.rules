@@ -1,23 +1,37 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function hasDMRole() {
+    function userCanDM() {
       return request.auth != null &&
         get(/databases/$(database)/documents/users/$(request.auth.uid))
           .data.canDM == true;
     }
 
     match /runs/{runId} {
+      // Only users that have the permission can create runs
+      allow create: if userCanDM();
       // Anyone can see the runs
       allow read: if true;
-      // Only DMs can write
-      allow write: if hasDMRole();
+      // Only run's admin and DMs can write
+      allow write: if isRunAdminOrDM();
       // Nobody can delete a run (use deleteRun cloud function for a soft delete)
       allow delete: if false;
       
       function isRunDM() {
         let data = get(/databases/$(database)/documents/runs/$(runId)).data;
         return (data.keys().hasAll(['dms']) && request.auth.uid in data.dms)
+          || (data.keys().hasAll(['dm']) && request.auth.uid == data.dm)
+      }
+
+      function isRunAdmin() {
+        let data = get(/databases/$(database)/documents/runs/$(runId)).data;
+        return data.keys().hasAll(['admin']) && data.admin == request.auth.uid
+      }
+
+      function isRunAdminOrDM() {
+        let data = get(/databases/$(database)/documents/runs/$(runId)).data;
+        return (data.keys().hasAll(['admin']) && data.admin == request.auth.uid)
+          || (data.keys().hasAll(['dms']) && request.auth.uid in data.dms)
           || (data.keys().hasAll(['dm']) && request.auth.uid == data.dm)
       }
       
@@ -45,8 +59,8 @@ service cloud.firestore {
       }
 
       match /invites/{inviteId} {
-        // Only the run's DM or a reviewer can interact with invitations
-        allow read, write: if request.auth != null && (isRunDM() || isUserReviewer());
+        // Only the run's admin or a reviewer can interact with invitations
+        allow read, write: if request.auth != null && (isRunAdmin() || isUserReviewer());
       }
     }
 
@@ -65,38 +79,21 @@ service cloud.firestore {
       }
 
       match /runs/{runId} {
-        function isRunDMOrPlayer() {
+        function isRunAdmin() {
           let data = get(/databases/$(database)/documents/runs/$(runId)).data;
-          return (data.keys().hasAll(['dms']) && request.auth.uid in data.dms)
-            || (data.keys().hasAll(['dm']) && request.auth.uid == data.dm)
-            || request.auth.uid in data.players
+          return data.keys().hasAll(['admin']) && data.admin == request.auth.uid
         }
 
-        function isRunDM() {
-          let data = get(/databases/$(database)/documents/runs/$(runId)).data;
-          return (data.keys().hasAll(['dms']) && request.auth.uid in data.dms)
-            || (data.keys().hasAll(['dm']) && request.auth.uid == data.dm)
-        }
-
+        // Anyone can read the run states
+        allow read: if true;
         // Users can read/write their own run states,
-        // provided that they are either DM or player on that run,
-        // or have the reviewer status
-        allow create, read, write: if request.auth != null
-                                    && (
-                                      (
+        // or the run's admin, or any reviewer
+        allow create, write, delete: if request.auth != null
+                                      && (
                                         request.auth.uid == userId
-                                        && isRunDMOrPlayer()
-                                      )
-                                      || isUserReviewer()
-                                    );
-        // Users can delete their own run states,
-        // or that run's DM or a reviewer can do it
-        allow delete: if request.auth != null
-                        && (
-                          request.auth.uid == userId
-                          || isRunDM()
-                          || isUserReviewer()
-                        )
+                                        || isRunAdmin()
+                                        || isUserReviewer()
+                                      );
       }
     }
   }
