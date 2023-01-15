@@ -90,7 +90,11 @@ const Navbar = ({ run }: Props): JSX.Element => {
 
   const runSettings = run !== undefined &&
     (isAdmin(roles) || userIsReviewer) && (
-      <RunSettingsModal initRun={run} initOpen={false} />
+      // Forcing the modal to open if the run has no description
+      <RunSettingsModal
+        initRun={run}
+        initOpen={(run.desc?.length ?? 0) === 0}
+      />
     );
 
   return (

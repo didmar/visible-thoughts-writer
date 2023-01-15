@@ -627,12 +627,9 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
 
   return run !== undefined && run !== null ? (
     <Box>
-      {/* If starting as already opened, don't show the button to open it */}
-      {!initOpen && (
-        <IconButton size="large" onClick={handleOpen} color="inherit">
-          <SettingsIcon />
-        </IconButton>
-      )}
+      <IconButton size="large" onClick={handleOpen} color="inherit">
+        <SettingsIcon />
+      </IconButton>
       <Modal
         open={open}
         onClose={handleClose}
