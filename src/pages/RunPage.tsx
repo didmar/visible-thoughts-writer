@@ -186,6 +186,7 @@ function RunPage(): JSX.Element {
         await onUserProfileChanged(uid, setUserProfile);
       } else {
         setRoles(null); // Guest
+        setUserProfile(undefined);
       }
     })();
   }, [currentUser]);
