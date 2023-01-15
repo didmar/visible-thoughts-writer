@@ -111,13 +111,18 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
   const [newPriv, setNewPriv] = useState<boolean>(run.priv ?? false);
   const [edited, setEdited] = useState(false);
 
-  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [participants, setParticipants] = useState<Participant[] | undefined>(
+    undefined
+  );
 
   const onParticipantRoleChange = (
     participant: Participant,
     role: Role,
     checked: boolean
   ): void => {
+    if (participants === undefined)
+      throw new Error(`Participants is undefined!`);
+
     // Update our local state
     if (checked) participant.roles.add(role);
     else participant.roles.delete(role);
@@ -160,6 +165,9 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
   };
 
   const handleRemoveParticipant = (participant: Participant): void => {
+    if (participants === undefined)
+      throw new Error(`Participants is undefined!`);
+
     if (participant.roles.has(Role.Admin))
       throw new Error(`Can't remove an admin from the participants!`);
 
@@ -224,6 +232,8 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
 
   useEffect(() => {
     console.log('RunSettingsModal > useEffect [participants]');
+
+    if (participants === undefined) return;
 
     const dms: string[] = [];
     const players: string[] = [];
@@ -397,54 +407,56 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
     </Box>
   );
 
-  const participantsTableRows = participants.map((participant, index) => (
-    <TableRow key={index}>
-      {/* Participant name column */}
-      <TableCell component="th" scope="row">
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'row',
-          }}
-        >
-          <Tooltip title="Registered player">
-            <AccountCircle sx={{ mr: 1 }} />
-          </Tooltip>
-          <Typography>{participant.userProfile.name}</Typography>
-        </Box>
-      </TableCell>
-      {/* Role checkboxes columns */}
-      {[Role.Admin, Role.DM, Role.Player].map((role, index) => {
-        return (
-          <TableCell key={index} className="roleCell">
-            <Tooltip title={`Toggle ${role.valueOf()} role`}>
-              <Checkbox
-                checked={participant.roles.has(role)}
-                onChange={(_, checked) => {
-                  onParticipantRoleChange(participant, role, checked);
-                }}
-                inputProps={{ 'aria-label': 'controlled' }}
-                disabled={role === Role.Admin}
-              />
+  const participantsTableRows = (participants ?? []).map(
+    (participant, index) => (
+      <TableRow key={index}>
+        {/* Participant name column */}
+        <TableCell component="th" scope="row">
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+            }}
+          >
+            <Tooltip title="Registered player">
+              <AccountCircle sx={{ mr: 1 }} />
             </Tooltip>
-          </TableCell>
-        );
-      })}
-      {/* Remove participant column */}
-      <TableCell>
-        {!participant.roles.has(Role.Admin) && (
-          <Tooltip title="Remove participant">
-            <IconButton
-              aria-label="remove"
-              onClick={() => handleRemoveParticipant(participant)}
-            >
-              <RemoveCircleIcon />
-            </IconButton>
-          </Tooltip>
-        )}
-      </TableCell>
-    </TableRow>
-  ));
+            <Typography>{participant.userProfile.name}</Typography>
+          </Box>
+        </TableCell>
+        {/* Role checkboxes columns */}
+        {[Role.Admin, Role.DM, Role.Player].map((role, index) => {
+          return (
+            <TableCell key={index} className="roleCell">
+              <Tooltip title={`Toggle ${role.valueOf()} role`}>
+                <Checkbox
+                  checked={participant.roles.has(role)}
+                  onChange={(_, checked) => {
+                    onParticipantRoleChange(participant, role, checked);
+                  }}
+                  inputProps={{ 'aria-label': 'controlled' }}
+                  disabled={role === Role.Admin}
+                />
+              </Tooltip>
+            </TableCell>
+          );
+        })}
+        {/* Remove participant column */}
+        <TableCell>
+          {!participant.roles.has(Role.Admin) && (
+            <Tooltip title="Remove participant">
+              <IconButton
+                aria-label="remove"
+                onClick={() => handleRemoveParticipant(participant)}
+              >
+                <RemoveCircleIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+        </TableCell>
+      </TableRow>
+    )
+  );
 
   const invitesTableRows = invites.map((invite, index) => (
     <TableRow key={100 + index}>
