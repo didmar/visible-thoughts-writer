@@ -492,16 +492,19 @@ export const withCustomization = (editor: CustomEditor): CustomEditor => {
       console.debug('> Removing empty eot');
       Transforms.removeNodes(editor, { at: path });
       return;
-    } else if (Editor.isBlock(editor, node) && node.type === 'bullet') {
-      if (beginsWithEOT(node)) {
-        fixBulletBeginningWithEOT(editor, node, path);
-        return;
-      } else {
-        const merged = mergeAdjacentThoughts(editor, path);
-        // Return only if some merged happened.
-        // Once all the merging is done, we want to continue
-        // with the rest of the normalization.
-        if (merged) return;
+    } else if (Editor.isBlock(editor, node as CustomElement)) {
+      const elem = node as CustomElement;
+      if (elem.type === 'bullet') {
+        if (beginsWithEOT(elem)) {
+          fixBulletBeginningWithEOT(editor, elem, path);
+          return;
+        } else {
+          const merged = mergeAdjacentThoughts(editor, path);
+          // Return only if some merged happened.
+          // Once all the merging is done, we want to continue
+          // with the rest of the normalization.
+          if (merged) return;
+        }
       }
     } else if (path.length === 0) {
       // When copy/pasting, multiple text elements may be created,
@@ -570,8 +573,8 @@ export const withCustomization = (editor: CustomEditor): CustomEditor => {
     const rootType = editor.children[0].type;
     const filteredFragment = [];
     for (const node of fragment) {
-      if (Editor.isBlock(editor, node)) {
-        const elem: CustomElement = node;
+      if (Editor.isBlock(editor, node as CustomElement)) {
+        const elem = node as CustomElement;
         // If the fragment contains a different type of element,
         // insert it as raw text to avoid messing up the data model.
         if (elem.type !== rootType) {

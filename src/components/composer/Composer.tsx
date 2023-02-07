@@ -163,22 +163,13 @@ const Composer = ({
 
       const scheduleFlush: boolean =
         pendingDiffs?.some(({ diff, path }) => {
-          console.log('diff: ', diff);
-          console.log('path: ', path);
-
           if (!diff.text.endsWith(' ')) {
             return false;
           }
 
-          // const { text } = SlateNode.leaf(editor, path);
-          // const beforeText = text.slice(0, diff.start) + diff.text.slice(0, -1);
-          // if (!(beforeText in SHORTCUTS)) {
-          //   return false;
-          // }
-
           const blockEntry = Editor.above(editor, {
             at: path,
-            match: (n) => Editor.isBlock(editor, n),
+            match: (n) => Editor.isBlock(editor, n as CustomElement),
           });
           if (blockEntry === undefined) {
             return false;
