@@ -480,7 +480,7 @@ export const isLongTermActive = (editor: CustomEditor): boolean | undefined => {
 };
 
 export const withCustomization = (editor: CustomEditor): CustomEditor => {
-  const { insertText, insertBreak, normalizeNode } = editor;
+  const { insertText, insertBreak, insertFragment, normalizeNode } = editor;
 
   // There are a few cases that need to be handled,
   // in order to keep our data model consistent.
@@ -564,5 +564,50 @@ export const withCustomization = (editor: CustomEditor): CustomEditor => {
     }
   };
 
+  editor.insertFragment = (fragment: Node[]) => {
+    console.debug('@ insertFragment: ', fragment);
+
+    const rootType = editor.children[0].type;
+    const filteredFragment = [];
+    for (const node of fragment) {
+      if (Editor.isBlock(editor, node)) {
+        const elem: CustomElement = node;
+        // If the fragment contains a different type of element,
+        // insert it as raw text to avoid messing up the data model.
+        if (elem.type !== rootType) {
+          insertText(elementToString(elem) + '\n');
+        } else {
+          filteredFragment.push(node);
+        }
+      }
+    }
+
+    return insertFragment(filteredFragment);
+  };
+
   return editor;
 };
+
+/**
+ * Transform an element into a raw text representation.
+ * @param elem The element to convert
+ * @returns Raw text representation of the element
+ */
+function elementToString(elem: CustomElement): string {
+  if (elem.children.length === 0) {
+    return '';
+  } else if (elem.type === 'bullet') {
+    return elem.children
+      .map((t: ThoughtText | EndOfThoughtText) => {
+        if (t.type === 'eot') {
+          return t.text + ' ';
+        } else {
+          return t.text;
+        }
+      })
+      .join('');
+  } else {
+    // text and ybrtext
+    return elem.children.map((t: SimpleText) => t.text).join('\n');
+  }
+}
