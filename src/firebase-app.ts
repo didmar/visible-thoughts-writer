@@ -121,7 +121,7 @@ export class Run {
   imported?: Timestamp;
 
   static MAX_TITLE_LENGTH = 256;
-  static MAX_DESC_LENGTH = 1024;
+  static MAX_DESC_LENGTH = 5000;
 
   constructor(
     id: string,
