@@ -29,12 +29,19 @@ const UserAvatar = ({ user }: Props): JSX.Element => {
 export default UserAvatar;
 
 // Taken from MUI documentation
-function stringAvatar(name: string): object {
+export function stringAvatar(name: string): object {
+  const _name =
+    name !== undefined && name !== null && name !== '' ? name : 'Anonymous';
+  const words = _name.split(' ');
+  const initials: string = words
+    .map((word) => (word.length > 0 ? word[0].toUpperCase() : ''))
+    .slice(0, 2)
+    .join('');
   return {
     sx: {
-      bgcolor: stringToColor(name),
+      bgcolor: stringToColor(_name),
     },
-    children: `${name.split(' ')[0][0]}${name.split(' ')[1][0]}`,
+    children: initials,
   };
 }
 
