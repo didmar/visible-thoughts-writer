@@ -492,7 +492,10 @@ export const withCustomization = (editor: CustomEditor): CustomEditor => {
       console.debug('> Removing empty eot');
       Transforms.removeNodes(editor, { at: path });
       return;
-    } else if (Editor.isBlock(editor, node as CustomElement)) {
+    }
+
+    // Fix bullet beginning with EOT
+    if (Editor.isBlock(editor, node as CustomElement)) {
       const elem = node as CustomElement;
       if (elem.type === 'bullet') {
         if (beginsWithEOT(elem)) {
@@ -500,13 +503,14 @@ export const withCustomization = (editor: CustomEditor): CustomEditor => {
           return;
         } else {
           const merged = mergeAdjacentThoughts(editor, path);
-          // Return only if some merged happened.
-          // Once all the merging is done, we want to continue
-          // with the rest of the normalization.
+          // If something had to be merged,
+          // return in order to do other normalization if necessary.
           if (merged) return;
         }
       }
-    } else if (path.length === 0) {
+    }
+
+    if (path.length === 0) {
       // When copy/pasting, multiple text elements may be created,
       // so merge them into one if so.
       const children = (node as CustomEditor).children;
