@@ -51,22 +51,49 @@ const HelpModal = (): JSX.Element => {
                 </a>
                 .
               </p>{' '}
-              <p>To get started, have a look at the video tutorial below.</p>
-              <iframe
-                width="560"
-                height="315"
-                src="https://www.youtube.com/embed/SDv_tMeXDCY"
-                title="YouTube video player"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                style={{ alignContent: 'center' }}
-              ></iframe>
               <p>
-                For any question, bug or feedback, please contact{' '}
-                <b>didier#4229</b> on the{' '}
+                1. Read{' '}
+                <a href="https://intelligence.org/visible/">this article</a>{' '}
+                first to better understand the project
+              </p>
+              <p>
+                2. Have a look at{' '}
+                <a href="https://www.youtube.com/watch?v=SDv_tMeXDCY">
+                  this video
+                </a>{' '}
+                to get started with the interface.
+              </p>
+              {/* Display video embed if screen height is enough */}
+              <Box
+                sx={{
+                  display: {
+                    xs: 'none',
+                    sm: 'none',
+                    md: 'block',
+                    lg: 'block',
+                    xl: 'block',
+                  },
+                }}
+              >
+                <iframe
+                  width="560"
+                  height="315"
+                  src="https://www.youtube.com/embed/SDv_tMeXDCY"
+                  title="YouTube video player"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  style={{ alignContent: 'center' }}
+                ></iframe>
+              </Box>
+              <p>
+                For questions about the <b>project</b>, please contact{' '}
+                <a href="mailto:vtp@intelligence.org">vtp@intelligence.org</a>
+              </p>
+              <p>
+                For questions, bug or feedback about this <b>interface</b>,
+                please report on the <b>#writer-tool</b> channel of{' '}
                 <a href="https://discord.gg/Uv6QRKN5">
                   Visible Thoughts Discord server
                 </a>
-                .
               </p>
             </Typography>
           </Box>
