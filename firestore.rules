@@ -12,8 +12,8 @@ service cloud.firestore {
       allow create: if userCanDM();
       // Anyone can see the runs
       allow read: if true;
-      // Only run's admin and DMs can write
-      allow write: if isRunAdminOrDM();
+      // Only run's admin, DMs and reviewers can write
+      allow write: if isRunAdminOrDM() || isUserReviewer();
       // Nobody can delete a run (use deleteRun cloud function for a soft delete)
       allow delete: if false;
       
