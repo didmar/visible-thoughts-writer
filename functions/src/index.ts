@@ -175,7 +175,7 @@ exports.notifyUpdateByEmail = firestore
           }
         }
         // If they have not already been notified of the current step
-        if (lastStepNotified !== undefined && lastStepNotified < n) {
+        if (lastStepNotified === undefined || lastStepNotified < n) {
           const userDocRef = db.doc(`users/${uid}`);
           const user = await userDocRef.get();
           if (user.exists) {
