@@ -153,14 +153,14 @@ export class Run {
     this.imported = imported;
   }
 
-  sortedLtts(): Thought[] {
+  sortedLtts(): Array<[number, Thought[]]> {
     if (this.ltts === undefined) return [];
 
     const arr: Array<[number, Thought[]]> = Object.entries(this.ltts).map(
       ([n, thoughts]) => [parseInt(n), thoughts]
     );
     arr.sort(([na], [nb]) => na - nb);
-    return arr.flatMap(([, thoughts]) => thoughts);
+    return arr;
   }
 
   static fromDocData(id: string, doc: DocumentData): Run {

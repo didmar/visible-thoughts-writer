@@ -19,10 +19,12 @@ interface StepElemProps {
   prevStep?: Step;
 }
 
-export function renderLongTermThoughts(ltts: Thought[]): JSX.Element {
-  const lis = ltts.map((thought, index) => (
-    <li key={index}>{renderThought(thought)}</li>
-  ));
+export function renderLongTermThoughts(
+  ltts: Array<[number, Thought[]]>
+): JSX.Element {
+  const lis = ltts
+    .flatMap(([_, thoughts]) => thoughts)
+    .map((thought, index) => <li key={index}>{renderThought(thought)}</li>);
   return <ul>{lis}</ul>;
 }
 

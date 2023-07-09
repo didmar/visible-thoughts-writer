@@ -86,7 +86,7 @@ function RunPage(): JSX.Element {
   // );
 
   const [xStepAgo, setXStepAgo] = useState<Step | undefined>(undefined);
-  const [ltts, setLtts] = useState<Thought[]>([]);
+  const [ltts, setLtts] = useState<Array<[number, Thought[]]>>([]);
   const [roles, setRoles] = useState<Set<Role> | null | undefined>(undefined);
   const [userProfile, setUserProfile] = useState<UserProfile | undefined>(
     undefined
@@ -117,6 +117,7 @@ function RunPage(): JSX.Element {
         setRun(null);
       } else {
         setRun(run);
+        console.log('>>>>2222 Update local state: ', run.sortedLtts());
         setLtts(run.sortedLtts());
       }
 
@@ -274,6 +275,7 @@ function RunPage(): JSX.Element {
         // and then update the ltts without a round-trip to Firestore.
         const updatedRun = await getRun(runId);
         if (updatedRun !== undefined) {
+          console.log('>>>>3333 Update local state: ', updatedRun.sortedLtts());
           setLtts(updatedRun.sortedLtts());
         } else {
           throw new Error(`Run ${runId} not found!`);
@@ -305,6 +307,8 @@ function RunPage(): JSX.Element {
         `Got an update for step ${n}, but we have not loaded it yet!`
       );
     }
+
+    console.log('>>> step: ', step.initT);
 
     let update: Partial<Step> = {};
     let nextStep: Step | undefined;
@@ -421,33 +425,26 @@ function RunPage(): JSX.Element {
       // the ltts from the run document and update the UI.
       if (lttsUpdate.length !== 0) {
         await updateRunLongTermThoughtsForStep(runId, n, lttsUpdate);
+        // Update the local state
+        const updatedLtts: Array<[number, Thought[]]> = ltts.map(([n2, t]) =>
+          n === n2 ? [n2, lttsUpdate] : [n2, t]
+        );
+        setLtts(updatedLtts);
       }
 
-      await updateStep(runId, n, update);
+      // Update the local state, in case this step
+      // is not monitored by the listener (e.g. previous steps)
+      const newUpdatedSteps: UpdatedSteps = { added: [], modified: [] };
+      const updatedStep = { ...step, ...update };
+      newUpdatedSteps.modified.push(updatedStep);
+      setUpdatedSteps(newUpdatedSteps);
 
-      // const newUpdatedSteps: UpdatedSteps = { added: [], modified: [] };
-      // If the listener won't get the updated step for us
-      // if (monitorFromStepN !== undefined && n < monitorFromStepN) {
-      //   console.log('!!! Update local state');
-      //   const updatedStep = { ...step, ...update };
-      //   newUpdatedSteps.modified.push(updatedStep);
-      // }
+      await updateStep(runId, n, update);
 
       if (nextStep !== undefined && Object.keys(updateNext).length !== 0) {
         // Update the next step
         await updateStep(runId, n + 1, updateNext);
-        // If the listener won't get the updated step for us
-        // if (monitorFromStepN !== undefined && n + 1 < monitorFromStepN) {
-        //   // Then add it the local state ourselves to trigger a re-render
-        //   const updatedNextStep: Step = { ...nextStep, ...updateNext };
-        //   console.log('!!! Update local state (next step)');
-        //   newUpdatedSteps.modified.push(updatedNextStep);
-        // }
       }
-
-      // if (newUpdatedSteps.modified.length > 0) {
-      //   setUpdatedSteps(newUpdatedSteps);
-      // }
     })();
   };
 
