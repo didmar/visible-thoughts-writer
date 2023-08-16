@@ -63,8 +63,7 @@ export function arraysContainsArray<T>(arrs: T[][], arr: T[]): boolean {
 export function noop(): void {}
 
 // Based on https://stackoverflow.com/a/51215842/2320087
-export function downloadToJSON(objectData: unknown): void {
-  const filename = 'export.json';
+export function downloadToJSON(filename: string, objectData: unknown): void {
   const contentType = 'application/json;charset=utf-8;';
   const a = document.createElement('a');
   a.download = filename;
@@ -107,4 +106,16 @@ export const orderedArrayWithoutDupes = <T>(arr: T[]): T[] => {
   }
 
   return result;
+};
+
+/**
+ * Sanitize a string to be used as a filename or slug.
+ * @param str A string to slugify
+ * @returns Slugified string
+ */
+export const slugify = (str: string): string => {
+  return str
+    .replace(/[ -]/g, '_')
+    .replace(/[^a-z0-9_]/gi, '')
+    .toLowerCase();
 };

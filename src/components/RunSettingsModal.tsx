@@ -52,7 +52,7 @@ import {
   UserProfile,
 } from '../firebase-app';
 import '../styles.css';
-import { downloadToJSON, orderedArrayWithoutDupes } from '../utils';
+import { downloadToJSON, orderedArrayWithoutDupes, slugify } from '../utils';
 
 const style = {
   position: 'absolute',
@@ -607,7 +607,8 @@ function RunSettingsModal({ initRun, initOpen, onClose }: Props): JSX.Element {
       const steps = await getSteps(run.id);
       const userProfiles = await getRunUserProfiles(run);
       const exportedRun = exportRun(run, userProfiles, steps);
-      downloadToJSON(exportedRun);
+      const filename = `${slugify(run.title).slice(0, 251)}.json`;
+      downloadToJSON(filename, exportedRun);
     })();
   };
 
