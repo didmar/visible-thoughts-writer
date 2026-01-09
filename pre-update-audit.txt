@@ -1,0 +1,339 @@
+# npm audit report
+
+@adobe/css-tools  <=4.3.1
+Severity: moderate
+@adobe/css-tools Regular Expression Denial of Service (ReDOS) while Parsing CSS - https://github.com/advisories/GHSA-hpx4-r86g-5jrg
+@adobe/css-tools Improper Input Validation and Inefficient Regular Expression Complexity - https://github.com/advisories/GHSA-prr3-c3m5-p7q2
+fix available via `npm audit fix`
+node_modules/@adobe/css-tools
+
+@babel/helpers  <7.26.10
+Severity: moderate
+Babel has inefficient RegExp complexity in generated code with .replace when transpiling named capturing groups - https://github.com/advisories/GHSA-968p-4wvh-cqc8
+fix available via `npm audit fix`
+node_modules/@babel/helpers
+
+@babel/runtime  <7.26.10
+Severity: moderate
+Babel has inefficient RegExp complexity in generated code with .replace when transpiling named capturing groups - https://github.com/advisories/GHSA-968p-4wvh-cqc8
+fix available via `npm audit fix`
+node_modules/@babel/runtime
+
+@babel/traverse  <7.23.2
+Severity: critical
+Babel vulnerable to arbitrary code execution when compiling specifically crafted malicious code - https://github.com/advisories/GHSA-67hx-6x53-jw92
+fix available via `npm audit fix`
+node_modules/@babel/traverse
+
+@grpc/grpc-js  <1.8.22
+Severity: moderate
+@grpc/grpc-js can allocate memory for incoming messages well above configured limits - https://github.com/advisories/GHSA-7v5v-9h63-cj86
+fix available via `npm audit fix --force`
+Will install firebase@12.7.0, which is a breaking change
+node_modules/@grpc/grpc-js
+  @firebase/firestore  1.3.1-0 - 1.3.1-canary.df1b588 || 1.3.2-0 - 1.3.3-canary.bc4a844 || 1.13.1-0 - 1.13.1-canary.ce3addba || 1.14.0-0 - 1.15.1 || 3.7.3-20221108184443 - 3.7.3-canary.fde5adf63 || 3.8.0-20221206221533 - 4.0.0
+  Depends on vulnerable versions of @grpc/grpc-js
+  node_modules/@firebase/firestore
+    @firebase/firestore-compat  <=0.0.900-exp.520ca39d0 || 0.2.3-20221108184443 - 0.2.3-canary.fde5adf63 || 0.3.0-20221206221533 - 0.3.13 || 0.3.25-20240130223218 - 0.3.25-20240131233318 || 0.3.30-20240424141009 - 0.3.30-dataconnect-preview.f2ddc3d7b || 0.4.0-20230301000120 - 0.4.0-firebase-studio-sdk-integration.f7536090e
+    Depends on vulnerable versions of @firebase/firestore
+    node_modules/@firebase/firestore-compat
+      firebase  <=10.9.0-canary.ed84efe50 || 11.9.0-20250603144652 - 11.9.0-canary.5871fd656 || 12.0.0-20250715195345 - 12.0.0-canary.e25317f9f
+      Depends on vulnerable versions of @firebase/firestore
+      Depends on vulnerable versions of @firebase/firestore-compat
+      node_modules/firebase
+        firebaseui  <=3.0.0 || 6.0.0 - 6.0.2
+        Depends on vulnerable versions of firebase
+        node_modules/firebaseui
+
+@remix-run/router  <=1.23.1
+Severity: high
+React Router vulnerable to XSS via Open Redirects - https://github.com/advisories/GHSA-2w69-qvjg-hvjx
+fix available via `npm audit fix`
+node_modules/@remix-run/router
+  react-router  6.0.0 - 6.30.2
+  Depends on vulnerable versions of @remix-run/router
+  node_modules/react-router
+    react-router-dom  6.0.0-alpha.0 - 6.30.2
+    Depends on vulnerable versions of @remix-run/router
+    Depends on vulnerable versions of react-router
+    node_modules/react-router-dom
+
+body-parser  <=1.20.3 || 2.0.0-beta.1 - 2.0.2
+Severity: high
+body-parser vulnerable to denial of service when url encoding is enabled - https://github.com/advisories/GHSA-qwcr-r2fm-qrc7
+Depends on vulnerable versions of qs
+fix available via `npm audit fix`
+node_modules/body-parser
+  express  <=4.21.2 || 5.0.0-alpha.1 - 5.0.1
+  Depends on vulnerable versions of body-parser
+  Depends on vulnerable versions of cookie
+  Depends on vulnerable versions of path-to-regexp
+  Depends on vulnerable versions of qs
+  Depends on vulnerable versions of send
+  Depends on vulnerable versions of serve-static
+  node_modules/express
+
+brace-expansion  1.0.0 - 1.1.11 || 2.0.0 - 2.0.1
+brace-expansion Regular Expression Denial of Service vulnerability - https://github.com/advisories/GHSA-v6h2-p8h4-qcjw
+brace-expansion Regular Expression Denial of Service vulnerability - https://github.com/advisories/GHSA-v6h2-p8h4-qcjw
+fix available via `npm audit fix`
+node_modules/brace-expansion
+node_modules/filelist/node_modules/brace-expansion
+
+braces  <3.0.3
+Severity: high
+Uncontrolled resource consumption in braces - https://github.com/advisories/GHSA-grv7-fg5c-xmjg
+fix available via `npm audit fix`
+node_modules/braces
+
+cookie  <0.7.0
+cookie accepts cookie name, path, and domain with out of bounds characters - https://github.com/advisories/GHSA-pxg6-pf52-xh8x
+fix available via `npm audit fix`
+node_modules/cookie
+
+cross-spawn  7.0.0 - 7.0.4
+Severity: high
+Regular Expression Denial of Service (ReDoS) in cross-spawn - https://github.com/advisories/GHSA-3xgq-45jj-v275
+fix available via `npm audit fix`
+node_modules/cross-spawn
+
+ejs  <3.1.10
+Severity: moderate
+ejs lacks certain pollution protection - https://github.com/advisories/GHSA-ghr5-ch3p-vcr6
+fix available via `npm audit fix`
+node_modules/ejs
+
+esbuild  <=0.24.2
+Severity: moderate
+esbuild enables any website to send any requests to the development server and read the response - https://github.com/advisories/GHSA-67mh-4wv8-2f99
+fix available via `npm audit fix`
+node_modules/esbuild
+  @esbuild-kit/core-utils  *
+  Depends on vulnerable versions of esbuild
+  node_modules/@esbuild-kit/core-utils
+    @esbuild-kit/cjs-loader  *
+    Depends on vulnerable versions of @esbuild-kit/core-utils
+    node_modules/@esbuild-kit/cjs-loader
+    @esbuild-kit/esm-loader  *
+    Depends on vulnerable versions of @esbuild-kit/core-utils
+    node_modules/@esbuild-kit/esm-loader
+      tsx  2.0.0 - 3.12.10
+      Depends on vulnerable versions of @esbuild-kit/cjs-loader
+      Depends on vulnerable versions of @esbuild-kit/core-utils
+      Depends on vulnerable versions of @esbuild-kit/esm-loader
+      node_modules/tsx
+
+
+
+follow-redirects  <=1.15.5
+Severity: moderate
+follow-redirects' Proxy-Authorization header kept across hosts - https://github.com/advisories/GHSA-cxjh-pqwp-8mfp
+Follow Redirects improperly handles URLs in the url.parse() function - https://github.com/advisories/GHSA-jchw-25xp-jwwc
+fix available via `npm audit fix`
+node_modules/follow-redirects
+
+form-data  3.0.0 - 3.0.3
+Severity: critical
+form-data uses unsafe random function in form-data for choosing boundary - https://github.com/advisories/GHSA-fjxv-7rqg-78g4
+fix available via `npm audit fix`
+node_modules/form-data
+
+http-proxy-middleware  <=2.0.8
+Severity: high
+Denial of service in http-proxy-middleware - https://github.com/advisories/GHSA-c7qv-q95q-8v27
+http-proxy-middleware allows fixRequestBody to proceed even if bodyParser has failed - https://github.com/advisories/GHSA-9gqv-wp59-fq42
+http-proxy-middleware can call writeBody twice because "else if" is not used - https://github.com/advisories/GHSA-4www-5p9h-95mh
+fix available via `npm audit fix`
+node_modules/http-proxy-middleware
+
+js-yaml  <3.14.2 || >=4.0.0 <4.1.1
+Severity: moderate
+js-yaml has prototype pollution in merge (<<) - https://github.com/advisories/GHSA-mh29-5h37-fv8m
+js-yaml has prototype pollution in merge (<<) - https://github.com/advisories/GHSA-mh29-5h37-fv8m
+fix available via `npm audit fix`
+node_modules/@istanbuljs/load-nyc-config/node_modules/js-yaml
+node_modules/js-yaml
+node_modules/svgo/node_modules/js-yaml
+
+micromatch  <4.0.8
+Severity: moderate
+Regular Expression Denial of Service (ReDoS) in micromatch - https://github.com/advisories/GHSA-952p-6rrq-rcjv
+fix available via `npm audit fix`
+node_modules/micromatch
+
+nanoid  <3.3.8
+Severity: moderate
+Predictable results in nanoid generation when given non-integer values - https://github.com/advisories/GHSA-mwcw-c2x4-8c55
+fix available via `npm audit fix`
+node_modules/nanoid
+
+node-forge  <=1.3.1
+Severity: high
+node-forge has ASN.1 Unbounded Recursion - https://github.com/advisories/GHSA-554w-wpv2-vw27
+node-forge has an Interpretation Conflict vulnerability via its ASN.1 Validator Desynchronization - https://github.com/advisories/GHSA-5gfm-wpxj-wjgq
+node-forge is vulnerable to ASN.1 OID Integer Truncation - https://github.com/advisories/GHSA-65ch-62r8-g69g
+fix available via `npm audit fix`
+node_modules/node-forge
+
+nth-check  <2.0.1
+Severity: high
+Inefficient Regular Expression Complexity in nth-check - https://github.com/advisories/GHSA-rp65-9cf3-cjxr
+fix available via `npm audit fix --force`
+Will install react-scripts@0.0.0, which is a breaking change
+node_modules/svgo/node_modules/nth-check
+  css-select  <=3.1.0
+  Depends on vulnerable versions of nth-check
+  node_modules/svgo/node_modules/css-select
+    svgo  1.0.0 - 1.3.2
+    Depends on vulnerable versions of css-select
+    node_modules/svgo
+      @svgr/plugin-svgo  <=5.5.0
+      Depends on vulnerable versions of svgo
+      node_modules/@svgr/plugin-svgo
+        @svgr/webpack  4.0.0 - 5.5.0
+        Depends on vulnerable versions of @svgr/plugin-svgo
+        node_modules/@svgr/webpack
+          react-scripts  >=0.1.0
+          Depends on vulnerable versions of @svgr/webpack
+          Depends on vulnerable versions of resolve-url-loader
+          Depends on vulnerable versions of webpack-dev-server
+          node_modules/react-scripts
+
+on-headers  <1.1.0
+on-headers is vulnerable to http response header manipulation - https://github.com/advisories/GHSA-76c9-3jph-rj3q
+fix available via `npm audit fix`
+node_modules/on-headers
+  compression  1.0.3 - 1.8.0
+  Depends on vulnerable versions of on-headers
+  node_modules/compression
+
+path-to-regexp  <=0.1.11
+Severity: high
+path-to-regexp outputs backtracking regular expressions - https://github.com/advisories/GHSA-9wv6-86v2-598j
+path-to-regexp contains a ReDoS - https://github.com/advisories/GHSA-rhx6-c78j-4q9w
+fix available via `npm audit fix`
+node_modules/path-to-regexp
+
+postcss  <8.4.31
+Severity: moderate
+PostCSS line return parsing error - https://github.com/advisories/GHSA-7fh5-64p2-3v2j
+fix available via `npm audit fix --force`
+Will install react-scripts@0.0.0, which is a breaking change
+node_modules/postcss
+node_modules/resolve-url-loader/node_modules/postcss
+  resolve-url-loader  0.0.1-experiment-postcss || 3.0.0-alpha.1 - 4.0.0
+  Depends on vulnerable versions of postcss
+  node_modules/resolve-url-loader
+
+protobufjs  6.10.0 - 6.11.3 || 7.0.0 - 7.2.4
+Severity: critical
+protobufjs Prototype Pollution vulnerability - https://github.com/advisories/GHSA-h755-8qp9-cq85
+protobufjs Prototype Pollution vulnerability - https://github.com/advisories/GHSA-h755-8qp9-cq85
+fix available via `npm audit fix`
+node_modules/@grpc/grpc-js/node_modules/protobufjs
+node_modules/protobufjs
+
+qs  <6.14.1
+Severity: high
+qs's arrayLimit bypass in its bracket notation allows DoS via memory exhaustion - https://github.com/advisories/GHSA-6rw7-vpxm-498p
+fix available via `npm audit fix`
+node_modules/qs
+
+
+rollup  <2.79.2
+Severity: high
+DOM Clobbering Gadget found in rollup bundled scripts that leads to XSS - https://github.com/advisories/GHSA-gcx4-mw62-g8wm
+fix available via `npm audit fix`
+node_modules/rollup
+
+semver  6.0.0 - 6.3.0 || 7.0.0 - 7.5.1
+Severity: high
+semver vulnerable to Regular Expression Denial of Service - https://github.com/advisories/GHSA-c2qf-rxjj-qqgw
+semver vulnerable to Regular Expression Denial of Service - https://github.com/advisories/GHSA-c2qf-rxjj-qqgw
+fix available via `npm audit fix`
+node_modules/@typescript-eslint/eslint-plugin/node_modules/semver
+node_modules/@typescript-eslint/typescript-estree/node_modules/semver
+node_modules/@typescript-eslint/utils/node_modules/semver
+node_modules/builtins/node_modules/semver
+node_modules/css-loader/node_modules/semver
+node_modules/eslint-plugin-n/node_modules/semver
+node_modules/fork-ts-checker-webpack-plugin/node_modules/semver
+node_modules/jest-jasmine2/node_modules/semver
+node_modules/jest-snapshot/node_modules/semver
+node_modules/postcss-loader/node_modules/semver
+node_modules/react-scripts/node_modules/semver
+node_modules/semver
+node_modules/ts-jest/node_modules/semver
+
+send  <0.19.0
+send vulnerable to template injection that can lead to XSS - https://github.com/advisories/GHSA-m6fv-jmcg-4jfg
+fix available via `npm audit fix`
+node_modules/send
+  serve-static  <=1.16.0
+  Depends on vulnerable versions of send
+  node_modules/serve-static
+
+serialize-javascript  6.0.0 - 6.0.1
+Severity: moderate
+Cross-site Scripting (XSS) in serialize-javascript - https://github.com/advisories/GHSA-76p7-773f-r4q5
+fix available via `npm audit fix`
+node_modules/serialize-javascript
+
+
+tough-cookie  <4.1.3
+Severity: moderate
+tough-cookie Prototype Pollution vulnerability - https://github.com/advisories/GHSA-72xf-g2v4-qvf3
+fix available via `npm audit fix`
+node_modules/tough-cookie
+
+validator  <=13.15.20
+Severity: high
+validator.js has a URL validation bypass vulnerability in its isURL function - https://github.com/advisories/GHSA-9965-vmph-33xx
+Validator is Vulnerable to Incomplete Filtering of One or More Instances of Special Elements - https://github.com/advisories/GHSA-vghf-hv5q-vc2g
+fix available via `npm audit fix`
+node_modules/validator
+
+webpack  5.0.0-alpha.0 - 5.93.0
+Severity: moderate
+Webpack's AutoPublicPathRuntimeModule has a DOM Clobbering Gadget that leads to XSS - https://github.com/advisories/GHSA-4vvj-4cpr-p986
+fix available via `npm audit fix`
+node_modules/webpack
+
+webpack-dev-middleware  <=5.3.3
+Severity: high
+Path traversal in webpack-dev-middleware - https://github.com/advisories/GHSA-wr3j-pwj9-hqq6
+fix available via `npm audit fix`
+node_modules/webpack-dev-middleware
+
+webpack-dev-server  <=5.2.0
+Severity: moderate
+webpack-dev-server users' source code may be stolen when they access a malicious web site with non-Chromium based browser - https://github.com/advisories/GHSA-9jgg-88mc-972h
+webpack-dev-server users' source code may be stolen when they access a malicious web site - https://github.com/advisories/GHSA-4v9v-hfq4-rm2v
+fix available via `npm audit fix --force`
+Will install react-scripts@0.0.0, which is a breaking change
+node_modules/webpack-dev-server
+  @pmmmwh/react-refresh-webpack-plugin  0.3.1 - 0.5.11
+  Depends on vulnerable versions of webpack-dev-server
+  node_modules/@pmmmwh/react-refresh-webpack-plugin
+
+word-wrap  <1.2.4
+Severity: moderate
+word-wrap vulnerable to Regular Expression Denial of Service - https://github.com/advisories/GHSA-j8xg-fqg3-53r7
+fix available via `npm audit fix`
+node_modules/word-wrap
+
+ws  7.0.0 - 7.5.9 || 8.0.0 - 8.17.0
+Severity: high
+ws affected by a DoS when handling a request with many HTTP headers - https://github.com/advisories/GHSA-3h5v-q93c-6h6q
+ws affected by a DoS when handling a request with many HTTP headers - https://github.com/advisories/GHSA-3h5v-q93c-6h6q
+fix available via `npm audit fix`
+node_modules/jsdom/node_modules/ws
+node_modules/ws
+
+57 vulnerabilities (6 low, 26 moderate, 22 high, 3 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
